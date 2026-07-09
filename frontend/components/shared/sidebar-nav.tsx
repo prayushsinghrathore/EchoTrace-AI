@@ -13,6 +13,7 @@ const navItems = [
   { label: "Projects", href: "/projects", icon: "📋" },
   { label: "Evidence", href: "/evidence", icon: "📎" },
   { label: "Upload", href: "/evidence/upload", icon: "⬆️" },
+  { label: "Investigations", href: "/investigations", icon: "🔍" },
 ];
 
 export function SidebarNav() {

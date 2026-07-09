@@ -275,3 +275,139 @@ export interface DashboardStats {
 export function getDashboardStats(): Promise<DashboardStats> {
   return request(`${API}/dashboard/stats`);
 }
+
+/* ── Investigations ─────────────────────────────────────────────────────── */
+
+export interface Investigation {
+  id: string;
+  workspace_id: string;
+  title: string;
+  description: string | null;
+  status: string;
+  priority: string;
+  created_by: string;
+  lead_investigator: string | null;
+  opened_at: string | null;
+  closed_at: string | null;
+  entity_count: number;
+  relationship_count: number;
+  timeline_count: number;
+  created_at: string;
+}
+
+export interface InvestigationCreate {
+  workspace_id: string;
+  title: string;
+  description?: string;
+  priority?: string;
+}
+
+export interface EntityItem {
+  id: string;
+  investigation_id: string;
+  type: string;
+  label: string;
+  description: string | null;
+  created_by: string;
+  created_at: string;
+}
+
+export interface RelationshipItem {
+  id: string;
+  investigation_id: string;
+  source_entity_id: string;
+  target_entity_id: string;
+  relationship_type: string;
+  confidence: number | null;
+  created_at: string;
+}
+
+export interface TimelineEvent {
+  id: string;
+  investigation_id: string;
+  event_timestamp: string;
+  title: string;
+  description: string | null;
+  entity_id: string | null;
+  evidence_id: string | null;
+  created_at: string;
+}
+
+export interface GraphData {
+  nodes: Array<{ id: string; label: string; type: string; color: string; icon: string }>;
+  edges: Array<{ id: string; source: string; target: string; type: string; confidence: number | null }>;
+}
+
+export interface InvestigationDashboard {
+  total: number;
+  open: number;
+  in_progress: number;
+  closed: number;
+  entities: number;
+  relationships: number;
+  timeline_events: number;
+}
+
+export function createInvestigation(data: InvestigationCreate): Promise<Investigation> {
+  return request(`${API}/investigations`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export function listInvestigations(wsId: string): Promise<Investigation[]> {
+  return request(`${API}/investigations/workspace/${wsId}`);
+}
+
+export function getInvestigation(id: string): Promise<Investigation> {
+  return request(`${API}/investigations/${id}`);
+}
+
+export function updateInvestigation(id: string, data: Record<string, unknown>): Promise<Investigation> {
+  return request(`${API}/investigations/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export function deleteInvestigation(id: string): Promise<void> {
+  return request(`${API}/investigations/${id}`, { method: "DELETE" });
+}
+
+export function getInvestigationDashboard(wsId: string): Promise<InvestigationDashboard> {
+  return request(`${API}/investigations/dashboard/${wsId}`);
+}
+
+export function listEntities(invId: string): Promise<EntityItem[]> {
+  return request(`${API}/investigations/${invId}/entities`);
+}
+
+export function createEntity(invId: string, data: { type: string; label: string; description?: string }): Promise<EntityItem> {
+  return request(`${API}/investigations/${invId}/entities`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export function deleteEntity(entityId: string): Promise<void> {
+  return request(`${API}/investigations/entities/${entityId}`, { method: "DELETE" });
+}
+
+export function listRelationships(invId: string): Promise<RelationshipItem[]> {
+  return request(`${API}/investigations/${invId}/relationships`);
+}
+
+export function createRelationship(invId: string, data: { source_entity_id: string; target_entity_id: string; relationship_type: string; confidence?: number }): Promise<RelationshipItem> {
+  return request(`${API}/investigations/${invId}/relationships`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export function deleteRelationship(relId: string): Promise<void> {
+  return request(`${API}/investigations/relationships/${relId}`, { method: "DELETE" });
+}
+
+export function listTimelineEvents(invId: string): Promise<TimelineEvent[]> {
+  return request(`${API}/investigations/${invId}/timeline`);
+}
+
+export function createTimelineEvent(invId: string, data: { event_timestamp: string; title: string; description?: string }): Promise<TimelineEvent> {
+  return request(`${API}/investigations/${invId}/timeline`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export function deleteTimelineEvent(eventId: string): Promise<void> {
+  return request(`${API}/investigations/timeline/${eventId}`, { method: "DELETE" });
+}
+
+export function getGraph(invId: string): Promise<GraphData> {
+  return request(`${API}/investigations/${invId}/graph`);
+}

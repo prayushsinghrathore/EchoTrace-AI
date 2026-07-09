@@ -1,12 +1,11 @@
 """API v1 route aggregator."""
 
-from __future__ import annotations
-
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import auth, health, members, organizations, projects, users, workspaces
 from app.api.v1.endpoints.dashboard import router as dashboard_router
 from app.api.v1.endpoints.evidence import router as evidence_router
+from app.api.v1.endpoints.investigations import router as investigations_router
 from app.api.v1.endpoints.invitations import router as invitations_router
 from app.api.v1.endpoints.invitations import ws_router as invitations_ws_router
 
@@ -23,3 +22,4 @@ api_v1_router.include_router(invitations_router, prefix="", tags=["invitations"]
 api_v1_router.include_router(projects.router, prefix="/projects", tags=["projects"])
 api_v1_router.include_router(dashboard_router, prefix="/dashboard", tags=["dashboard"])
 api_v1_router.include_router(evidence_router, prefix="/evidence", tags=["evidence"])
+api_v1_router.include_router(investigations_router, prefix="/investigations", tags=["investigations"])
