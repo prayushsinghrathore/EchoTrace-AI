@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -34,7 +33,7 @@ class MemberWithUserResponse(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
     email: str = ""
-    display_name: Optional[str] = None
+    display_name: str | None = None
     role: WorkspaceRole
     joined_at: datetime
 

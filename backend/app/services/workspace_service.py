@@ -5,7 +5,6 @@ Workspace service — manages workspaces within organizations.
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy import delete as sa_delete
@@ -41,12 +40,12 @@ class WorkspaceService:
         if org.owner_id != user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    async def _get_member_role(self, workspace_id: uuid.UUID, user_id: uuid.UUID) -> Optional[WorkspaceRole]:
+    async def _get_member_role(self, workspace_id: uuid.UUID, user_id: uuid.UUID) -> WorkspaceRole | None:
         member_repo = BaseRepository(self.db, WorkspaceMember)
         member = await member_repo.find_one(workspace_id=workspace_id, user_id=user_id)
         return member.role if member else None
 
-    async def create(self, organization_id: uuid.UUID, name: str, slug: str, user_id: uuid.UUID, description: Optional[str] = None) -> Workspace:
+    async def create(self, organization_id: uuid.UUID, name: str, slug: str, user_id: uuid.UUID, description: str | None = None) -> Workspace:
         await self._check_org_access(organization_id, user_id)
 
         existing = await self.repo.find_one(slug=slug, organization_id=organization_id)
@@ -111,7 +110,7 @@ class WorkspaceService:
         if role not in (WorkspaceRole.OWNER, WorkspaceRole.ADMIN):
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
 
-        if "slug" in kwargs and kwargs["slug"]:
+        if kwargs.get("slug"):
             existing = await self.repo.find_one(slug=kwargs["slug"], organization_id=ws.organization_id)
             if existing and existing.id != ws_id:
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug already in use")

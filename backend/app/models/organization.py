@@ -4,8 +4,9 @@ Organization model — top-level tenant entity.
 An organization owns workspaces and is the root of the multi-tenant hierarchy.
 """
 
+from __future__ import annotations
+
 import uuid
-from typing import Optional
 
 from sqlalchemy import ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
@@ -51,14 +52,14 @@ class Organization(Base, TimestampMixin):
         comment="User who owns this organization",
     )
 
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="Description of the organization",
     )
 
     # Relationships
-    workspaces: Mapped[list["Workspace"]] = relationship(
+    workspaces: Mapped[list[Workspace]] = relationship(
         back_populates="organization",
         cascade="all, delete-orphan",
         passive_deletes=True,

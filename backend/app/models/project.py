@@ -5,9 +5,10 @@ All evidence, timelines, AI investigations, graphs, and reports
 belong to a project.
 """
 
+from __future__ import annotations
+
 import enum
 import uuid
-from typing import Optional
 
 from sqlalchemy import Enum, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
@@ -59,7 +60,7 @@ class Project(Base, TimestampMixin):
         comment="URL-friendly slug within the workspace",
     )
 
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="Description of the project",
@@ -74,7 +75,7 @@ class Project(Base, TimestampMixin):
     )
 
     # Relationships
-    workspace: Mapped["Workspace"] = relationship(
+    workspace: Mapped[Workspace] = relationship(
         back_populates="projects",
     )
 

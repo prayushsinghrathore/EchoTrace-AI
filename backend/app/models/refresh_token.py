@@ -7,9 +7,10 @@ Each refresh token is stored in the database so it can be:
 - Audited (track when/where tokens were issued)
 """
 
+from __future__ import annotations
+
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import UUID
@@ -64,7 +65,7 @@ class RefreshToken(Base, TimestampMixin):
     )
 
     # Rotation chain — the previous token this one rotated from
-    rotated_from_jti: Mapped[Optional[str]] = mapped_column(
+    rotated_from_jti: Mapped[str | None] = mapped_column(
         String(64),
         nullable=True,
         comment="JWT ID of the token this one rotated from (null for initial tokens)",
@@ -78,26 +79,26 @@ class RefreshToken(Base, TimestampMixin):
         comment="Whether this token has been revoked",
     )
 
-    revoked_at: Mapped[Optional[datetime]] = mapped_column(
+    revoked_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         comment="When this token was revoked",
     )
 
-    revoked_by_action: Mapped[Optional[str]] = mapped_column(
+    revoked_by_action: Mapped[str | None] = mapped_column(
         String(32),
         nullable=True,
         comment="Action that caused revocation: rotation, logout, admin_revoke",
     )
 
     # Metadata
-    ip_address: Mapped[Optional[str]] = mapped_column(
+    ip_address: Mapped[str | None] = mapped_column(
         String(45),
         nullable=True,
         comment="IP address that issued this token",
     )
 
-    user_agent: Mapped[Optional[str]] = mapped_column(
+    user_agent: Mapped[str | None] = mapped_column(
         String(512),
         nullable=True,
         comment="User agent that issued this token",

@@ -5,7 +5,6 @@ Organization service — manages tenant organizations.
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy import delete as sa_delete
@@ -26,7 +25,7 @@ class OrganizationService:
         self.db = db
         self.repo = BaseRepository(db, Organization)
 
-    async def create(self, name: str, slug: str, owner_id: uuid.UUID, description: Optional[str] = None) -> Organization:
+    async def create(self, name: str, slug: str, owner_id: uuid.UUID, description: str | None = None) -> Organization:
         """Create a new organization."""
         existing = await self.repo.find_one(slug=slug)
         if existing:
@@ -61,7 +60,7 @@ class OrganizationService:
         org = await self.get(org_id)
         if org.owner_id != user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the owner can update the organization")
-        if "slug" in kwargs and kwargs["slug"]:
+        if kwargs.get("slug"):
             existing = await self.repo.find_one(slug=kwargs["slug"])
             if existing and existing.id != org_id:
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug already in use")

@@ -2,6 +2,8 @@
 WorkspaceMember model — user membership within a workspace with role.
 """
 
+from __future__ import annotations
+
 import enum
 import uuid
 from datetime import datetime
@@ -68,11 +70,11 @@ class WorkspaceMember(Base):
     )
 
     # Relationships
-    workspace: Mapped["Workspace"] = relationship(
+    workspace: Mapped[Workspace] = relationship(
         back_populates="members",
     )
 
-    user: Mapped["User"] = relationship(
+    user: Mapped[User] = relationship(
         lazy="selectin",
     )
 

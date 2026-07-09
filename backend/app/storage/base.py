@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import abc
 from dataclasses import dataclass
-from typing import BinaryIO, Optional
+from typing import BinaryIO
 
 
 @dataclass
@@ -19,11 +19,11 @@ class StorageProvider(abc.ABC):
     """Interface for file storage backends."""
 
     @abc.abstractmethod
-    async def store(self, data: BinaryIO, filename: str, mime_type: str, path: Optional[str] = None) -> StoredFile:
+    async def store(self, data: BinaryIO, filename: str, mime_type: str, path: str | None = None) -> StoredFile:
         ...
 
     @abc.abstractmethod
-    async def retrieve(self, path: str) -> Optional[bytes]:
+    async def retrieve(self, path: str) -> bytes | None:
         ...
 
     @abc.abstractmethod
@@ -35,5 +35,5 @@ class StorageProvider(abc.ABC):
         ...
 
     @abc.abstractmethod
-    async def get_size(self, path: str) -> Optional[int]:
+    async def get_size(self, path: str) -> int | None:
         ...

@@ -6,8 +6,6 @@ Tests CRUD, upload, download, verification, versioning, comments, search, chain 
 
 from __future__ import annotations
 
-import io
-
 import pytest
 from httpx import AsyncClient
 
@@ -44,7 +42,7 @@ class TestEvidenceCRUD:
     async def test_create_evidence(self, client: AsyncClient) -> None:
         token, ws_id, proj_id = await _setup_env(client)
         resp = await client.post("/api/v1/evidence", json={
-            "project_id": proj_id, 
+            "project_id": proj_id,
             "title": "Test Evidence Item", "category": "document", "priority": "high",
             "description": "A test evidence item", "source": "email",
             "tags": ["important", "test"],

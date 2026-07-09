@@ -5,10 +5,11 @@ Represents an authenticated user with role-based access control
 and login audit tracking.
 """
 
+from __future__ import annotations
+
 import enum
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, Enum, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
@@ -74,13 +75,13 @@ class User(Base, TimestampMixin):
     )
 
     # ── Profile ─────────────────────────────────────────────────────────
-    display_name: Mapped[Optional[str]] = mapped_column(
+    display_name: Mapped[str | None] = mapped_column(
         String(150),
         nullable=True,
         comment="Display name shown in the UI",
     )
 
-    avatar_url: Mapped[Optional[str]] = mapped_column(
+    avatar_url: Mapped[str | None] = mapped_column(
         String(512),
         nullable=True,
         comment="URL to the user's avatar image",
@@ -119,13 +120,13 @@ class User(Base, TimestampMixin):
     )
 
     # ── Login Audit Fields ──────────────────────────────────────────────
-    last_login_at: Mapped[Optional[datetime]] = mapped_column(
+    last_login_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         comment="Timestamp of the last successful login",
     )
 
-    last_login_ip: Mapped[Optional[str]] = mapped_column(
+    last_login_ip: Mapped[str | None] = mapped_column(
         String(45),
         nullable=True,
         comment="IP address of the last successful login (IPv4 or IPv6)",
@@ -154,7 +155,7 @@ class User(Base, TimestampMixin):
         """Increment the failed login attempt counter."""
         self.failed_login_attempts = (self.failed_login_attempts or 0) + 1
 
-    def record_successful_login(self, ip_address: Optional[str]) -> None:
+    def record_successful_login(self, ip_address: str | None) -> None:
         """Reset failed attempts and record login metadata."""
         self.failed_login_attempts = 0
         self.last_login_ip = ip_address

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy import delete as sa_delete
@@ -73,7 +73,7 @@ class InvestigationService:
         await self._check_investigator(inv.workspace_id, user_id)
 
         if kwargs.get("status") == InvestigationStatus.CLOSED:
-            kwargs["closed_at"] = datetime.now(timezone.utc)
+            kwargs["closed_at"] = datetime.now(UTC)
         elif kwargs.get("status") in (InvestigationStatus.OPEN, InvestigationStatus.IN_PROGRESS):
             kwargs["closed_at"] = None
 

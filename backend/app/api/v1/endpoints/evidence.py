@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
 from fastapi.responses import StreamingResponse
@@ -100,14 +99,14 @@ async def list_evidence(
 
 @router.get("/search", response_model=dict)
 async def search_evidence(
-    q: Optional[str] = Query(None, max_length=500),
-    project_id: Optional[uuid.UUID] = Query(None),
-    workspace_id: Optional[uuid.UUID] = Query(None),
-    category: Optional[str] = Query(None),
-    status: Optional[str] = Query(None),
-    priority: Optional[str] = Query(None),
-    hash_value: Optional[str] = Query(None),
-    filename: Optional[str] = Query(None),
+    q: str | None = Query(None, max_length=500),
+    project_id: uuid.UUID | None = Query(None),
+    workspace_id: uuid.UUID | None = Query(None),
+    category: str | None = Query(None),
+    status: str | None = Query(None),
+    priority: str | None = Query(None),
+    hash_value: str | None = Query(None),
+    filename: str | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     sort_by: str = Query("created_at"),
@@ -176,7 +175,7 @@ async def restore_evidence(
 async def upload_file(
     evidence_id: uuid.UUID,
     file: UploadFile = File(...),
-    change_notes: Optional[str] = Form(None),
+    change_notes: str | None = Form(None),
     db: AsyncSession = Depends(get_db_session),
     user: User = Depends(get_current_user),
 ):

@@ -5,7 +5,6 @@ Member service — manages workspace membership.
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy import delete as sa_delete
@@ -27,7 +26,7 @@ class MemberService:
         self.db = db
         self.repo = BaseRepository(db, WorkspaceMember)
 
-    async def _get_member_role(self, workspace_id: uuid.UUID, user_id: uuid.UUID) -> Optional[WorkspaceRole]:
+    async def _get_member_role(self, workspace_id: uuid.UUID, user_id: uuid.UUID) -> WorkspaceRole | None:
         member = await self.repo.find_one(workspace_id=workspace_id, user_id=user_id)
         return member.role if member else None
 

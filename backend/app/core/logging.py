@@ -42,22 +42,10 @@ def setup_logging() -> None:
 
     if settings.is_production or settings.is_staging:
         # Production: JSON logging
-        processors = shared_processors + [
-            structlog.stdlib.filter_by_level,
-            structlog.processors.format_exc_info,
-            structlog.processors.UnicodeDecoder(),
-            structlog.processors.JSONRenderer(),
-        ]
+        processors = [*shared_processors, structlog.stdlib.filter_by_level, structlog.processors.format_exc_info, structlog.processors.UnicodeDecoder(), structlog.processors.JSONRenderer()]
     else:
         # Development: Colored console
-        processors = shared_processors + [
-            structlog.stdlib.filter_by_level,
-            structlog.dev.set_exc_info,
-            structlog.dev.ConsoleRenderer(
-                colors=True,
-                sort_keys=False,
-            ),
-        ]
+        processors = [*shared_processors, structlog.stdlib.filter_by_level, structlog.dev.set_exc_info, structlog.dev.ConsoleRenderer(colors=True, sort_keys=False)]
 
     structlog.configure(
         processors=processors,

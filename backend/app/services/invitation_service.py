@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import secrets
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -54,7 +54,7 @@ class InvitationService:
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User is already a member of this workspace")
 
         token = secrets.token_urlsafe(32)
-        expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+        expires_at = datetime.now(UTC) + timedelta(days=7)
 
         invitation = Invitation(
             workspace_id=workspace_id,

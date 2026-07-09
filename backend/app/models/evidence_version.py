@@ -1,7 +1,8 @@
 """Evidence version tracking."""
 
+from __future__ import annotations
+
 import uuid
-from typing import Optional
 
 from sqlalchemy import BigInteger, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
@@ -24,19 +25,19 @@ class EvidenceVersion(Base, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
     )
 
-    original_filename: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    stored_filename: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-    storage_path: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
-    mime_type: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    file_size: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    original_filename: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    stored_filename: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    storage_path: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    mime_type: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    file_size: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
 
-    sha256_hash: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
-    sha1_hash: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
-    md5_hash: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
+    sha256_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    sha1_hash: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    md5_hash: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
-    change_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    change_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    evidence: Mapped["Evidence"] = relationship(back_populates="versions")
+    evidence: Mapped[Evidence] = relationship(back_populates="versions")
 
     def __repr__(self) -> str:
         return f"<EvidenceVersion id={self.id} ev={self.evidence_id} v{self.version_number}>"

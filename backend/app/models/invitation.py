@@ -4,9 +4,10 @@ Invitation model — pending workspace invitations.
 Tracks invitations sent to email addresses with expiry and role.
 """
 
+from __future__ import annotations
+
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import DateTime, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
@@ -72,27 +73,27 @@ class Invitation(Base, TimestampMixin):
         comment="When the invitation expires",
     )
 
-    accepted_at: Mapped[Optional[datetime]] = mapped_column(
+    accepted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         comment="When the invitation was accepted",
     )
 
-    declined_at: Mapped[Optional[datetime]] = mapped_column(
+    declined_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         comment="When the invitation was declined",
     )
 
     # Relationships
-    workspace: Mapped["Workspace"] = relationship(
+    workspace: Mapped[Workspace] = relationship(
         back_populates="invitations",
     )
 
     @property
     def is_expired(self) -> bool:
         import datetime as dt_module
-        return dt_module.datetime.now(dt_module.timezone.utc) > self.expires_at
+        return dt_module.datetime.now(dt_module.UTC) > self.expires_at
 
     @property
     def is_accepted(self) -> bool:
@@ -104,11 +105,11 @@ class Invitation(Base, TimestampMixin):
 
     def accept(self) -> None:
         import datetime as dt_module
-        self.accepted_at = dt_module.datetime.now(dt_module.timezone.utc)
+        self.accepted_at = dt_module.datetime.now(dt_module.UTC)
 
     def decline(self) -> None:
         import datetime as dt_module
-        self.declined_at = dt_module.datetime.now(dt_module.timezone.utc)
+        self.declined_at = dt_module.datetime.now(dt_module.UTC)
 
     def __repr__(self) -> str:
         return f"<Invitation id={self.id} email={self.email} ws={self.workspace_id}>"

@@ -9,8 +9,8 @@ from __future__ import annotations
 import hashlib
 import secrets
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from fastapi import HTTPException, UploadFile, status
 from sqlalchemy import delete as sa_delete
@@ -55,7 +55,7 @@ class EvidenceService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this workspace")
         return member.role
 
-    async def _check_project_belongs_to_workspace(self, project_id: uuid.UUID, workspace_id: Optional[uuid.UUID] = None) -> Project:
+    async def _check_project_belongs_to_workspace(self, project_id: uuid.UUID, workspace_id: uuid.UUID | None = None) -> Project:
         proj_repo = BaseRepository(self.db, Project)
         proj = await proj_repo.get(project_id)
         if not proj:
@@ -66,7 +66,7 @@ class EvidenceService:
 
     def _generate_evidence_number(self) -> str:
         prefix = "ET"
-        ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        ts = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
         rand = secrets.token_hex(4).upper()
         return f"{prefix}-{ts}-{rand}"
 
@@ -156,7 +156,7 @@ class EvidenceService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
 
         ev.is_deleted = True
-        ev.deleted_at = datetime.now(timezone.utc)
+        ev.deleted_at = datetime.now(UTC)
         await self.db.commit()
         await self.custody.record(ev.id, user_id, "delete",
                                   notes=f"Evidence '{ev.title}' deleted")
@@ -178,7 +178,7 @@ class EvidenceService:
     # ── File Upload ─────────────────────────────────────────────────────
 
     async def upload_file(self, evidence_id: uuid.UUID, file: UploadFile, user_id: uuid.UUID,
-                          change_notes: Optional[str] = None) -> Evidence:
+                          change_notes: str | None = None) -> Evidence:
         ev = await self.get(evidence_id, user_id)
 
         # Validate file size
@@ -215,7 +215,7 @@ class EvidenceService:
         ev.original_filename = file.filename
         ev.stored_filename = stored.filename
         ev.storage_path = stored.path
-        ev.upload_timestamp = datetime.now(timezone.utc)
+        ev.upload_timestamp = datetime.now(UTC)
         ev.current_version_number += 1
 
         # Create version record
@@ -260,8 +260,8 @@ class EvidenceService:
     # ── Hash Verification ───────────────────────────────────────────────
 
     async def verify_hashes(self, evidence_id: uuid.UUID, user_id: uuid.UUID,
-                            sha256: Optional[str] = None, sha1: Optional[str] = None,
-                            md5: Optional[str] = None) -> dict[str, Any]:
+                            sha256: str | None = None, sha1: str | None = None,
+                            md5: str | None = None) -> dict[str, Any]:
         ev = await self.get(evidence_id, user_id)
         results: dict[str, Any] = {"verified": True, "checks": {}}
 
@@ -283,7 +283,7 @@ class EvidenceService:
             if not match:
                 results["verified"] = False
 
-        ev.verification_timestamp = datetime.now(timezone.utc)
+        ev.verification_timestamp = datetime.now(UTC)
         await self.db.commit()
 
         await self.custody.record(ev.id, user_id, "verify",
@@ -446,7 +446,7 @@ class EvidenceService:
 
         # Recent uploads (last 7 days)
         from datetime import timedelta
-        week_ago = datetime.now(timezone.utc) - timedelta(days=7)
+        week_ago = datetime.now(UTC) - timedelta(days=7)
         recent_result = await self.db.execute(
             select(func.count(Evidence.id)).where(
                 Evidence.project_id == project_id, Evidence.is_deleted == False,
@@ -502,7 +502,7 @@ class EvidenceService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Can only edit own comments")
         comment.body = body
         comment.is_edited = True
-        comment.edited_at = datetime.now(timezone.utc)
+        comment.edited_at = datetime.now(UTC)
         await self.db.commit()
         await self.db.refresh(comment)
         return comment

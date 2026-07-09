@@ -1,8 +1,9 @@
 """Evidence comments with edit tracking."""
 
+from __future__ import annotations
+
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID
@@ -25,9 +26,9 @@ class EvidenceComment(Base, TimestampMixin):
     )
     body: Mapped[str] = mapped_column(Text, nullable=False)
     is_edited: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    edited_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    edited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    evidence: Mapped["Evidence"] = relationship(back_populates="comments")
+    evidence: Mapped[Evidence] = relationship(back_populates="comments")
 
     def __repr__(self) -> str:
         return f"<EvidenceComment id={self.id} ev={self.evidence_id}>"

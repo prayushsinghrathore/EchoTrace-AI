@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -14,30 +14,30 @@ from app.models.investigation import InvestigationPriority, InvestigationStatus
 class InvestigationCreate(BaseModel):
     workspace_id: uuid.UUID
     title: str = Field(..., min_length=1, max_length=500)
-    description: Optional[str] = Field(None, max_length=10000)
+    description: str | None = Field(None, max_length=10000)
     priority: InvestigationPriority = InvestigationPriority.MEDIUM
-    lead_investigator: Optional[uuid.UUID] = None
+    lead_investigator: uuid.UUID | None = None
 
 
 class InvestigationUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=1, max_length=500)
-    description: Optional[str] = Field(None, max_length=10000)
-    status: Optional[InvestigationStatus] = None
-    priority: Optional[InvestigationPriority] = None
-    lead_investigator: Optional[uuid.UUID] = None
+    title: str | None = Field(None, min_length=1, max_length=500)
+    description: str | None = Field(None, max_length=10000)
+    status: InvestigationStatus | None = None
+    priority: InvestigationPriority | None = None
+    lead_investigator: uuid.UUID | None = None
 
 
 class InvestigationResponse(BaseModel):
     id: uuid.UUID
     workspace_id: uuid.UUID
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     status: InvestigationStatus
     priority: InvestigationPriority
     created_by: uuid.UUID
-    lead_investigator: Optional[uuid.UUID] = None
+    lead_investigator: uuid.UUID | None = None
     opened_at: datetime
-    closed_at: Optional[datetime] = None
+    closed_at: datetime | None = None
     entity_count: int = 0
     relationship_count: int = 0
     evidence_count: int = 0
@@ -51,15 +51,15 @@ class InvestigationResponse(BaseModel):
 class EntityCreate(BaseModel):
     type: str = Field(..., max_length=50)
     label: str = Field(..., min_length=1, max_length=500)
-    description: Optional[str] = Field(None, max_length=10000)
-    metadata_json: Optional[dict[str, Any]] = None
+    description: str | None = Field(None, max_length=10000)
+    metadata_json: dict[str, Any] | None = None
 
 
 class EntityUpdate(BaseModel):
-    type: Optional[str] = None
-    label: Optional[str] = Field(None, min_length=1, max_length=500)
-    description: Optional[str] = Field(None, max_length=10000)
-    metadata_json: Optional[dict[str, Any]] = None
+    type: str | None = None
+    label: str | None = Field(None, min_length=1, max_length=500)
+    description: str | None = Field(None, max_length=10000)
+    metadata_json: dict[str, Any] | None = None
 
 
 class EntityResponse(BaseModel):
@@ -67,8 +67,8 @@ class EntityResponse(BaseModel):
     investigation_id: uuid.UUID
     type: str
     label: str
-    description: Optional[str] = None
-    metadata_json: Optional[dict[str, Any]] = None
+    description: str | None = None
+    metadata_json: dict[str, Any] | None = None
     created_by: uuid.UUID
     created_at: datetime
     updated_at: datetime
@@ -80,14 +80,14 @@ class RelationshipCreate(BaseModel):
     source_entity_id: uuid.UUID
     target_entity_id: uuid.UUID
     relationship_type: str = Field(..., max_length=50)
-    confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
-    notes: Optional[str] = Field(None, max_length=5000)
+    confidence: float | None = Field(None, ge=0.0, le=1.0)
+    notes: str | None = Field(None, max_length=5000)
 
 
 class RelationshipUpdate(BaseModel):
-    relationship_type: Optional[str] = None
-    confidence: Optional[float] = Field(None, ge=0.0, le=1.0)
-    notes: Optional[str] = Field(None, max_length=5000)
+    relationship_type: str | None = None
+    confidence: float | None = Field(None, ge=0.0, le=1.0)
+    notes: str | None = Field(None, max_length=5000)
 
 
 class RelationshipResponse(BaseModel):
@@ -96,8 +96,8 @@ class RelationshipResponse(BaseModel):
     source_entity_id: uuid.UUID
     target_entity_id: uuid.UUID
     relationship_type: str
-    confidence: Optional[float] = None
-    notes: Optional[str] = None
+    confidence: float | None = None
+    notes: str | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -107,17 +107,17 @@ class RelationshipResponse(BaseModel):
 class TimelineEventCreate(BaseModel):
     event_timestamp: datetime
     title: str = Field(..., min_length=1, max_length=500)
-    description: Optional[str] = Field(None, max_length=10000)
-    entity_id: Optional[uuid.UUID] = None
-    evidence_id: Optional[uuid.UUID] = None
+    description: str | None = Field(None, max_length=10000)
+    entity_id: uuid.UUID | None = None
+    evidence_id: uuid.UUID | None = None
 
 
 class TimelineEventUpdate(BaseModel):
-    event_timestamp: Optional[datetime] = None
-    title: Optional[str] = Field(None, min_length=1, max_length=500)
-    description: Optional[str] = Field(None, max_length=10000)
-    entity_id: Optional[uuid.UUID] = None
-    evidence_id: Optional[uuid.UUID] = None
+    event_timestamp: datetime | None = None
+    title: str | None = Field(None, min_length=1, max_length=500)
+    description: str | None = Field(None, max_length=10000)
+    entity_id: uuid.UUID | None = None
+    evidence_id: uuid.UUID | None = None
 
 
 class TimelineEventResponse(BaseModel):
@@ -125,9 +125,9 @@ class TimelineEventResponse(BaseModel):
     investigation_id: uuid.UUID
     event_timestamp: datetime
     title: str
-    description: Optional[str] = None
-    entity_id: Optional[uuid.UUID] = None
-    evidence_id: Optional[uuid.UUID] = None
+    description: str | None = None
+    entity_id: uuid.UUID | None = None
+    evidence_id: uuid.UUID | None = None
     created_by: uuid.UUID
     created_at: datetime
     updated_at: datetime
@@ -137,9 +137,9 @@ class TimelineEventResponse(BaseModel):
 
 class EvidenceLinkCreate(BaseModel):
     evidence_id: uuid.UUID
-    entity_id: Optional[uuid.UUID] = None
-    relationship: Optional[str] = Field(None, max_length=100)
-    notes: Optional[str] = Field(None, max_length=5000)
+    entity_id: uuid.UUID | None = None
+    relationship: str | None = Field(None, max_length=100)
+    notes: str | None = Field(None, max_length=5000)
 
 
 class GraphNode(BaseModel):
@@ -155,7 +155,7 @@ class GraphEdge(BaseModel):
     source: str
     target: str
     type: str
-    confidence: Optional[float] = None
+    confidence: float | None = None
 
 
 class GraphResponse(BaseModel):
@@ -164,13 +164,13 @@ class GraphResponse(BaseModel):
 
 
 class InvestigationSearchParams(BaseModel):
-    query: Optional[str] = Field(None, max_length=500)
-    workspace_id: Optional[uuid.UUID] = None
-    status: Optional[InvestigationStatus] = None
-    priority: Optional[InvestigationPriority] = None
-    created_by: Optional[uuid.UUID] = None
-    date_from: Optional[datetime] = None
-    date_to: Optional[datetime] = None
+    query: str | None = Field(None, max_length=500)
+    workspace_id: uuid.UUID | None = None
+    status: InvestigationStatus | None = None
+    priority: InvestigationPriority | None = None
+    created_by: uuid.UUID | None = None
+    date_from: datetime | None = None
+    date_to: datetime | None = None
     skip: int = Field(default=0, ge=0)
     limit: int = Field(default=50, ge=1, le=200)
 

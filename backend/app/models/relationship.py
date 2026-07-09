@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import enum
 import uuid
-from typing import Optional
 
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import Float, ForeignKey, Text
@@ -39,12 +38,12 @@ class Relationship(Base, TimestampMixin):
     source_entity_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("entities.id", ondelete="CASCADE"), nullable=False, index=True)
     target_entity_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("entities.id", ondelete="CASCADE"), nullable=False, index=True)
     relationship_type: Mapped[RelationshipType] = mapped_column(SAEnum(RelationshipType, name="relationship_type"), nullable=False, index=True)
-    confidence: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    investigation: Mapped["Investigation"] = relationship(back_populates="relationships")
-    src_entity: Mapped["Entity"] = relationship(back_populates="src_rels", foreign_keys=[source_entity_id])
-    tgt_entity: Mapped["Entity"] = relationship(back_populates="tgt_rels", foreign_keys=[target_entity_id])
+    investigation: Mapped[Investigation] = relationship(back_populates="relationships")
+    src_entity: Mapped[Entity] = relationship(back_populates="src_rels", foreign_keys=[source_entity_id])
+    tgt_entity: Mapped[Entity] = relationship(back_populates="tgt_rels", foreign_keys=[target_entity_id])
 
     def __repr__(self):
         return f"<Relationship {self.relationship_type.value}: {self.source_entity_id} -> {self.target_entity_id}>"

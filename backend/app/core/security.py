@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import bcrypt
@@ -78,14 +78,14 @@ def create_access_token(
     Returns:
         Encoded JWT string.
     """
-    expire = datetime.now(timezone.utc) + (
+    expire = datetime.now(UTC) + (
         expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 
     payload: dict[str, Any] = {
         "sub": subject,
         "exp": expire,
-        "iat": datetime.now(timezone.utc),
+        "iat": datetime.now(UTC),
         "type": "access",
     }
 
@@ -109,12 +109,12 @@ def create_refresh_token(
     Returns:
         Encoded JWT string.
     """
-    expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    expire = datetime.now(UTC) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
 
     payload: dict[str, Any] = {
         "sub": subject,
         "exp": expire,
-        "iat": datetime.now(timezone.utc),
+        "iat": datetime.now(UTC),
         "type": "refresh",
     }
 
@@ -154,14 +154,14 @@ def create_password_reset_token(user_id: str) -> str:
     Returns:
         Encoded JWT string (24-hour expiry by default).
     """
-    expire = datetime.now(timezone.utc) + timedelta(
+    expire = datetime.now(UTC) + timedelta(
         hours=settings.PASSWORD_RESET_TOKEN_EXPIRE_HOURS,
     )
 
     payload: dict[str, Any] = {
         "sub": user_id,
         "exp": expire,
-        "iat": datetime.now(timezone.utc),
+        "iat": datetime.now(UTC),
         "type": "password_reset",
         "purpose": "password_reset",
     }

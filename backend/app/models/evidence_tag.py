@@ -1,5 +1,7 @@
 """Evidence tags — many-to-many via simple join table."""
 
+from __future__ import annotations
+
 import uuid
 
 from sqlalchemy import ForeignKey, String, UniqueConstraint
@@ -23,7 +25,7 @@ class EvidenceTag(Base):
     )
     tag: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
 
-    evidence: Mapped["Evidence"] = relationship(back_populates="tags")
+    evidence: Mapped[Evidence] = relationship(back_populates="tags")
 
     def __repr__(self) -> str:
         return f"<EvidenceTag {self.tag} ev={self.evidence_id}>"

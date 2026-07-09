@@ -8,7 +8,6 @@ All configuration values are accessed through a single `settings` instance.
 from __future__ import annotations
 
 import json
-from typing import List, Optional
 
 from pydantic import Field, PostgresDsn, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -38,11 +37,11 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     LOG_LEVEL: str = Field(default="DEBUG", pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")
     API_V1_PREFIX: str = "/api/v1"
-    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+    BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8000"]
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
-    def parse_cors_origins(cls, v: str | List[str]) -> List[str]:
+    def parse_cors_origins(cls, v: str | list[str]) -> list[str]:
         """Parse CORS origins from JSON string or list."""
         if isinstance(v, str):
             try:
@@ -65,8 +64,8 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "echotrace"
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = Field(default=5432, ge=1, le=65535)
-    DATABASE_URL: Optional[str] = None
-    DATABASE_SYNC_URL: Optional[str] = None
+    DATABASE_URL: str | None = None
+    DATABASE_SYNC_URL: str | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -94,21 +93,20 @@ class Settings(BaseSettings):
     SYNC_DATABASE_URI: PostgresDsn | str = ""
 
     @model_validator(mode="after")
-    def set_database_uris(self) -> "Settings":
+    def set_database_uris(self) -> Settings:
         """Set validated database URIs after construction."""
         self.ASYNC_DATABASE_URI = self.DATABASE_URL  # type: ignore[assignment]
         self.SYNC_DATABASE_URI = self.DATABASE_SYNC_URL  # type: ignore[assignment]
         return self
 
     @model_validator(mode="after")
-    def enforce_secret_key_in_production(self) -> "Settings":
+    def enforce_secret_key_in_production(self) -> Settings:
         """Require a proper SECRET_KEY in production/staging environments."""
-        if self.is_production or self.is_staging:
-            if not self.SECRET_KEY or len(self.SECRET_KEY) < 32:
-                raise ValueError(
-                    "SECRET_KEY must be set and at least 32 characters long "
-                    "in production/staging environments."
-                )
+        if (self.is_production or self.is_staging) and (not self.SECRET_KEY or len(self.SECRET_KEY) < 32):
+            raise ValueError(
+                "SECRET_KEY must be set and at least 32 characters long "
+                "in production/staging environments."
+            )
         return self
 
     # ── Authentication ───────────────────────────────────────────────────

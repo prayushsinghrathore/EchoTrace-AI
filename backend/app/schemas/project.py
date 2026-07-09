@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -15,14 +14,14 @@ class ProjectCreate(BaseModel):
     workspace_id: uuid.UUID
     name: str = Field(..., min_length=1, max_length=255)
     slug: str = Field(..., min_length=1, max_length=120, pattern=r"^[a-z0-9-]+$")
-    description: Optional[str] = Field(None, max_length=2000)
+    description: str | None = Field(None, max_length=2000)
 
 
 class ProjectUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=1, max_length=255)
-    slug: Optional[str] = Field(None, min_length=1, max_length=120, pattern=r"^[a-z0-9-]+$")
-    description: Optional[str] = Field(None, max_length=2000)
-    status: Optional[ProjectStatus] = None
+    name: str | None = Field(None, min_length=1, max_length=255)
+    slug: str | None = Field(None, min_length=1, max_length=120, pattern=r"^[a-z0-9-]+$")
+    description: str | None = Field(None, max_length=2000)
+    status: ProjectStatus | None = None
 
 
 class ProjectResponse(BaseModel):
@@ -30,7 +29,7 @@ class ProjectResponse(BaseModel):
     workspace_id: uuid.UUID
     name: str
     slug: str
-    description: Optional[str] = None
+    description: str | None = None
     status: ProjectStatus
     created_at: datetime
     updated_at: datetime

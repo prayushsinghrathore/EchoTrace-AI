@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -14,23 +13,23 @@ from app.models.evidence import EvidencePriority, EvidenceStatus
 class EvidenceCreate(BaseModel):
     project_id: uuid.UUID
     title: str = Field(..., min_length=1, max_length=500)
-    description: Optional[str] = Field(None, max_length=10000)
+    description: str | None = Field(None, max_length=10000)
     category: str = Field(default="other", max_length=100)
     priority: EvidencePriority = EvidencePriority.MEDIUM
-    source: Optional[str] = Field(None, max_length=255)
-    collector_id: Optional[uuid.UUID] = None
+    source: str | None = Field(None, max_length=255)
+    collector_id: uuid.UUID | None = None
     tags: list[str] = Field(default_factory=list)
 
 
 class EvidenceUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=1, max_length=500)
-    description: Optional[str] = Field(None, max_length=10000)
-    category: Optional[str] = Field(None, max_length=100)
-    priority: Optional[EvidencePriority] = None
-    status: Optional[EvidenceStatus] = None
-    source: Optional[str] = Field(None, max_length=255)
-    collector_id: Optional[uuid.UUID] = None
-    tags: Optional[list[str]] = None
+    title: str | None = Field(None, min_length=1, max_length=500)
+    description: str | None = Field(None, max_length=10000)
+    category: str | None = Field(None, max_length=100)
+    priority: EvidencePriority | None = None
+    status: EvidenceStatus | None = None
+    source: str | None = Field(None, max_length=255)
+    collector_id: uuid.UUID | None = None
+    tags: list[str] | None = None
 
 
 class EvidenceResponse(BaseModel):
@@ -38,23 +37,23 @@ class EvidenceResponse(BaseModel):
     project_id: uuid.UUID
     workspace_id: uuid.UUID
     created_by: uuid.UUID
-    collector_id: Optional[uuid.UUID] = None
+    collector_id: uuid.UUID | None = None
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     evidence_number: str
     category: str
     status: EvidenceStatus
     priority: EvidencePriority
-    source: Optional[str] = None
-    sha256_hash: Optional[str] = None
-    sha1_hash: Optional[str] = None
-    md5_hash: Optional[str] = None
-    mime_type: Optional[str] = None
-    file_size: Optional[int] = None
-    original_filename: Optional[str] = None
-    stored_filename: Optional[str] = None
-    upload_timestamp: Optional[datetime] = None
-    verification_timestamp: Optional[datetime] = None
+    source: str | None = None
+    sha256_hash: str | None = None
+    sha1_hash: str | None = None
+    md5_hash: str | None = None
+    mime_type: str | None = None
+    file_size: int | None = None
+    original_filename: str | None = None
+    stored_filename: str | None = None
+    upload_timestamp: datetime | None = None
+    verification_timestamp: datetime | None = None
     current_version_number: int = 1
     is_deleted: bool = False
     tags: list[str] = Field(default_factory=list)
@@ -74,10 +73,10 @@ class EvidenceListResponse(BaseModel):
     category: str
     status: EvidenceStatus
     priority: EvidencePriority
-    sha256_hash: Optional[str] = None
-    mime_type: Optional[str] = None
-    file_size: Optional[int] = None
-    original_filename: Optional[str] = None
+    sha256_hash: str | None = None
+    mime_type: str | None = None
+    file_size: int | None = None
+    original_filename: str | None = None
     tag_names: list[str] = Field(default_factory=list)
     created_at: datetime
 
@@ -85,19 +84,19 @@ class EvidenceListResponse(BaseModel):
 
 
 class EvidenceSearchParams(BaseModel):
-    query: Optional[str] = Field(None, max_length=500)
-    project_id: Optional[uuid.UUID] = None
-    workspace_id: Optional[uuid.UUID] = None
-    category: Optional[str] = None
-    status: Optional[EvidenceStatus] = None
-    priority: Optional[EvidencePriority] = None
-    tags: Optional[list[str]] = None
-    collector_id: Optional[uuid.UUID] = None
-    created_by: Optional[uuid.UUID] = None
-    hash_value: Optional[str] = None
-    filename: Optional[str] = None
-    date_from: Optional[datetime] = None
-    date_to: Optional[datetime] = None
+    query: str | None = Field(None, max_length=500)
+    project_id: uuid.UUID | None = None
+    workspace_id: uuid.UUID | None = None
+    category: str | None = None
+    status: EvidenceStatus | None = None
+    priority: EvidencePriority | None = None
+    tags: list[str] | None = None
+    collector_id: uuid.UUID | None = None
+    created_by: uuid.UUID | None = None
+    hash_value: str | None = None
+    filename: str | None = None
+    date_from: datetime | None = None
+    date_to: datetime | None = None
     skip: int = Field(default=0, ge=0)
     limit: int = Field(default=50, ge=1, le=200)
     sort_by: str = "created_at"
@@ -118,11 +117,11 @@ class EvidenceVersionResponse(BaseModel):
     evidence_id: uuid.UUID
     version_number: int
     created_by: uuid.UUID
-    original_filename: Optional[str] = None
-    mime_type: Optional[str] = None
-    file_size: Optional[int] = None
-    sha256_hash: Optional[str] = None
-    change_notes: Optional[str] = None
+    original_filename: str | None = None
+    mime_type: str | None = None
+    file_size: int | None = None
+    sha256_hash: str | None = None
+    change_notes: str | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -150,7 +149,7 @@ class EvidenceCommentResponse(BaseModel):
 
 class EvidenceUploadResponse(BaseModel):
     evidence: EvidenceResponse
-    custody_event: Optional["CustodyEventResponse"] = None
+    custody_event: CustodyEventResponse | None = None
 
 
 class CustodyEventResponse(BaseModel):
@@ -159,10 +158,10 @@ class CustodyEventResponse(BaseModel):
     user_id: uuid.UUID
     action: str
     timestamp: datetime
-    ip_address: Optional[str] = None
-    request_id: Optional[str] = None
-    notes: Optional[str] = None
-    details: Optional[str] = None
+    ip_address: str | None = None
+    request_id: str | None = None
+    notes: str | None = None
+    details: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -173,6 +172,6 @@ class BulkActionRequest(BaseModel):
 
 
 class VerifyRequest(BaseModel):
-    sha256_hash: Optional[str] = None
-    sha1_hash: Optional[str] = None
-    md5_hash: Optional[str] = None
+    sha256_hash: str | None = None
+    sha1_hash: str | None = None
+    md5_hash: str | None = None

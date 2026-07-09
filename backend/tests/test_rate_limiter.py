@@ -4,7 +4,6 @@ Rate limiter tests.
 
 from __future__ import annotations
 
-import pytest
 from app.core.rate_limiter import TokenBucket
 
 

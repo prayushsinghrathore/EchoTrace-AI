@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,10 +21,10 @@ class CustodyService:
         self.repo = BaseRepository(db, ChainOfCustodyEvent)
 
     async def record(self, evidence_id: uuid.UUID, user_id: uuid.UUID,
-                     action: str, notes: Optional[str] = None,
-                     ip_address: Optional[str] = None,
-                     request_id: Optional[str] = None,
-                     details: Optional[str] = None) -> ChainOfCustodyEvent:
+                     action: str, notes: str | None = None,
+                     ip_address: str | None = None,
+                     request_id: str | None = None,
+                     details: str | None = None) -> ChainOfCustodyEvent:
         """Record an immutable custody event."""
         event = ChainOfCustodyEvent(
             evidence_id=evidence_id,

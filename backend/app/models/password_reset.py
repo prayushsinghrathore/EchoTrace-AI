@@ -5,9 +5,10 @@ Tracks password reset requests for audit and rate-limiting.
 Tokens themselves are JWT-based but the request record is persisted.
 """
 
+from __future__ import annotations
+
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
@@ -59,13 +60,13 @@ class PasswordResetToken(Base, TimestampMixin):
         comment="Whether this reset token has been used",
     )
 
-    used_at: Mapped[Optional[datetime]] = mapped_column(
+    used_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
         comment="When the password was actually reset",
     )
 
-    used_by_ip: Mapped[Optional[str]] = mapped_column(
+    used_by_ip: Mapped[str | None] = mapped_column(
         String(45),
         nullable=True,
         comment="IP address that performed the reset",
@@ -81,13 +82,13 @@ class PasswordResetToken(Base, TimestampMixin):
     def is_expired(self) -> bool:
         """Check if the reset window has passed."""
         import datetime as dt_module
-        return dt_module.datetime.now(dt_module.timezone.utc) > self.expires_at
+        return dt_module.datetime.now(dt_module.UTC) > self.expires_at
 
-    def mark_used(self, ip_address: Optional[str]) -> None:
+    def mark_used(self, ip_address: str | None) -> None:
         """Mark this token as used after a successful reset."""
         import datetime as dt_module
         self.is_used = True
-        self.used_at = dt_module.datetime.now(dt_module.timezone.utc)
+        self.used_at = dt_module.datetime.now(dt_module.UTC)
         self.used_by_ip = ip_address
 
     def __repr__(self) -> str:

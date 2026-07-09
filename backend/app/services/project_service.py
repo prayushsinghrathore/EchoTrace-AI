@@ -5,7 +5,6 @@ Project service — manages investigation projects.
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy import delete as sa_delete
@@ -27,7 +26,7 @@ class ProjectService:
         self.db = db
         self.repo = BaseRepository(db, Project)
 
-    async def _get_member_role(self, workspace_id: uuid.UUID, user_id: uuid.UUID) -> Optional[WorkspaceRole]:
+    async def _get_member_role(self, workspace_id: uuid.UUID, user_id: uuid.UUID) -> WorkspaceRole | None:
         member_repo = BaseRepository(self.db, WorkspaceMember)
         member = await member_repo.find_one(workspace_id=workspace_id, user_id=user_id)
         return member.role if member else None
@@ -45,7 +44,7 @@ class ProjectService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workspace not found")
         return ws
 
-    async def create(self, workspace_id: uuid.UUID, name: str, slug: str, user_id: uuid.UUID, description: Optional[str] = None) -> Project:
+    async def create(self, workspace_id: uuid.UUID, name: str, slug: str, user_id: uuid.UUID, description: str | None = None) -> Project:
         await self._check_ws_exists(workspace_id)
         role = await self._check_member_access(workspace_id, user_id)
         if role not in (WorkspaceRole.OWNER, WorkspaceRole.ADMIN, WorkspaceRole.INVESTIGATOR):
@@ -77,7 +76,7 @@ class ProjectService:
         proj = await self.get(project_id)
         await self._check_member_access(proj.workspace_id, user_id)
 
-        if "slug" in kwargs and kwargs["slug"]:
+        if kwargs.get("slug"):
             existing = await self.repo.find_one(slug=kwargs["slug"], workspace_id=proj.workspace_id)
             if existing and existing.id != project_id:
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug already in use")

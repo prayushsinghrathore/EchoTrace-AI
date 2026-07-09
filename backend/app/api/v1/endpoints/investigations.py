@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -54,10 +53,10 @@ async def list_investigations(
 
 @router.get("/search", response_model=dict)
 async def search_investigations(
-    q: Optional[str] = Query(None),
-    workspace_id: Optional[uuid.UUID] = Query(None),
-    status: Optional[str] = Query(None),
-    priority: Optional[str] = Query(None),
+    q: str | None = Query(None),
+    workspace_id: uuid.UUID | None = Query(None),
+    status: str | None = Query(None),
+    priority: str | None = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db_session),

@@ -7,8 +7,9 @@ for the Neo4j graph database.
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import Any, AsyncGenerator
+from typing import Any
 
 from neo4j import AsyncDriver, AsyncGraphDatabase, AsyncSession
 

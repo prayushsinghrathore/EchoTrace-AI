@@ -7,7 +7,7 @@ Supports both Bearer token (header) and HTTPOnly cookie auth strategies.
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import jwt as pyjwt
@@ -115,7 +115,7 @@ async def _revoke_user_refresh_tokens(
     """
     stmt = select(RefreshToken).where(
         RefreshToken.user_id == uuid.UUID(user_id),
-        RefreshToken.is_revoked == False,  # noqa: E712
+        RefreshToken.is_revoked == False,
     )
     if exclude_jti:
         stmt = stmt.where(RefreshToken.token_jti != exclude_jti)
@@ -224,7 +224,7 @@ async def login(
 
     # Record successful login
     user.record_successful_login(ip_address=client_ip)
-    user.last_login_at = datetime.now(timezone.utc)
+    user.last_login_at = datetime.now(UTC)
     await db.flush()
 
     # Generate tokens with rotation support
@@ -240,7 +240,7 @@ async def login(
 
     # Persist refresh token for rotation/revocation tracking
     token_hash = hash_token(refresh_token)
-    expires_at = datetime.now(timezone.utc) + timedelta(
+    expires_at = datetime.now(UTC) + timedelta(
         days=settings.REFRESH_TOKEN_EXPIRE_DAYS,
     )
     db_refresh_token = RefreshToken(
@@ -407,7 +407,7 @@ async def refresh(
 
     # Persist the new refresh token
     new_token_hash = hash_token(new_refresh_token)
-    expires_at = datetime.now(timezone.utc) + timedelta(
+    expires_at = datetime.now(UTC) + timedelta(
         days=settings.REFRESH_TOKEN_EXPIRE_DAYS,
     )
     new_db_token = RefreshToken(
@@ -507,7 +507,7 @@ async def forgot_password(
 
     from datetime import timedelta
 
-    expires_at = datetime.now(timezone.utc) + timedelta(
+    expires_at = datetime.now(UTC) + timedelta(
         hours=settings.PASSWORD_RESET_TOKEN_EXPIRE_HOURS,
     )
 
@@ -588,7 +588,7 @@ async def reset_password(
         select(PasswordResetToken).where(
             PasswordResetToken.user_id == uuid.UUID(user_id),
             PasswordResetToken.token_hash == token_hash,
-            PasswordResetToken.is_used == False,  # noqa: E712
+            PasswordResetToken.is_used == False,
         )
     )
     reset_record = result.scalar_one_or_none()

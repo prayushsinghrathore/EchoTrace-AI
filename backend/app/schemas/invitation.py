@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -33,8 +32,8 @@ class InvitationResponse(BaseModel):
     role: WorkspaceRole
     token: str
     expires_at: datetime
-    accepted_at: Optional[datetime] = None
-    declined_at: Optional[datetime] = None
+    accepted_at: datetime | None = None
+    declined_at: datetime | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

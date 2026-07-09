@@ -4,8 +4,9 @@ Workspace model — collaborative unit within an organization.
 Workspaces contain projects and have their own membership.
 """
 
+from __future__ import annotations
+
 import uuid
-from typing import Optional
 
 from sqlalchemy import ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
@@ -50,30 +51,30 @@ class Workspace(Base, TimestampMixin):
         comment="URL-friendly slug within the organization",
     )
 
-    description: Mapped[Optional[str]] = mapped_column(
+    description: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="Description of the workspace",
     )
 
     # Relationships
-    organization: Mapped["Organization"] = relationship(
+    organization: Mapped[Organization] = relationship(
         back_populates="workspaces",
     )
 
-    projects: Mapped[list["Project"]] = relationship(
+    projects: Mapped[list[Project]] = relationship(
         back_populates="workspace",
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
 
-    members: Mapped[list["WorkspaceMember"]] = relationship(
+    members: Mapped[list[WorkspaceMember]] = relationship(
         back_populates="workspace",
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
 
-    invitations: Mapped[list["Invitation"]] = relationship(
+    invitations: Mapped[list[Invitation]] = relationship(
         back_populates="workspace",
         cascade="all, delete-orphan",
         passive_deletes=True,

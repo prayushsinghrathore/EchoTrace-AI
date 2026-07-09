@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from pathlib import Path
-from typing import BinaryIO, Optional
+from typing import BinaryIO
 
 from app.core.config import settings
 from app.core.logging import get_logger
@@ -16,7 +16,7 @@ logger = get_logger(__name__)
 class LocalStorageProvider(StorageProvider):
     """Stores files on the local filesystem under a configurable base path."""
 
-    def __init__(self, base_path: Optional[str] = None) -> None:
+    def __init__(self, base_path: str | None = None) -> None:
         self.base_path = Path(base_path or settings.STORAGE_LOCAL_PATH or "./storage")
         self.base_path.mkdir(parents=True, exist_ok=True)
         logger.info("Local storage initialized", path=str(self.base_path))
@@ -30,7 +30,7 @@ class LocalStorageProvider(StorageProvider):
         full.parent.mkdir(parents=True, exist_ok=True)
         return full
 
-    async def store(self, data: BinaryIO | bytes, filename: str, mime_type: str, path: Optional[str] = None) -> StoredFile:
+    async def store(self, data: BinaryIO | bytes, filename: str, mime_type: str, path: str | None = None) -> StoredFile:
         # Sanitize filename — strip path separators to prevent traversal
         safe_filename = filename.replace("/", "_").replace("\\", "_")
         safe_name = f"{uuid.uuid4().hex}_{safe_filename}"
@@ -48,7 +48,7 @@ class LocalStorageProvider(StorageProvider):
         logger.debug("File stored", path=file_path, size=size, mime=mime_type)
         return StoredFile(path=file_path, filename=filename, size=size, mime_type=mime_type)
 
-    async def retrieve(self, path: str) -> Optional[bytes]:
+    async def retrieve(self, path: str) -> bytes | None:
         full = self._resolve(path)
         if not full.exists():
             return None
@@ -65,7 +65,7 @@ class LocalStorageProvider(StorageProvider):
     async def exists(self, path: str) -> bool:
         return self._resolve(path).exists()
 
-    async def get_size(self, path: str) -> Optional[int]:
+    async def get_size(self, path: str) -> int | None:
         full = self._resolve(path)
         if full.exists():
             return full.stat().st_size

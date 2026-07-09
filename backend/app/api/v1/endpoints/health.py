@@ -11,7 +11,7 @@ Provides comprehensive system health information including:
 from __future__ import annotations
 
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
@@ -80,7 +80,7 @@ async def health_check(
         status=overall_status,
         version=settings.VERSION,
         environment=settings.ENVIRONMENT,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         services=services,
         uptime_seconds=round(uptime, 2),
     )
