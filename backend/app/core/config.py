@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     # ── General ─────────────────────────────────────────────────────────
     PROJECT_NAME: str = "EchoTrace AI"
     VERSION: str = "0.1.0"
-    ENVIRONMENT: str = Field(default="development", pattern="^(development|staging|production)$")
+    ENVIRONMENT: str = Field(default="development", pattern="^(development|staging|production|test)$")
     DEBUG: bool = True
     LOG_LEVEL: str = Field(default="DEBUG", pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")
     API_V1_PREFIX: str = "/api/v1"
@@ -173,6 +173,10 @@ class Settings(BaseSettings):
     @property
     def is_staging(self) -> bool:
         return self.ENVIRONMENT == "staging"
+
+    @property
+    def is_test(self) -> bool:
+        return self.ENVIRONMENT == "test"
 
     def __repr__(self) -> str:
         return f"<Settings environment={self.ENVIRONMENT} project={self.PROJECT_NAME}>"
