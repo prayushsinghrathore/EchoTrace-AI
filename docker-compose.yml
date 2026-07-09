@@ -1,0 +1,167 @@
+version: "3.9"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# EchoTrace AI — Docker Compose
+# ═══════════════════════════════════════════════════════════════════════════════
+# Production-grade multi-service orchestration.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+x-shared-environment: &shared-environment
+  PROJECT_NAME: ${PROJECT_NAME:-EchoTrace AI}
+  ENVIRONMENT: ${ENVIRONMENT:-development}
+  LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
+  API_V1_PREFIX: ${API_V1_PREFIX:-/api/v1}
+  BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-["http://localhost:3000"]}
+  # WARNING: In production/staging, always override this default with a strong
+  # random 32+ char secret via .env or docker environment variables.
+  SECRET_KEY: ${SECRET_KEY:-dev-secret-key-do-not-use-in-production}
+
+x-postgres-environment: &postgres-environment
+  POSTGRES_USER: ${POSTGRES_USER:-echotrace}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-echotrace_secret}
+  POSTGRES_DB: ${POSTGRES_DB:-echotrace}
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: 5432
+  DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-echotrace}:${POSTGRES_PASSWORD:-echotrace_secret}@postgres:5432/${POSTGRES_DB:-echotrace}
+  DATABASE_SYNC_URL: postgresql://${POSTGRES_USER:-echotrace}:${POSTGRES_PASSWORD:-echotrace_secret}@postgres:5432/${POSTGRES_DB:-echotrace}
+
+x-neo4j-environment: &neo4j-environment
+  NEO4J_URI: bolt://neo4j:7687
+  NEO4J_USER: ${NEO4J_USER:-neo4j}
+  NEO4J_PASSWORD: ${NEO4J_PASSWORD:-echotrace_neo4j}
+  NEO4J_DATABASE: ${NEO4J_DATABASE:-neo4j}
+
+services:
+  # ── PostgreSQL ─────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: echotrace-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-echotrace}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-echotrace_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-echotrace}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-echotrace} -d ${POSTGRES_DB:-echotrace}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - echotrace-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Neo4j ─────────────────────────────────────────────────────────────────
+  neo4j:
+    image: neo4j:5-enterprise
+    container_name: echotrace-neo4j
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-echotrace_neo4j}
+      NEO4J_ACCEPT_LICENSE_AGREEMENT: ${NEO4J_ACCEPT_LICENSE:-yes}
+      NEO4J_dbms_memory_pagecache_size: 512M
+      NEO4J_dbms_memory_heap_max__size: 1G
+    ports:
+      - "7474:7474"   # HTTP
+      - "7687:7687"   # Bolt
+    volumes:
+      - neo4j-data:/data
+      - neo4j-logs:/logs
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u ${NEO4J_USER:-neo4j} -p ${NEO4J_PASSWORD:-echotrace_neo4j} 'RETURN 1'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks:
+      - echotrace-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Backend (FastAPI) ─────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: echotrace-backend
+    restart: unless-stopped
+    environment:
+      <<: *shared-environment
+      <<: *postgres-environment
+      <<: *neo4j-environment
+      BACKEND_HOST: 0.0.0.0
+      BACKEND_PORT: 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__
+    command: >
+      sh -c "
+        alembic upgrade head &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --log-level debug
+      "
+    networks:
+      - echotrace-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── Frontend (Next.js) ────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: echotrace-frontend
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_ENVIRONMENT: development
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    command: npm run dev
+    networks:
+      - echotrace-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  postgres-data:
+    driver: local
+  neo4j-data:
+    driver: local
+  neo4j-logs:
+    driver: local
+
+networks:
+  echotrace-network:
+    driver: bridge

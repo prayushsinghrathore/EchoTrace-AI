@@ -1,0 +1,16 @@
+**
+!app
+!alembic
+!alembic.ini
+!requirements.txt
+!pyproject.toml
+!.env
+.git
+.gitignore
+__pycache__
+*.pyc
+.env
+.venv
+venv
+tests
+*.md

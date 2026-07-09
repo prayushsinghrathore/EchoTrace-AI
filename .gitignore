@@ -1,0 +1,62 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.venv/
+venv/
+env/
+
+# Build
+.next/
+out/
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+coverage/
+.coverage
+htmlcov/
+.pytest_cache/
+junit.xml
+*.log
+
+# Docker
+docker-data/
+postgres-data/
+neo4j-data/
+
+# Next.js
+.cache/
+.next/
+*.tsbuildinfo
+next-env.d.ts
+
+# FastAPI
+*.db
+
+# Environment
+!.env.example
+
+# Uploads
+uploads/
+media/
