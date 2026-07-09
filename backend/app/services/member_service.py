@@ -84,7 +84,7 @@ class MemberService:
         return member
 
     async def update_member(self, workspace_id: uuid.UUID, member_id: uuid.UUID, role: WorkspaceRole, actor_id: uuid.UUID) -> WorkspaceMember:
-        actor = await self._check_admin(workspace_id, actor_id)
+        await self._check_admin(workspace_id, actor_id)
 
         member = await self.repo.get(member_id)
         if not member or member.workspace_id != workspace_id:

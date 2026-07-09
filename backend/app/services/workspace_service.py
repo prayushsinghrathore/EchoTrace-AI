@@ -124,7 +124,7 @@ class WorkspaceService:
         return ws
 
     async def delete(self, ws_id: uuid.UUID, user_id: uuid.UUID) -> None:
-        ws = await self.get(ws_id)
+        await self.get(ws_id)
         role = await self._get_member_role(ws_id, user_id)
         if role != WorkspaceRole.OWNER:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the owner can delete the workspace")
