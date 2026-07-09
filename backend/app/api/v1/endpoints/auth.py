@@ -306,12 +306,12 @@ async def refresh(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token has expired. Please log in again.",
-        )
+        ) from None
     except pyjwt.PyJWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token",
-        )
+        ) from None
 
     if payload.get("type") != "refresh":
         raise HTTPException(
@@ -445,7 +445,7 @@ async def refresh(
     description="Revokes all active refresh tokens for the authenticated user.",
 )
 async def logout(
-    request: Request,
+    _request: Request,
     response: Response,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
@@ -475,7 +475,7 @@ async def logout(
 )
 async def forgot_password(
     body: ForgotPasswordRequest,
-    request: Request,
+    _request: Request,
     db: AsyncSession = Depends(get_db_session),
     _rate_limit: None = Depends(rate_limit("reset")),
 ) -> dict[str, str]:
@@ -568,12 +568,12 @@ async def reset_password(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Reset token has expired. Request a new one.",
-        )
+        ) from None
     except pyjwt.PyJWTError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or malformed reset token.",
-        )
+        ) from None
 
     user_id = payload.get("sub")
     if not user_id:

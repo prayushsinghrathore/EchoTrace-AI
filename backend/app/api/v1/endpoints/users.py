@@ -128,7 +128,7 @@ async def change_password(
     description="Returns a list of all registered users. Admin role required.",
 )
 async def list_users(
-    user: User = Depends(require_role(UserRole.ADMIN)),
+    _user: User = Depends(require_role(UserRole.ADMIN)),
     db: AsyncSession = Depends(get_db_session),
 ) -> list[User]:
     """

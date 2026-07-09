@@ -50,7 +50,7 @@ async def list_ws(
 async def get_ws(
     ws_id: uuid.UUID,
     db: AsyncSession = Depends(get_db_session),
-    user: User = Depends(get_current_user),
+    _user: User = Depends(get_current_user),
 ):
     svc = WorkspaceService(db)
     return await svc.get_with_counts(ws_id)

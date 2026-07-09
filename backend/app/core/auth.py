@@ -118,13 +118,13 @@ async def get_current_user(
         raise AuthError(
             detail="Token has expired",
             error_code="TOKEN_EXPIRED",
-        )
+        ) from None
     except pyjwt.PyJWTError as exc:
         logger.warning("Invalid token", error=str(exc))
         raise AuthError(
             detail="Invalid or malformed token",
             error_code="INVALID_TOKEN",
-        )
+        ) from exc
 
     # Verify it's an access token
     token_type = payload.get("type")

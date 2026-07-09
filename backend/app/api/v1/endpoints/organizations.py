@@ -39,7 +39,7 @@ async def list_orgs(
 async def get_org(
     org_id: uuid.UUID,
     db: AsyncSession = Depends(get_db_session),
-    user: User = Depends(get_current_user),
+    _user: User = Depends(get_current_user),
 ):
     svc = OrganizationService(db)
     return await svc.get(org_id)

@@ -293,7 +293,7 @@ class EvidenceService:
 
     # ── List / Search ──────────────────────────────────────────────────
 
-    async def list_for_project(self, project_id: uuid.UUID, user_id: uuid.UUID,
+    async def list_for_project(self, project_id: uuid.UUID, _user_id: uuid.UUID,
                                 skip: int = 0, limit: int = 50) -> list[dict]:
         ev_list = await self.repo.find_many(project_id=project_id, is_deleted=False,
                                               order_by="created_at", descending=True,

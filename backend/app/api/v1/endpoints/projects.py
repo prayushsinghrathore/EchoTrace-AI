@@ -46,7 +46,7 @@ async def list_projects(
 async def get_project(
     project_id: uuid.UUID,
     db: AsyncSession = Depends(get_db_session),
-    user: User = Depends(get_current_user),
+    _user: User = Depends(get_current_user),
 ):
     svc = ProjectService(db)
     return await svc.get(project_id)

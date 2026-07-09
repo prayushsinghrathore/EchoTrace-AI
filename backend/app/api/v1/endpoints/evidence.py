@@ -282,7 +282,7 @@ async def delete_comment(
 async def list_custody(
     evidence_id: uuid.UUID,
     db: AsyncSession = Depends(get_db_session),
-    user: User = Depends(get_current_user),
+    _user: User = Depends(get_current_user),
 ):
     svc = CustodyService(db)
     return await svc.list_for_evidence(evidence_id)
