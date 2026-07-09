@@ -35,6 +35,7 @@ dist/
 # Testing
 coverage/
 .coverage
+coverage.xml
 htmlcov/
 .pytest_cache/
 junit.xml
