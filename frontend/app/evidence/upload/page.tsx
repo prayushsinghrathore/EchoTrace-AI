@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { Suspense, useState, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { listEvidence, listProjects, listWorkspaces } from "@/lib/workspace-client";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 const MAX_SIZE_MB = 500;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
-export default function UploadPage() {
+function UploadFormContent() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
@@ -205,5 +205,13 @@ export default function UploadPage() {
         {uploading ? "Uploading..." : "Upload File"}
       </Button>
     </div>
+  );
+}
+
+export default function UploadPage() {
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-2xl space-y-6"><div className="h-8 w-48 animate-pulse rounded bg-muted" /><div className="h-64 animate-pulse rounded bg-muted" /></div>}>
+      <UploadFormContent />
+    </Suspense>
   );
 }

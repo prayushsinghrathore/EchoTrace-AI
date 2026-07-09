@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { listWorkspaces, listOrgs, createWorkspace, deleteWorkspace } from "@/lib/workspace-client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function WorkspacesPage() {
+function WorkspacesPageContent() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -56,7 +56,7 @@ export default function WorkspacesPage() {
               <div>
                 <label className="text-sm font-medium">Organization</label>
                 <select value={orgId} onChange={(e) => setOrgId(e.target.value)} required
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                   <option value="">Select organization</option>
                   {orgs?.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
                 </select>
@@ -116,5 +116,13 @@ export default function WorkspacesPage() {
         </CardContent></Card>
       )}
     </div>
+  );
+}
+
+export default function WorkspacesPage() {
+  return (
+    <Suspense fallback={<div className="space-y-6"><Skeleton className="h-8 w-48" /><Skeleton className="h-64 w-full" /></div>}>
+      <WorkspacesPageContent />
+    </Suspense>
   );
 }
