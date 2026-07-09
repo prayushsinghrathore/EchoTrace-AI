@@ -104,6 +104,7 @@ async def _check_postgresql(db: AsyncSession) -> ServiceStatus:
             name="postgresql",
             status="healthy",
             latency_ms=round(latency, 2),
+            details=None,
         )
     except Exception as exc:
         latency = (time.time() - start) * 1000
@@ -132,6 +133,7 @@ async def _check_neo4j() -> ServiceStatus:
                 name="neo4j",
                 status="healthy",
                 latency_ms=round(latency, 2),
+                details=None,
             )
         return ServiceStatus(
             name="neo4j",

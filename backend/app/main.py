@@ -7,6 +7,7 @@ Application factory with lifecycle management, middleware, and routing.
 from __future__ import annotations
 
 import time
+import typing
 import uuid
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -99,7 +100,7 @@ def create_application() -> FastAPI:
 
     # ── Request Lifecycle & Tracing Middleware ───────────────────────────
     @app.middleware("http")
-    async def add_request_tracing(request: Request, call_next: callable) -> JSONResponse:  # type: ignore[valid-type]
+    async def add_request_tracing(request: Request, call_next: typing.Callable[..., typing.Any]) -> JSONResponse:
         """Add X-Request-ID, X-Process-Time headers and structured logging."""
         start_time = time.time()
 

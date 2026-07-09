@@ -1,6 +1,12 @@
 """Relationship model — connections between entities."""
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.entity import Entity
+    from app.models.investigation import Investigation
+
 import enum
 import uuid
 

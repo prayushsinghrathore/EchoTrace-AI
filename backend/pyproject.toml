@@ -19,6 +19,7 @@ line-ending = "lf"
 
 [tool.mypy]
 python_version = "3.12"
+plugins = ["sqlalchemy.ext.mypy.plugin"]
 strict = false
 ignore_missing_imports = true
 warn_unused_configs = true

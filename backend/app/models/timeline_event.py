@@ -1,6 +1,11 @@
 """TimelineEvent model — chronological events within an investigation."""
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.investigation import Investigation
+
 import uuid
 from datetime import datetime
 

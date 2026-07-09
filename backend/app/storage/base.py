@@ -19,7 +19,7 @@ class StorageProvider(abc.ABC):
     """Interface for file storage backends."""
 
     @abc.abstractmethod
-    async def store(self, data: BinaryIO, filename: str, mime_type: str, path: str | None = None) -> StoredFile:
+    async def store(self, data: bytes | BinaryIO, filename: str, mime_type: str, path: str | None = None) -> StoredFile:
         ...
 
     @abc.abstractmethod

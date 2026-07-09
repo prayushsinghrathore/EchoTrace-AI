@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime, timedelta
-from typing import Any
 
 import jwt as pyjwt
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
@@ -181,7 +180,7 @@ async def login(
     response: Response,
     db: AsyncSession = Depends(get_db_session),
     _rate_limit: None = Depends(rate_limit("login")),
-) -> dict[str, Any]:
+) -> TokenResponse:
     """
     Authenticate user, audit login attempt, issue JWT tokens.
 
@@ -286,7 +285,7 @@ async def refresh(
     response: Response,
     db: AsyncSession = Depends(get_db_session),
     _rate_limit: None = Depends(rate_limit("refresh")),
-) -> dict[str, Any]:
+) -> TokenResponse:
     """
     Exchange a refresh token for a new token pair.
 

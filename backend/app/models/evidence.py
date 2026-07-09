@@ -7,6 +7,14 @@ status, and links to versions, comments, tags, and custody chain.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.chain_of_custody import ChainOfCustodyEvent
+    from app.models.evidence_comment import EvidenceComment
+    from app.models.evidence_tag import EvidenceTag
+    from app.models.evidence_version import EvidenceVersion
+
 import enum
 import uuid
 from datetime import datetime

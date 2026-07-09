@@ -22,7 +22,7 @@ logger = get_logger(__name__)
 # ── Async Engine & Session ──────────────────────────────────────────────────
 
 async_engine = create_async_engine(
-    settings.ASYNC_DATABASE_URI,
+    str(settings.ASYNC_DATABASE_URI),
     pool_size=settings.DB_POOL_SIZE,
     max_overflow=settings.DB_MAX_OVERFLOW,
     echo=settings.DB_ECHO,
@@ -65,13 +65,9 @@ async def check_database_connection() -> bool:
         True if the database is reachable.
     """
     try:
+        from sqlalchemy import text
         async with AsyncSessionLocal() as session:
-            await session.execute(  # type: ignore[call-overload]
-                AsyncSessionLocal().bind.dialect.statement_compiler(
-                    AsyncSessionLocal().bind.dialect,
-                    AsyncSessionLocal().bind.dialect.statement_compiler,
-                )
-            )
+            await session.execute(text("SELECT 1"))
             return True
     except Exception as exc:
         logger.error("Database connection check failed", error=str(exc))
@@ -81,7 +77,7 @@ async def check_database_connection() -> bool:
 # ── Sync Engine & Session (for Alembic and scripts) ─────────────────────────
 
 sync_engine = create_engine(
-    settings.SYNC_DATABASE_URI,
+    str(settings.SYNC_DATABASE_URI),
     pool_size=settings.DB_POOL_SIZE,
     max_overflow=settings.DB_MAX_OVERFLOW,
     echo=settings.DB_ECHO,

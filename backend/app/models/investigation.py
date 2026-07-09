@@ -1,6 +1,14 @@
 """Investigation model — case within a workspace."""
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.entity import Entity
+    from app.models.evidence_link import EvidenceLink
+    from app.models.relationship import Relationship
+    from app.models.timeline_event import TimelineEvent
+
 import enum
 import uuid
 from datetime import datetime

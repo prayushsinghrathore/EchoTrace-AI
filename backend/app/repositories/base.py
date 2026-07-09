@@ -9,7 +9,9 @@ from __future__ import annotations
 
 from typing import Any, Generic, TypeVar
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete as sa_delete
+from sqlalchemy import select
+from sqlalchemy import update as sa_update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
@@ -71,7 +73,7 @@ class BaseRepository(Generic[ModelType]):
 
     async def update(self, id: Any, **kwargs: Any) -> ModelType | None:
         stmt = (
-            update(self.model)
+            sa_update(self.model)
             .where(self.model.id == id)  # type: ignore[attr-defined]
             .values(**kwargs)
             .returning(self.model)
@@ -82,15 +84,16 @@ class BaseRepository(Generic[ModelType]):
 
     async def delete(self, id: Any, hard: bool = False) -> bool:
         if hard or not hasattr(self.model, "deleted_at"):
-            stmt = delete(self.model).where(self.model.id == id)  # type: ignore[attr-defined]
+            result = await self.session.execute(
+                sa_delete(self.model).where(self.model.id == id)  # type: ignore[attr-defined]
+            )
         else:
             from sqlalchemy import func as sa_func
-            stmt = (
-                update(self.model)
+            result = await self.session.execute(
+                sa_update(self.model)
                 .where(self.model.id == id)  # type: ignore[attr-defined]
                 .values(deleted_at=sa_func.now())
             )
-        result = await self.session.execute(stmt)
         await self.session.flush()
         return result.rowcount > 0
 

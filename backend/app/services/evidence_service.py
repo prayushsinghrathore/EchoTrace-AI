@@ -522,8 +522,8 @@ class EvidenceService:
         comment_repo = BaseRepository(self.db, EvidenceComment)
         return await comment_repo.find_many(evidence_id=evidence_id, order_by="created_at", descending=True)
 
-    async def bulk_action(self, evidence_ids: list[uuid.UUID], action: str, user_id: uuid.UUID) -> dict:
-        results = {"affected": 0, "errors": []}
+    async def bulk_action(self, evidence_ids: list[uuid.UUID], action: str, user_id: uuid.UUID) -> dict[str, Any]:
+        results: dict[str, Any] = {"affected": 0, "errors": []}
         for ev_id in evidence_ids:
             try:
                 if action == "delete":

@@ -6,6 +6,11 @@ An organization owns workspaces and is the root of the multi-tenant hierarchy.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.workspace import Workspace
+
 import uuid
 
 from sqlalchemy import ForeignKey, String, Text, UniqueConstraint

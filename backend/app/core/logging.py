@@ -33,22 +33,20 @@ def setup_logging() -> None:
         structlog.processors.StackInfoRenderer(),
         structlog.processors.CallsiteParameterAdder(
             parameters=[
-                structlog.processors.CallsiteParameter.FILE_NAME,
+                structlog.processors.CallsiteParameter.FILENAME,
                 structlog.processors.CallsiteParameter.FUNC_NAME,
-                structlog.processors.CallsiteParameter.LINE_NUMBER,
+                structlog.processors.CallsiteParameter.LINENO,
             ],
         ),
     ]
 
     if settings.is_production or settings.is_staging:
-        # Production: JSON logging
-        processors = [*shared_processors, structlog.stdlib.filter_by_level, structlog.processors.format_exc_info, structlog.processors.UnicodeDecoder(), structlog.processors.JSONRenderer()]
+        _processors: list[structlog.types.Processor] = [*shared_processors, structlog.stdlib.filter_by_level, structlog.processors.format_exc_info, structlog.processors.UnicodeDecoder(), structlog.processors.JSONRenderer()]
     else:
-        # Development: Colored console
-        processors = [*shared_processors, structlog.stdlib.filter_by_level, structlog.dev.set_exc_info, structlog.dev.ConsoleRenderer(colors=True, sort_keys=False)]
+        _processors = [*shared_processors, structlog.stdlib.filter_by_level, structlog.dev.set_exc_info, structlog.dev.ConsoleRenderer(colors=True, sort_keys=False)]
 
     structlog.configure(
-        processors=processors,
+        processors=_processors,
         wrapper_class=structlog.stdlib.BoundLogger,
         context_class=dict,
         logger_factory=structlog.stdlib.LoggerFactory(),

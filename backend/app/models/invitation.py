@@ -6,6 +6,11 @@ Tracks invitations sent to email addresses with expiry and role.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.workspace import Workspace
+
 import uuid
 from datetime import datetime
 

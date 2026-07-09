@@ -1,6 +1,12 @@
 """Entity model — people, devices, IPs, domains, etc."""
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.investigation import Investigation
+    from app.models.relationship import Relationship
+
 import enum
 import uuid
 

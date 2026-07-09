@@ -6,6 +6,14 @@ Workspaces contain projects and have their own membership.
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.invitation import Invitation
+    from app.models.organization import Organization
+    from app.models.project import Project
+    from app.models.workspace_member import WorkspaceMember
+
 import uuid
 
 from sqlalchemy import ForeignKey, String, Text, UniqueConstraint
