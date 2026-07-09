@@ -140,6 +140,130 @@ export function deleteProject(id: string): Promise<void> {
   return request(`${API}/projects/${id}`, { method: "DELETE" });
 }
 
+/* Evidence */
+export interface EvidenceItem {
+  id: string;
+  project_id: string;
+  workspace_id: string;
+  title: string;
+  description: string | null;
+  evidence_number: string;
+  category: string;
+  status: string;
+  priority: string;
+  source: string | null;
+  sha256_hash: string | null;
+  mime_type: string | null;
+  file_size: number | null;
+  original_filename: string | null;
+  tag_names: string[];
+  created_at: string;
+}
+
+export interface EvidenceDetail extends EvidenceItem {
+  created_by: string;
+  collector_id: string | null;
+  sha1_hash: string | null;
+  md5_hash: string | null;
+  stored_filename: string | null;
+  upload_timestamp: string | null;
+  verification_timestamp: string | null;
+  current_version_number: number;
+  is_deleted: boolean;
+  tags: string[];
+  updated_at: string;
+}
+
+export interface EvidenceCreate {
+  project_id: string;
+  title: string;
+  description?: string;
+  category?: string;
+  priority?: string;
+  source?: string;
+  collector_id?: string;
+  tags?: string[];
+}
+
+export interface EvidenceComment {
+  id: string;
+  evidence_id: string;
+  author_id: string;
+  body: string;
+  is_edited: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CustodyEvent {
+  id: string;
+  evidence_id: string;
+  user_id: string;
+  action: string;
+  timestamp: string;
+  ip_address: string | null;
+  notes: string | null;
+  details: string | null;
+}
+
+export interface EvidenceStats {
+  total: number;
+  by_status: Record<string, number>;
+  by_category: Record<string, number>;
+  by_priority: Record<string, number>;
+  total_size_bytes: number;
+  recent_uploads: number;
+}
+
+export function listEvidence(projectId: string, skip = 0, limit = 50): Promise<EvidenceItem[]> {
+  return request(`${API}/evidence?project_id=${projectId}&skip=${skip}&limit=${limit}`);
+}
+
+export function getEvidence(id: string): Promise<EvidenceDetail> {
+  return request(`${API}/evidence/${id}`);
+}
+
+export function createEvidence(data: EvidenceCreate): Promise<EvidenceDetail> {
+  return request(`${API}/evidence`, { method: "POST", body: JSON.stringify(data) });
+}
+
+export function updateEvidence(id: string, data: Record<string, unknown>): Promise<EvidenceDetail> {
+  return request(`${API}/evidence/${id}`, { method: "PATCH", body: JSON.stringify(data) });
+}
+
+export function deleteEvidence(id: string): Promise<void> {
+  return request(`${API}/evidence/${id}`, { method: "DELETE" });
+}
+
+export function restoreEvidence(id: string): Promise<EvidenceDetail> {
+  return request(`${API}/evidence/${id}/restore`, { method: "POST" });
+}
+
+export function listComments(evId: string): Promise<EvidenceComment[]> {
+  return request(`${API}/evidence/${evId}/comments`);
+}
+
+export function addComment(evId: string, body: string): Promise<EvidenceComment> {
+  return request(`${API}/evidence/${evId}/comments`, { method: "POST", body: JSON.stringify({ body }) });
+}
+
+export function deleteComment(commentId: string): Promise<void> {
+  return request(`${API}/evidence/comments/${commentId}`, { method: "DELETE" });
+}
+
+export function listCustody(evId: string): Promise<CustodyEvent[]> {
+  return request(`${API}/evidence/${evId}/custody`);
+}
+
+export function getEvidenceStats(projectId: string): Promise<EvidenceStats> {
+  return request(`${API}/evidence/stats/project/${projectId}`);
+}
+
+export function searchEvidence(params: Record<string, string>): Promise<{ items: EvidenceItem[]; total: number }> {
+  const qs = new URLSearchParams(params).toString();
+  return request(`${API}/evidence/search?${qs}`);
+}
+
 /* Dashboard */
 export interface DashboardStats {
   org_count: number;

@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { useParams, useRouter } from "next/navigation";
 
 const FUTURE_MODULES = [
-  { name: "Evidence Upload", icon: "📎", desc: "Upload and manage digital evidence files", stage: "Stage 4" },
+  { name: "Evidence", icon: "📎", desc: "Upload and manage digital evidence files", stage: "Active", href: "/evidence" },
   { name: "Timeline Reconstruction", icon: "⏱️", desc: "Visual timeline of events and artifacts", stage: "Stage 5" },
   { name: "AI Investigation", icon: "🤖", desc: "AI-powered analysis and anomaly detection", stage: "Stage 6" },
   { name: "Graph Visualization", icon: "🔗", desc: "Interactive relationship graphs", stage: "Stage 7" },
@@ -72,17 +72,33 @@ export default function ProjectDetailPage() {
           <CardContent><div className="text-sm">{new Date(project.created_at).toLocaleDateString()}</div></CardContent></Card>
       </div>
 
+      {/* Evidence quick link */}
+      <Card className="cursor-pointer hover-card" onClick={() => router.push("/evidence")}>
+        <CardContent className="flex items-center gap-4 p-6">
+          <span className="text-4xl">📎</span>
+          <div>
+            <h2 className="text-xl font-semibold">Evidence Management</h2>
+            <p className="text-sm text-muted-foreground">View and manage evidence items for this investigation</p>
+          </div>
+          <Badge variant="success" className="ml-auto">Active</Badge>
+        </CardContent>
+      </Card>
+
       <Separator />
 
       {/* Future Modules */}
       <div>
         <h2 className="mb-4 text-xl font-semibold">Investigation Modules</h2>
         <p className="mb-6 text-sm text-muted-foreground">
-          These modules will be enabled in upcoming stages. Each module adds new investigation capabilities.
+          These modules will be enabled in upcoming stages.
         </p>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {FUTURE_MODULES.map((mod) => (
-            <Card key={mod.name} className="border-dashed bg-muted/30">
+            <Card
+              key={mod.name}
+              className={`${mod.href ? "cursor-pointer hover-card" : "border-dashed bg-muted/30"}`}
+              onClick={() => mod.href && router.push(mod.href)}
+            >
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">{mod.icon}</span>
@@ -91,7 +107,7 @@ export default function ProjectDetailPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">{mod.desc}</p>
-                <Badge variant="outline" className="mt-3 text-[10px]">{mod.stage}</Badge>
+                <Badge variant={mod.stage === "Active" ? "success" : "outline"} className="mt-3 text-[10px]">{mod.stage}</Badge>
               </CardContent>
             </Card>
           ))}

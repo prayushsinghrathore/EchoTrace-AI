@@ -133,6 +133,28 @@ class Settings(BaseSettings):
     RATE_LIMIT_RESET_MAX: int = Field(default=3, ge=1)
     RATE_LIMIT_RESET_WINDOW: int = Field(default=3600, ge=1)
 
+    # ── Storage ─────────────────────────────────────────────────────────
+    STORAGE_PROVIDER: str = "local"
+    STORAGE_LOCAL_PATH: str = "./storage"
+    STORAGE_S3_BUCKET: str = ""
+    STORAGE_S3_REGION: str = ""
+    STORAGE_S3_ACCESS_KEY: str = ""
+    STORAGE_S3_SECRET_KEY: str = ""
+    STORAGE_S3_ENDPOINT: str = ""
+    MAX_UPLOAD_SIZE_MB: int = Field(default=500, ge=1, le=10240)
+    ALLOWED_MIME_TYPES: list[str] = [
+        "application/pdf", "application/zip", "application/x-tar", "application/gzip",
+        "application/x-7z-compressed", "application/x-rar-compressed",
+        "image/jpeg", "image/png", "image/tiff", "image/webp",
+        "text/plain", "text/csv", "text/html", "text/xml", "text/json",
+        "application/json", "application/xml",
+        "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "video/mp4", "video/x-msvideo", "video/x-matroska",
+        "audio/mpeg", "audio/wav", "audio/ogg",
+        "application/octet-stream",
+    ]
+
     # ── Neo4j ──────────────────────────────────────────────────────────
     NEO4J_URI: str = "bolt://localhost:7687"
     NEO4J_USER: str = "neo4j"
