@@ -5,9 +5,8 @@ Authentication schemas — request and response models for auth endpoints.
 from __future__ import annotations
 
 import re
-from datetime import datetime
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class RegisterRequest(BaseModel):

@@ -8,14 +8,13 @@ import uuid
 from typing import Optional
 
 from fastapi import HTTPException, status
-from sqlalchemy import select, delete as sa_delete
+from sqlalchemy import delete as sa_delete
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import joinedload
 
 from app.core.logging import get_logger
-from app.models.workspace import Workspace
-from app.models.workspace_member import WorkspaceMember, WorkspaceRole
 from app.models.user import User
+from app.models.workspace_member import WorkspaceMember, WorkspaceRole
 from app.repositories.base import BaseRepository
 
 logger = get_logger(__name__)

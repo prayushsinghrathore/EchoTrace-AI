@@ -7,7 +7,7 @@ An organization owns workspaces and is the root of the multi-tenant hierarchy.
 import uuid
 from typing import Optional
 
-from sqlalchemy import ForeignKey, String, Text, UniqueConstraint, func
+from sqlalchemy import ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 

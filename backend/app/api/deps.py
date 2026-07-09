@@ -8,9 +8,8 @@ Following FastAPI's dependency injection pattern for clean separation.
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
-from typing import Any
 
-from fastapi import Depends, Request
+from fastapi import Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Settings, settings

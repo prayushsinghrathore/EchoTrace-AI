@@ -5,7 +5,6 @@ from __future__ import annotations
 import uuid
 from typing import Optional
 
-from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger

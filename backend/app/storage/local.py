@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
-import os
 import uuid
 from pathlib import Path
 from typing import BinaryIO, Optional
@@ -24,18 +22,27 @@ class LocalStorageProvider(StorageProvider):
         logger.info("Local storage initialized", path=str(self.base_path))
 
     def _resolve(self, path: str) -> Path:
-        full = self.base_path / path
+        # Resolve and verify the path is within base_path (traversal protection)
+        full = (self.base_path / path).resolve()
+        base = self.base_path.resolve()
+        if not str(full).startswith(str(base)):
+            raise PermissionError(f"Path traversal detected: {path}")
         full.parent.mkdir(parents=True, exist_ok=True)
         return full
 
-    async def store(self, data: BinaryIO, filename: str, mime_type: str, path: Optional[str] = None) -> StoredFile:
-        safe_name = f"{uuid.uuid4().hex}_{filename}"
+    async def store(self, data: BinaryIO | bytes, filename: str, mime_type: str, path: Optional[str] = None) -> StoredFile:
+        # Sanitize filename — strip path separators to prevent traversal
+        safe_filename = filename.replace("/", "_").replace("\\", "_")
+        safe_name = f"{uuid.uuid4().hex}_{safe_filename}"
         relative = path or f"uploads/{safe_name[:2]}/{safe_name[2:4]}"
         file_path = relative + "/" + safe_name
         full = self._resolve(file_path)
 
-        data.seek(0)
-        full.write_bytes(data.read())
+        if isinstance(data, bytes):
+            full.write_bytes(data)
+        else:
+            data.seek(0)
+            full.write_bytes(data.read())
         size = full.stat().st_size
 
         logger.debug("File stored", path=file_path, size=size, mime=mime_type)

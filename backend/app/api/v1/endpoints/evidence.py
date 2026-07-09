@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query, Request, UploadFile, File, Form, status
+from fastapi import APIRouter, Depends, File, Form, Query, UploadFile, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,13 +13,20 @@ from app.api.deps import get_db_session
 from app.core.auth import get_current_user
 from app.models.user import User
 from app.schemas.evidence import (
-    BulkActionRequest, CustodyEventResponse, EvidenceCommentCreate, EvidenceCommentResponse,
-    EvidenceCommentUpdate, EvidenceCreate, EvidenceResponse, EvidenceSearchParams,
-    EvidenceStats, EvidenceUpdate, EvidenceUploadResponse, EvidenceVersionResponse,
+    BulkActionRequest,
+    CustodyEventResponse,
+    EvidenceCommentCreate,
+    EvidenceCommentResponse,
+    EvidenceCommentUpdate,
+    EvidenceCreate,
+    EvidenceResponse,
+    EvidenceStats,
+    EvidenceUpdate,
+    EvidenceVersionResponse,
     VerifyRequest,
 )
-from app.services.evidence_service import EvidenceService
 from app.services.custody_service import CustodyService
+from app.services.evidence_service import EvidenceService
 
 router = APIRouter(tags=["evidence"])
 

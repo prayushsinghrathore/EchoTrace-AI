@@ -8,7 +8,6 @@ and proper lifecycle management.
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator, Generator
-from typing import Any
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine

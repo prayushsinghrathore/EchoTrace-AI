@@ -10,7 +10,7 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator
 
-from neo4j import AsyncDriver, AsyncGraphDatabase, AsyncSession, ManagedTransaction
+from neo4j import AsyncDriver, AsyncGraphDatabase, AsyncSession
 
 from app.core.config import settings
 from app.core.logging import get_logger

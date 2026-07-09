@@ -4,12 +4,11 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import auth, health, users
-from app.api.v1.endpoints import organizations, workspaces, projects, members
+from app.api.v1.endpoints import auth, health, members, organizations, projects, users, workspaces
 from app.api.v1.endpoints.dashboard import router as dashboard_router
 from app.api.v1.endpoints.evidence import router as evidence_router
-from app.api.v1.endpoints.invitations import ws_router as invitations_ws_router
 from app.api.v1.endpoints.invitations import router as invitations_router
+from app.api.v1.endpoints.invitations import ws_router as invitations_ws_router
 
 api_v1_router = APIRouter()
 

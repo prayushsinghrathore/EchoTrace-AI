@@ -12,8 +12,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Callable
 
-from fastapi import HTTPException, Request, Response, status
-from fastapi.responses import JSONResponse
+from fastapi import HTTPException, Request, status
 
 from app.core.config import settings
 from app.core.logging import get_logger

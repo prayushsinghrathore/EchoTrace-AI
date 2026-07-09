@@ -7,25 +7,24 @@ Handles CRUD, upload, download, verification, versioning, search, tags, and comm
 from __future__ import annotations
 
 import hashlib
-import os
 import secrets
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Optional
 
 from fastapi import HTTPException, UploadFile, status
-from sqlalchemy import or_, select, func, delete as sa_delete, and_
+from sqlalchemy import delete as sa_delete
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.logging import get_logger
-from app.models.evidence import Evidence, EvidencePriority, EvidenceStatus
-from app.models.evidence_version import EvidenceVersion
-from app.models.evidence_tag import EvidenceTag
+from app.models.evidence import Evidence, EvidenceStatus
 from app.models.evidence_comment import EvidenceComment
-from app.models.chain_of_custody import ChainOfCustodyEvent
-from app.models.workspace_member import WorkspaceMember, WorkspaceRole
+from app.models.evidence_tag import EvidenceTag
+from app.models.evidence_version import EvidenceVersion
 from app.models.project import Project
+from app.models.workspace_member import WorkspaceMember, WorkspaceRole
 from app.repositories.base import BaseRepository
 from app.services.custody_service import CustodyService
 from app.storage.base import StorageProvider

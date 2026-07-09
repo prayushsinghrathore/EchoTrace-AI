@@ -7,10 +7,10 @@ status, and links to versions, comments, tags, and custody chain.
 
 import enum
 import uuid
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text, BigInteger, func
+from sqlalchemy import BigInteger, Boolean, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 

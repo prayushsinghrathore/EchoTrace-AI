@@ -10,7 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db_session
 from app.core.auth import get_current_user
 from app.models.user import User
-from app.schemas.member import MemberAddRequest, MemberResponse, MemberUpdateRequest, MemberWithUserResponse
+from app.schemas.member import (
+    MemberAddRequest,
+    MemberResponse,
+    MemberUpdateRequest,
+    MemberWithUserResponse,
+)
 from app.services.member_service import MemberService
 
 router = APIRouter(tags=["members"])

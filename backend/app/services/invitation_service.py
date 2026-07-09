@@ -7,17 +7,15 @@ from __future__ import annotations
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
-from app.models.workspace import Workspace
-from app.models.workspace_member import WorkspaceMember, WorkspaceRole
 from app.models.invitation import Invitation
 from app.models.user import User
+from app.models.workspace_member import WorkspaceMember, WorkspaceRole
 from app.repositories.base import BaseRepository
 
 logger = get_logger(__name__)

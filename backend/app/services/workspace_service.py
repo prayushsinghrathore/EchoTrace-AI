@@ -8,7 +8,8 @@ import uuid
 from typing import Optional
 
 from fastapi import HTTPException, status
-from sqlalchemy import select, func as sa_func, delete as sa_delete
+from sqlalchemy import delete as sa_delete
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger

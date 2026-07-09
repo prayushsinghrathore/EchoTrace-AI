@@ -8,7 +8,7 @@ Uses efficient aggregate queries to avoid N+1 patterns.
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db_session
@@ -16,9 +16,9 @@ from app.core.auth import get_current_user
 from app.core.logging import get_logger
 from app.models.organization import Organization
 from app.models.project import Project
+from app.models.user import User
 from app.models.workspace import Workspace
 from app.models.workspace_member import WorkspaceMember
-from app.models.user import User
 
 logger = get_logger(__name__)
 
