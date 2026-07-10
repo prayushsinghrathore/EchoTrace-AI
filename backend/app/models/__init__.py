@@ -1,6 +1,7 @@
 """SQLAlchemy ORM models."""
 
 from app.db.base import Base
+from app.models.activity_event import ActivityEvent, ActivityEventType
 from app.models.ai_job import AIJob, AIJobStatus, AIJobType
 from app.models.ai_suggestion import AISuggestion, SuggestionStatus, SuggestionType
 from app.models.chain_of_custody import ChainOfCustodyEvent
@@ -10,8 +11,10 @@ from app.models.evidence_comment import EvidenceComment
 from app.models.evidence_link import EvidenceLink
 from app.models.evidence_tag import EvidenceTag
 from app.models.evidence_version import EvidenceVersion
+from app.models.export_job import ExportEntityType, ExportFormat, ExportJob, ExportJobStatus
 from app.models.investigation import Investigation, InvestigationPriority, InvestigationStatus
 from app.models.invitation import Invitation
+from app.models.notification import Notification, NotificationType
 from app.models.organization import Organization
 from app.models.password_reset import PasswordResetToken
 from app.models.project import Project, ProjectStatus
@@ -28,6 +31,8 @@ __all__ = [
     "AIJobStatus",
     "AIJobType",
     "AISuggestion",
+    "ActivityEvent",
+    "ActivityEventType",
     "Base",
     "ChainOfCustodyEvent",
     "Entity",
@@ -39,10 +44,16 @@ __all__ = [
     "EvidenceStatus",
     "EvidenceTag",
     "EvidenceVersion",
+    "ExportEntityType",
+    "ExportFormat",
+    "ExportJob",
+    "ExportJobStatus",
     "Investigation",
     "InvestigationPriority",
     "InvestigationStatus",
     "Invitation",
+    "Notification",
+    "NotificationType",
     "Organization",
     "PasswordResetToken",
     "Project",
