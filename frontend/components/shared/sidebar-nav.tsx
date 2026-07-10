@@ -14,6 +14,7 @@ const navItems = [
   { label: "Evidence", href: "/evidence", icon: "📎" },
   { label: "Upload", href: "/evidence/upload", icon: "⬆️" },
   { label: "Investigations", href: "/investigations", icon: "🔍" },
+  { label: "AI Engine", href: "/ai", icon: "🤖" },
 ];
 
 export function SidebarNav() {

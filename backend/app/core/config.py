@@ -157,6 +157,39 @@ class Settings(BaseSettings):
     NEO4J_PASSWORD: str = "echotrace_neo4j"
     NEO4J_DATABASE: str = "neo4j"
 
+    # ── AI / LLM Providers ──────────────────────────────────────────────
+    AI_PROVIDER: str = Field(default="openai", pattern="^(openai|openrouter|ollama|azure)$")
+    AI_PROMPT_VERSION: str = "1.0.0"
+    AI_MAX_TOKENS: int = Field(default=4096, ge=128, le=32768)
+    AI_MAX_INPUT_TOKENS: int = Field(default=32000, ge=1024, le=128000)
+    AI_TIMEOUT_SECONDS: int = Field(default=120, ge=30, le=600)
+    AI_CHUNK_SIZE: int = Field(default=16000, ge=1000, le=64000)
+    AI_SUMMARIZE_MAX_CHARS: int = Field(default=100000, ge=1000, le=500000)
+    AI_RATE_LIMIT_MAX: int = Field(default=20, ge=1, le=100)
+    AI_RATE_LIMIT_WINDOW: int = Field(default=60, ge=10, le=3600)
+    AI_CACHE_ENABLED: bool = True
+    AI_CACHE_TTL_SECONDS: int = Field(default=3600, ge=60, le=86400)
+
+    # OpenAI
+    OPENAI_API_KEY: str = ""
+    OPENAI_MODEL: str = "gpt-4o"
+    OPENAI_BASE_URL: str = "https://api.openai.com/v1"
+
+    # OpenRouter
+    OPENROUTER_API_KEY: str = ""
+    OPENROUTER_MODEL: str = "openai/gpt-4o"
+    OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
+
+    # Ollama
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_MODEL: str = "llama3"
+
+    # Azure OpenAI (interface stub)
+    AZURE_OPENAI_ENDPOINT: str = ""
+    AZURE_OPENAI_KEY: str = ""
+    AZURE_OPENAI_DEPLOYMENT: str = ""
+    AZURE_OPENAI_API_VERSION: str = "2024-02-15-preview"
+
     # ── Database Pool ──────────────────────────────────────────────────
     DB_POOL_SIZE: int = Field(default=20, ge=1, le=100)
     DB_MAX_OVERFLOW: int = Field(default=10, ge=0, le=50)
