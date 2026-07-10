@@ -59,6 +59,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Ensure /app/public exists (it may be empty and thus excluded by .dockerignore
+# whitelist), so COPY --from=builder in the production stage does not fail.
+RUN mkdir -p /app/public
+
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1
 
