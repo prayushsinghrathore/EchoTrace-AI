@@ -1,0 +1,68 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EchoTrace AI — CODEOWNERS
+# ═══════════════════════════════════════════════════════════════════════════════
+# Each line is a file pattern followed by one or more owners.
+# Order matters: the last matching pattern takes precedence.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Default owners for everything in the repo
+* @prayushsinghrathore
+
+# ── Core Application ──────────────────────────────────────────────────────────
+
+# Backend application code
+/backend/ @prayushsinghrathore
+/backend/app/core/ @prayushsinghrathore
+/backend/app/api/ @prayushsinghrathore
+/backend/app/models/ @prayushsinghrathore
+/backend/app/services/ @prayushsinghrathore
+/backend/app/schemas/ @prayushsinghrathore
+/backend/app/repositories/ @prayushsinghrathore
+/backend/app/graph/ @prayushsinghrathore
+
+# Frontend application code
+/frontend/ @prayushsinghrathore
+/frontend/app/ @prayushsinghrathore
+/frontend/components/ @prayushsinghrathore
+/frontend/lib/ @prayushsinghrathore
+/frontend/hooks/ @prayushsinghrathore
+/frontend/types/ @prayushsinghrathore
+
+# ── Infrastructure ────────────────────────────────────────────────────────────
+
+# Docker configuration
+/Dockerfile* @prayushsinghrathore
+/docker-compose*.yml @prayushsinghrathore
+/docker/ @prayushsinghrathore
+
+# Kubernetes manifests
+/k8s/ @prayushsinghrathore
+
+# Infrastructure as Code
+/terraform/ @prayushsinghrathore
+
+# Monitoring & observability
+/monitoring/ @prayushsinghrathore
+
+# ── CI/CD ─────────────────────────────────────────────────────────────────────
+
+# GitHub Actions workflows
+/.github/workflows/ @prayushsinghrathore
+
+# ── Documentation ─────────────────────────────────────────────────────────────
+
+# Project documentation
+/docs/ @prayushsinghrathore
+/README.md @prayushsinghrathore
+/CONTRIBUTING.md @prayushsinghrathore
+/SECURITY.md @prayushsinghrathore
+
+# ── Configuration Files ───────────────────────────────────────────────────────
+
+# Root configuration
+/.editorconfig @prayushsinghrathore
+/.gitignore @prayushsinghrathore
+/.env.example @prayushsinghrathore
+/.prettierrc @prayushsinghrathore
+/LICENSE @prayushsinghrathore
+/CHANGELOG.md @prayushsinghrathore
