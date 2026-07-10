@@ -20,7 +20,7 @@ neo4j==5.27.0
 
 # ── AI / LangChain (prepared for later stages) ──────────────────────────────
 langchain==0.3.14
-langchain-core==0.3.30
+langchain-core==1.4.9
 langgraph==0.2.60
 langchain-openai==0.2.14
 langchain-google-genai==2.0.7
