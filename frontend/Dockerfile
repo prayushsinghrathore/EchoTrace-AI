@@ -89,8 +89,8 @@ LABEL org.opencontainers.image.title="EchoTrace AI Frontend" \
 WORKDIR /app
 
 # Create non-root user with configurable UID/GID
-RUN addgroup --system --gid ${APP_GID} ${APP_USER} && \
-    adduser --system --uid ${APP_UID} --gid ${APP_GID} --disabled-password ${APP_USER}
+RUN addgroup -S -g ${APP_GID} ${APP_USER} && \
+    adduser -S -u ${APP_UID} -G ${APP_USER} -D -H ${APP_USER}
 
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
