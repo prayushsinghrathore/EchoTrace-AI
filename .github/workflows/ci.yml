@@ -99,7 +99,7 @@ jobs:
           SECRET_KEY: test-secret-key
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v7
         with:
           file: backend/coverage.xml
           flags: backend
