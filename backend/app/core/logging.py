@@ -14,17 +14,21 @@ Context fields automatically included in all log entries:
   service, version
 """
 
-from __future__ import annotations
-
 import logging
 import sys
+from collections.abc import Mapping, MutableMapping
+from typing import Any
 
 import structlog
 
 from app.core.config import settings
 
 
-def _add_env_info(_logger: logging.Logger, _method_name: str, event_dict: dict) -> dict:
+def _add_env_info(
+    _logger: Any,
+    _method_name: str,
+    event_dict: MutableMapping[str, Any],
+) -> Mapping[str, Any]:
     """
     Add environment metadata to every log record.
 
