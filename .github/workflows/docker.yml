@@ -27,6 +27,7 @@ jobs:
       contents: read
       packages: write
       id-token: write
+      security-events: write
 
     steps:
       - name: Checkout repository
@@ -128,14 +129,18 @@ jobs:
           path: trivy-*.sarif
           retention-days: 30
 
+      # SARIF upload to GitHub Security tab only runs on push/tag (not PR).
+      # PRs from forked repos lack security-events:write permissions.
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        if: github.event_name != 'pull_request'
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-backend.sarif
           category: trivy-backend
 
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        if: github.event_name != 'pull_request'
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-frontend.sarif
           category: trivy-frontend

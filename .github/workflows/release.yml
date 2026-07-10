@@ -8,6 +8,7 @@ on:
 permissions:
   contents: write
   packages: write
+  security-events: write
 
 env:
   REGISTRY: ghcr.io
@@ -118,7 +119,7 @@ jobs:
           hide-progress: true
 
       - name: Upload Trivy release scan
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-release-backend.sarif
           category: trivy-release
