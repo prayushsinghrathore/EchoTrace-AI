@@ -4,6 +4,7 @@ from app.db.base import Base
 from app.models.activity_event import ActivityEvent, ActivityEventType
 from app.models.ai_job import AIJob, AIJobStatus, AIJobType
 from app.models.ai_suggestion import AISuggestion, SuggestionStatus, SuggestionType
+from app.models.audit_log import AuditAction, AuditLog
 from app.models.chain_of_custody import ChainOfCustodyEvent
 from app.models.entity import Entity, EntityType
 from app.models.evidence import Evidence, EvidencePriority, EvidenceStatus
@@ -33,6 +34,8 @@ __all__ = [
     "AISuggestion",
     "ActivityEvent",
     "ActivityEventType",
+    "AuditAction",
+    "AuditLog",
     "Base",
     "ChainOfCustodyEvent",
     "Entity",

@@ -6,19 +6,16 @@ Application factory with lifecycle management, middleware, and routing.
 
 from __future__ import annotations
 
-import time
-import typing
-import uuid
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
 from app.api.v1.api import api_v1_router
 from app.core.config import settings
 from app.core.logging import get_logger, setup_logging
+from app.core.middleware import add_security_headers_middleware
 from app.core.rate_limiter import initialize_limiters
 from app.graph.neo4j import neo4j_manager
 
@@ -86,9 +83,7 @@ def create_application() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # ── Middleware ───────────────────────────────────────────────────────
-
-    # CORS
+    # ── CORS ─────────────────────────────────────────────────────────────
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.BACKEND_CORS_ORIGINS,
@@ -98,49 +93,8 @@ def create_application() -> FastAPI:
         expose_headers=["X-Request-ID", "X-Process-Time"],
     )
 
-    # ── Request Lifecycle & Tracing Middleware ───────────────────────────
-    @app.middleware("http")
-    async def add_request_tracing(request: Request, call_next: typing.Callable[..., typing.Any]) -> JSONResponse:
-        """Add X-Request-ID, X-Process-Time headers and structured logging."""
-        start_time = time.time()
-
-        # Generate or propagate request ID
-        request_id = request.headers.get("X-Request-ID")
-        if not request_id:
-            request_id = str(uuid.uuid4())
-
-        # Add request context to logs
-        import structlog
-        structlog.contextvars.clear_contextvars()
-        structlog.contextvars.bind_contextvars(
-            request_id=request_id,
-            method=request.method,
-            path=request.url.path,
-        )
-
-        try:
-            response = await call_next(request)
-        except Exception:
-            logger.exception("Unhandled request error", path=request.url.path)
-            return JSONResponse(
-                status_code=500,
-                content={
-                    "detail": "Internal server error",
-                    "request_id": request_id,
-                },
-            )
-
-        process_time = time.time() - start_time
-        response.headers["X-Request-ID"] = request_id
-        response.headers["X-Process-Time"] = str(round(process_time * 1000, 2))
-
-        logger.info(
-            "Request completed",
-            status_code=response.status_code,
-            duration_ms=round(process_time * 1000, 2),
-        )
-
-        return response
+    # ── Security Headers, Metrics, and Tracing Middleware ─────────────────
+    add_security_headers_middleware(app)
 
     # ── Routers ──────────────────────────────────────────────────────────
     app.include_router(api_v1_router, prefix=settings.API_V1_PREFIX)
