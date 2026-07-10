@@ -1,48 +1,65 @@
-version: "3.9"
+# ═══════════════════════════════════════════════════════════════════════════════
+# EchoTrace AI — Production Docker Compose
+# ═══════════════════════════════════════════════════════════════════════════════
+# Production-grade multi-service orchestration with security hardening,
+# resource limits, healthcheck-based dependency management, and no
+# development-only volume mounts.
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+#
+# For external database services (managed RDS, Neo4j Aura, etc.), set
+# the appropriate *_HOST/*_URI environment variables and omit the
+# corresponding service(s) from the `depends_on` lists.
+# ═══════════════════════════════════════════════════════════════════════════════
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# EchoTrace AI — Docker Compose
-# ═══════════════════════════════════════════════════════════════════════════════
-# Production-grade multi-service orchestration.
-# ═══════════════════════════════════════════════════════════════════════════════
+name: echotrace-prod
 
+# ── Shared Configuration ─────────────────────────────────────────────────────
 x-shared-environment: &shared-environment
   PROJECT_NAME: ${PROJECT_NAME:-EchoTrace AI}
-  ENVIRONMENT: ${ENVIRONMENT:-development}
-  LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
+  ENVIRONMENT: production
+  LOG_LEVEL: ${LOG_LEVEL:-INFO}
   API_V1_PREFIX: ${API_V1_PREFIX:-/api/v1}
   BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-["http://localhost:3000"]}
-  # WARNING: In production/staging, always override this default with a strong
-  # random 32+ char secret via .env or docker environment variables.
-  SECRET_KEY: ${SECRET_KEY:-dev-secret-key-do-not-use-in-production}
+  SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required in production}
 
 x-postgres-environment: &postgres-environment
   POSTGRES_USER: ${POSTGRES_USER:-echotrace}
-  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-echotrace_secret}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
   POSTGRES_DB: ${POSTGRES_DB:-echotrace}
   POSTGRES_HOST: postgres
   POSTGRES_PORT: 5432
-  DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-echotrace}:${POSTGRES_PASSWORD:-echotrace_secret}@postgres:5432/${POSTGRES_DB:-echotrace}
-  DATABASE_SYNC_URL: postgresql://${POSTGRES_USER:-echotrace}:${POSTGRES_PASSWORD:-echotrace_secret}@postgres:5432/${POSTGRES_DB:-echotrace}
+  DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-echotrace}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-echotrace}
+  DATABASE_SYNC_URL: postgresql://${POSTGRES_USER:-echotrace}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-echotrace}
 
 x-neo4j-environment: &neo4j-environment
   NEO4J_URI: bolt://neo4j:7687
   NEO4J_USER: ${NEO4J_USER:-neo4j}
-  NEO4J_PASSWORD: ${NEO4J_PASSWORD:-echotrace_neo4j}
+  NEO4J_PASSWORD: ${NEO4J_PASSWORD:?NEO4J_PASSWORD is required}
   NEO4J_DATABASE: ${NEO4J_DATABASE:-neo4j}
+
+# Security defaults shared by all application services
+x-security-defaults: &security-defaults
+  init: true
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  restart: always
 
 services:
   # ── PostgreSQL ─────────────────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
     container_name: echotrace-postgres
-    restart: unless-stopped
+    restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-echotrace}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-echotrace_secret}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB: ${POSTGRES_DB:-echotrace}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -58,25 +75,33 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
 
   # ── Neo4j ─────────────────────────────────────────────────────────────────
   neo4j:
     image: neo4j:5-enterprise
     container_name: echotrace-neo4j
-    restart: unless-stopped
+    restart: always
     environment:
-      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-echotrace_neo4j}
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:?NEO4J_PASSWORD is required}
       NEO4J_ACCEPT_LICENSE_AGREEMENT: ${NEO4J_ACCEPT_LICENSE:-yes}
       NEO4J_dbms_memory_pagecache_size: 512M
       NEO4J_dbms_memory_heap_max__size: 1G
     ports:
-      - "7474:7474"   # HTTP
-      - "7687:7687"   # Bolt
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
     volumes:
       - neo4j-data:/data
       - neo4j-logs:/logs
     healthcheck:
-      test: ["CMD-SHELL", "cypher-shell -u ${NEO4J_USER:-neo4j} -p ${NEO4J_PASSWORD:-echotrace_neo4j} 'RETURN 1'"]
+      test: ["CMD-SHELL", "cypher-shell -u ${NEO4J_USER:-neo4j} -p ${NEO4J_PASSWORD} 'RETURN 1'"]
       interval: 15s
       timeout: 10s
       retries: 10
@@ -88,15 +113,23 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2G
+        reservations:
+          cpus: "0.5"
+          memory: 1G
 
   # ── Backend (FastAPI) ─────────────────────────────────────────────────────
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-      target: development
+      target: production
     container_name: echotrace-backend
-    restart: unless-stopped
+    <<: *security-defaults
     environment:
       <<: *shared-environment
       <<: *postgres-environment
@@ -104,20 +137,18 @@ services:
       BACKEND_HOST: 0.0.0.0
       BACKEND_PORT: 8000
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
       neo4j:
         condition: service_healthy
-    volumes:
-      - ./backend:/app
-      - /app/__pycache__
-    command: >
-      sh -c "
-        alembic upgrade head &&
-        uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --log-level debug
-      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     networks:
       - echotrace-network
     logging:
@@ -125,28 +156,39 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
 
   # ── Frontend (Next.js) ────────────────────────────────────────────────────
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      target: development
+      target: production
     container_name: echotrace-frontend
-    restart: unless-stopped
+    <<: *security-defaults
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
-      NEXT_PUBLIC_APP_URL: http://localhost:3000
-      NEXT_PUBLIC_ENVIRONMENT: development
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      NEXT_PUBLIC_ENVIRONMENT: production
+      NEXT_TELEMETRY_DISABLED: 1
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       - backend
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
-    command: npm run dev
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     networks:
       - echotrace-network
     logging:
@@ -154,6 +196,14 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
 
 volumes:
   postgres-data:

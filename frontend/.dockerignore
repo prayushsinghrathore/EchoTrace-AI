@@ -1,12 +1,23 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EchoTrace AI — Frontend .dockerignore
+# ═══════════════════════════════════════════════════════════════════════════════
+# Whitelist approach: ignore everything, then explicitly allow only build-needed
+# paths. All other files are excluded from the Docker build context.
+
+# Ignore everything first
 **
-!app
-!components
-!config
-!contexts
-!hooks
-!lib
-!types
-!public
+
+# Application source directories
+!app/**
+!components/**
+!config/**
+!contexts/**
+!hooks/**
+!lib/**
+!types/**
+!public/**
+
+# Build configuration
 !next.config.ts
 !tsconfig.json
 !package.json
@@ -14,13 +25,29 @@
 !tailwind.config.ts
 !postcss.config.mjs
 !components.json
+
+# Linting and formatting
 !.eslintrc.json
 !.prettierrc
+
+# Version control
 .git
 .gitignore
+
+# Dependencies and build output
 node_modules
 .next
+*.tsbuildinfo
+
+# Documentation and environment
 *.md
-.env.local
 .env
+.env.*
+
+# CI and coverage
 coverage.xml
+coverage/
+
+# Container files — not needed at runtime
+Dockerfile
+.dockerignore

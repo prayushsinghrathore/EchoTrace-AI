@@ -1,16 +1,54 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EchoTrace AI — Backend .dockerignore
+# ═══════════════════════════════════════════════════════════════════════════════
+# Whitelist approach: ignore everything, then explicitly allow only build-needed
+# paths. All other files are excluded from the Docker build context.
+
+# Ignore everything first
 **
-!app
-!alembic
+
+# Allow application source — ** ensures recursive inclusion
+!app/**
+!alembic/**
 !alembic.ini
 !requirements.txt
 !pyproject.toml
-!.env
+!entrypoint.sh
+
+# Version control
 .git
 .gitignore
-__pycache__
+
+# Python artifacts
+__pycache__/
 *.pyc
+
+# Environment and secrets
 .env
-.venv
-venv
-tests
+.env.*
+
+# Virtual environments
+.venv/
+venv/
+
+# Tests, docs, and non-essential files
+tests/
 *.md
+
+# Local runtime data
+*.db
+*.sqlite
+storage/
+exports/
+logs/
+
+# CI and linting caches
+.coverage
+coverage.xml
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Container files — not needed at runtime
+Dockerfile
+.dockerignore
