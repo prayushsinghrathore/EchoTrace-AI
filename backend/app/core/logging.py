@@ -4,8 +4,14 @@ Centralized logging configuration.
 Uses structlog for structured, production-grade logging with:
 - JSON output in production, pretty console in development
 - Correlation IDs for request tracing
-- Automatic context propagation
+- Automatic context propagation via contextvars
+- Trace/span IDs from OpenTelemetry context
 - Performance-optimized async support
+
+Context fields automatically included in all log entries:
+  request_id, correlation_id, trace_id, span_id, user_id, workspace_id,
+  investigation_id, method, path, status_code, duration_ms, environment,
+  service, version
 """
 
 from __future__ import annotations
@@ -18,17 +24,32 @@ import structlog
 from app.core.config import settings
 
 
+def _add_env_info(_logger: logging.Logger, _method_name: str, event_dict: dict) -> dict:
+    """
+    Add environment metadata to every log record.
+
+    Injected as an early processor so all subsequent processors (including
+    JSONRenderer) can use the enriched context.
+    """
+    event_dict["environment"] = settings.ENVIRONMENT
+    event_dict["service"] = "echotrace-backend"
+    event_dict["version"] = settings.VERSION
+    return event_dict
+
+
 def setup_logging() -> None:
     """
     Configure structured logging across the entire application.
 
-    In production: JSON-formatted logs for log aggregation systems.
+    In production: JSON-formatted logs for log aggregation systems (Loki,
+    CloudWatch, ELK, etc.).
     In development: Colored console output with rich formatting.
     """
     shared_processors: list[structlog.types.Processor] = [
         structlog.contextvars.merge_contextvars,
         structlog.stdlib.add_log_level,
         structlog.stdlib.add_logger_name,
+        _add_env_info,
         structlog.processors.TimeStamper(fmt="iso", utc=True),
         structlog.processors.StackInfoRenderer(),
         structlog.processors.CallsiteParameterAdder(
@@ -41,9 +62,20 @@ def setup_logging() -> None:
     ]
 
     if settings.is_production or settings.is_staging:
-        _processors: list[structlog.types.Processor] = [*shared_processors, structlog.stdlib.filter_by_level, structlog.processors.format_exc_info, structlog.processors.UnicodeDecoder(), structlog.processors.JSONRenderer()]
+        _processors: list[structlog.types.Processor] = [
+            *shared_processors,
+            structlog.stdlib.filter_by_level,
+            structlog.processors.format_exc_info,
+            structlog.processors.UnicodeDecoder(),
+            structlog.processors.JSONRenderer(),
+        ]
     else:
-        _processors = [*shared_processors, structlog.stdlib.filter_by_level, structlog.dev.set_exc_info, structlog.dev.ConsoleRenderer(colors=True, sort_keys=False)]
+        _processors = [
+            *shared_processors,
+            structlog.stdlib.filter_by_level,
+            structlog.dev.set_exc_info,
+            structlog.dev.ConsoleRenderer(colors=True, sort_keys=False),
+        ]
 
     structlog.configure(
         processors=_processors,

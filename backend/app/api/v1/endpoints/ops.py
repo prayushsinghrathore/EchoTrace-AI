@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import time
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,6 +15,7 @@ from app.core.auth import get_current_user
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.core.metrics import metrics
+from app.core.prometheus_metrics import render_prometheus_metrics
 from app.graph.neo4j import check_neo4j_connection
 from app.models.user import User
 from app.schemas.health import HealthResponse, ServiceStatus
@@ -88,8 +89,25 @@ async def readiness(
 async def get_metrics(
     _user: User = Depends(get_current_user),
 ) -> dict:
-    """Application metrics snapshot. Requires authentication."""
+    """Application metrics snapshot (JSON). Requires authentication."""
     return metrics.get_snapshot()
+
+
+@router.get("/metrics/prometheus")
+async def get_prometheus_metrics(
+    _user: User = Depends(get_current_user),
+) -> Response:
+    """
+    Prometheus exposition-format metrics.
+
+    Returns metrics in Prometheus text-based exposition format for scraping.
+    Requires authentication. Use this endpoint as the Prometheus scrape target.
+    """
+    data = render_prometheus_metrics()
+    return Response(
+        content=data,
+        media_type="text/plain; version=0.0.4; charset=utf-8",
+    )
 
 
 # ── Rate Limits ────────────────────────────────────────────────────────────────

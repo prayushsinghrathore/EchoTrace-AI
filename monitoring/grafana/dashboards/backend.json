@@ -1,0 +1,120 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "title": "EchoTrace AI — Backend",
+  "description": "Backend API performance dashboard — request rate, latency, error rate, status codes, active requests.",
+  "uid": "echotrace-backend",
+  "tags": ["echotrace", "backend", "api"],
+  "schemaVersion": 39,
+  "version": 1,
+  "timezone": "utc",
+  "editable": false,
+  "refresh": "30s",
+  "panels": [
+    {
+      "title": "Request Rate",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0},
+      "targets": [
+        {
+          "expr": "rate(echotrace_requests_total[5m])",
+          "legendFormat": "{{method}} {{path}}",
+          "interval": "15s"
+        }
+      ],
+      "description": "Incoming request rate per second over a 5-minute rolling window, grouped by HTTP method and path."
+    },
+    {
+      "title": "Latency (P50, P95, P99)",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0},
+      "targets": [
+        {
+          "expr": "echotrace:backend:latency_p95_5m",
+          "legendFormat": "P95",
+          "interval": "15s"
+        },
+        {
+          "expr": "echotrace:backend:latency_p99_5m",
+          "legendFormat": "P99",
+          "interval": "15s"
+        }
+      ],
+      "description": "Request latency percentiles in milliseconds (P95, P99) over a 5-minute rolling window."
+    },
+    {
+      "title": "Error Rate",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0},
+      "targets": [
+        {
+          "expr": "echotrace:backend:error_ratio_5m",
+          "legendFormat": "Error Ratio",
+          "interval": "15s"
+        }
+      ],
+      "description": "Ratio of error responses (5xx) to total requests over a 5-minute window."
+    },
+    {
+      "title": "Status Codes",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "targets": [
+        {
+          "expr": "rate(echotrace_requests_total{status=~\"2.*\"}[5m])",
+          "legendFormat": "2xx Success",
+          "interval": "15s"
+        },
+        {
+          "expr": "rate(echotrace_requests_total{status=~\"4.*\"}[5m])",
+          "legendFormat": "4xx Client Error",
+          "interval": "15s"
+        },
+        {
+          "expr": "rate(echotrace_requests_total{status=~\"5.*\"}[5m])",
+          "legendFormat": "5xx Server Error",
+          "interval": "15s"
+        }
+      ],
+      "description": "Request volume broken down by HTTP status class (2xx, 4xx, 5xx)."
+    },
+    {
+      "title": "Active Requests",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "targets": [
+        {
+          "expr": "echotrace_requests_in_progress",
+          "legendFormat": "Active",
+          "interval": "15s"
+        }
+      ],
+      "description": "Number of requests currently being processed by the backend."
+    },
+    {
+      "title": "Uptime",
+      "type": "stat",
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 16},
+      "targets": [
+        {
+          "expr": "echotrace:backend:uptime_days",
+          "legendFormat": "Days"
+        }
+      ],
+      "description": "Service uptime in days since last restart."
+    },
+    {
+      "title": "DB Query Latency (Avg)",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 4, "y": 16},
+      "targets": [
+        {
+          "expr": "rate(echotrace_db_latency_seconds_sum[5m]) / rate(echotrace_db_latency_seconds_count[5m]) * 1000",
+          "legendFormat": "Avg DB Latency",
+          "interval": "15s"
+        }
+      ],
+      "description": "Average database query latency in milliseconds over a 5-minute window."
+    }
+  ]
+}

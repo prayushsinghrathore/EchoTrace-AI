@@ -1,0 +1,116 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "title": "EchoTrace AI — Infrastructure",
+  "description": "Infrastructure monitoring dashboard — CPU, RAM, disk, network, Docker, Kubernetes.",
+  "uid": "echotrace-infrastructure",
+  "tags": ["echotrace", "infrastructure", "docker", "kubernetes"],
+  "schemaVersion": 39,
+  "version": 1,
+  "timezone": "utc",
+  "editable": false,
+  "refresh": "30s",
+  "panels": [
+    {
+      "title": "CPU Usage (%)",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 0},
+      "targets": [
+        {
+          "expr": "100 - (avg by(instance) (rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+          "legendFormat": "{{instance}} CPU",
+          "interval": "30s"
+        }
+      ],
+      "description": "CPU usage percentage per node over a 5-minute window."
+    },
+    {
+      "title": "Memory Usage (%)",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 0},
+      "targets": [
+        {
+          "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+          "legendFormat": "{{instance}} Memory",
+          "interval": "30s"
+        }
+      ],
+      "description": "Memory usage percentage per node."
+    },
+    {
+      "title": "Disk Usage (%)",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 0},
+      "targets": [
+        {
+          "expr": "(1 - (node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"})) * 100",
+          "legendFormat": "{{instance}} Disk",
+          "interval": "60s"
+        }
+      ],
+      "description": "Root filesystem disk usage percentage per node."
+    },
+    {
+      "title": "Network I/O",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "targets": [
+        {
+          "expr": "rate(node_network_receive_bytes_total[5m])",
+          "legendFormat": "{{instance}} RX",
+          "interval": "30s"
+        },
+        {
+          "expr": "rate(node_network_transmit_bytes_total[5m])",
+          "legendFormat": "{{instance}} TX",
+          "interval": "30s"
+        }
+      ],
+      "description": "Network receive and transmit throughput in bytes per second."
+    },
+    {
+      "title": "Docker Container CPU",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "targets": [
+        {
+          "expr": "rate(container_cpu_usage_seconds_total[5m]) * 100",
+          "legendFormat": "{{name}}",
+          "interval": "15s"
+        }
+      ],
+      "description": "CPU usage percentage per Docker container."
+    },
+    {
+      "title": "Docker Container Memory",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+      "targets": [
+        {
+          "expr": "container_memory_usage_bytes",
+          "legendFormat": "{{name}}",
+          "interval": "15s"
+        }
+      ],
+      "description": "Memory usage in bytes per Docker container."
+    },
+    {
+      "title": "Disk I/O",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+      "targets": [
+        {
+          "expr": "rate(node_disk_read_bytes_total[5m])",
+          "legendFormat": "{{instance}} Read",
+          "interval": "30s"
+        },
+        {
+          "expr": "rate(node_disk_written_bytes_total[5m])",
+          "legendFormat": "{{instance}} Write",
+          "interval": "30s"
+        }
+      ],
+      "description": "Disk read and write throughput in bytes per second."
+    }
+  ]
+}

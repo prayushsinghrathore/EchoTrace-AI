@@ -1,0 +1,104 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EchoTrace AI — Database Recording & Alert Rules
+# ═══════════════════════════════════════════════════════════════════════════════
+
+groups:
+  - name: postgresql_alerts
+    interval: 30s
+    rules:
+      # High connection count (>80% of max)
+      - alert: PostgresHighConnections
+        expr: |
+          pg_stat_activity_count{job="postgres-exporter"}
+          /
+          (pg_settings_max_connections{job="postgres-exporter"} + 1) > 0.80
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          title: "PostgreSQL connection count exceeds 80%"
+          description: >
+            PostgreSQL on {{ $labels.instance }} has {{ $value | humanizePercentage }}
+            of max connections in use.
+
+      # Slow queries (>1 per second over 5m)
+      - alert: PostgresSlowQueries
+        expr: rate(pg_stat_activity_max_tx_duration{job="postgres-exporter"}[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          title: "PostgreSQL slow queries detected"
+          description: >
+            Slow queries on {{ $labels.instance }} running at {{ $value | humanize }} per second.
+
+      # Low cache hit ratio (<95% over 5m)
+      - alert: PostgresLowCacheHitRatio
+        expr: |
+          (rate(pg_stat_database_blks_hit{job="postgres-exporter"}[5m])
+          /
+          (rate(pg_stat_database_blks_hit{job="postgres-exporter"}[5m]) + rate(pg_stat_database_blks_read{job="postgres-exporter"}[5m]))) < 0.95
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          title: "PostgreSQL cache hit ratio below 95%"
+          description: >
+            PostgreSQL cache hit ratio on {{ $labels.instance }} is {{ $value | humanizePercentage }}.
+
+      # High storage usage (>85%)
+      - alert: PostgresStorageUsage
+        expr: pg_database_size_bytes{job="postgres-exporter"} / 1e9 > 85
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          title: "PostgreSQL storage exceeds 85 GB"
+          description: >
+            Database size on {{ $labels.instance }} is {{ $value | humanize }} GB.
+
+  - name: neo4j_alerts
+    interval: 30s
+    rules:
+      # High heap usage (>85%)
+      - alert: Neo4jHighHeapUsage
+        expr: |
+          neo4j_memory_pool_usage_bytes{pool="heap"}
+          /
+          neo4j_memory_pool_max_bytes{pool="heap"} > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          title: "Neo4j heap usage exceeds 85%"
+          description: >
+            Neo4j heap usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}.
+
+      # Transaction failures increasing
+      - alert: Neo4jTransactionFailures
+        expr: rate(neo4j_transactions_failed_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          title: "Neo4j transaction failures detected"
+          description: >
+            Neo4j transaction failures on {{ $labels.instance }}: {{ $value | humanize }} per second.
+
+      # High query time (>1s average over 5m)
+      - alert: Neo4jSlowQueries
+        expr: rate(neo4j_query_duration_seconds_sum[5m]) / rate(neo4j_query_duration_seconds_count[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          title: "Neo4j query time exceeds 1s"
+          description: >
+            Average Neo4j query time is {{ $value | humanizeDuration }} on {{ $labels.instance }}.

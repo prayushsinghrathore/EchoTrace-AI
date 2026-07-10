@@ -1,0 +1,92 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EchoTrace AI — Backend Recording & Alert Rules
+# ═══════════════════════════════════════════════════════════════════════════════
+
+groups:
+  - name: backend_recording
+    interval: 15s
+    rules:
+      # Request rate per second (5m window)
+      - record: echotrace:backend:requests_rate_5m
+        expr: rate(echotrace_requests_total[5m])
+
+      # Error rate per second (5m window)
+      - record: echotrace:backend:errors_rate_5m
+        expr: rate(echotrace_errors_total[5m])
+
+      # Error ratio (5m window)
+      - record: echotrace:backend:error_ratio_5m
+        expr: |
+          rate(echotrace_errors_total[5m])
+          /
+          (rate(echotrace_requests_total[5m]) + 1)
+
+      # Average latency (5m window, in ms)
+      - record: echotrace:backend:latency_avg_5m
+        expr: rate(echotrace_latency_seconds_sum[5m]) / rate(echotrace_latency_seconds_count[5m]) * 1000
+
+      # P95 latency (5m window)
+      - record: echotrace:backend:latency_p95_5m
+        expr: histogram_quantile(0.95, rate(echotrace_latency_seconds_bucket[5m])) * 1000
+
+      # P99 latency (5m window)
+      - record: echotrace:backend:latency_p99_5m
+        expr: histogram_quantile(0.99, rate(echotrace_latency_seconds_bucket[5m])) * 1000
+
+      # Uptime in days
+      - record: echotrace:backend:uptime_days
+        expr: (time() - process_start_time_seconds{job="echotrace-backend"}) / 86400
+
+  - name: backend_alerts
+    interval: 30s
+    rules:
+      # High error rate (>5% over 5m)
+      - alert: BackendHighErrorRate
+        expr: echotrace:backend:error_ratio_5m > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          title: "Backend error rate exceeds 5%"
+          description: >
+            Backend error rate is {{ $value | humanizePercentage }} over the last 5 minutes.
+            Job: {{ $labels.job }}, Instance: {{ $labels.instance }}
+
+      # High latency (P95 > 2s over 5m)
+      - alert: BackendHighLatency
+        expr: echotrace:backend:latency_p95_5m > 2000
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          title: "Backend P95 latency exceeds 2s"
+          description: >
+            Backend P95 latency is {{ $value | humanizeDuration }} over the last 5 minutes.
+            Job: {{ $labels.job }}, Instance: {{ $labels.instance }}
+
+      # Service down
+      - alert: BackendServiceDown
+        expr: up{job="echotrace-backend"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          title: "Backend service is down"
+          description: >
+            Backend service {{ $labels.instance }} has been unreachable for over 30 seconds.
+
+      # Service crash-looping (frequent restarts)
+      - alert: BackendCrashLooping
+        expr: rate(process_start_time_seconds{job="echotrace-backend"}[15m]) > 2
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          title: "Backend is crash-looping"
+          description: >
+            Backend instance {{ $labels.instance }} has restarted
+            {{ $value | humanize }} times in the last 15 minutes.

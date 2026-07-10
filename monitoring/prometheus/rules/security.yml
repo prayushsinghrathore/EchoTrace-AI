@@ -1,0 +1,57 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EchoTrace AI — Security Alert Rules
+# ═══════════════════════════════════════════════════════════════════════════════
+
+groups:
+  - name: security_alerts
+    interval: 30s
+    rules:
+      # Spike in failed logins (>10 per 5m)
+      - alert: FailedLoginSpike
+        expr: rate(echotrace_failed_logins_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          title: "Spike in failed login attempts"
+          description: >
+            {{ $value | humanize }} failed login attempts per second over 5 minutes.
+            Possible brute force attack in progress.
+
+      # Critical failed login spike (>50 per 5m)
+      - alert: CriticalFailedLoginSpike
+        expr: rate(echotrace_failed_logins_total[5m]) > 50
+        for: 1m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          title: "Critical spike in failed login attempts"
+          description: >
+            {{ $value | humanize }} failed login attempts per second over 5 minutes.
+            Active brute force attack likely in progress.
+
+      # Authentication failures (rate > 5 per 5m)
+      - alert: HighAuthFailureRate
+        expr: rate(echotrace_auth_failures_total[5m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          title: "High authentication failure rate"
+          description: >
+            {{ $value | humanize }} auth failures per second over the last 5 minutes.
+
+      # Rate limit violations (>10 per 5m)
+      - alert: RateLimitViolations
+        expr: rate(echotrace_rate_limit_hits_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          title: "Rate limit violations detected"
+          description: >
+            {{ $value | humanize }} rate limit violations per second over 5 minutes.

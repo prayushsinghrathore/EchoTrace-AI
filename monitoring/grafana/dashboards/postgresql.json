@@ -1,0 +1,98 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "title": "EchoTrace AI — PostgreSQL",
+  "description": "PostgreSQL database performance dashboard — connections, slow queries, locks, cache hit ratio.",
+  "uid": "echotrace-postgresql",
+  "tags": ["echotrace", "postgresql", "database"],
+  "schemaVersion": 39,
+  "version": 1,
+  "timezone": "utc",
+  "editable": false,
+  "refresh": "30s",
+  "panels": [
+    {
+      "title": "Active Connections",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "targets": [
+        {
+          "expr": "pg_stat_activity_count{datname=~\"echotrace.*\"}",
+          "legendFormat": "{{datname}}",
+          "interval": "30s"
+        }
+      ],
+      "description": "Number of active PostgreSQL connections per database."
+    },
+    {
+      "title": "Slow Queries (Longest Transaction)",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "targets": [
+        {
+          "expr": "pg_stat_activity_max_tx_duration{datname=~\"echotrace.*\"}",
+          "legendFormat": "{{datname}} Max TX Duration",
+          "interval": "30s"
+        }
+      ],
+      "description": "Duration of the longest running transaction in seconds per database."
+    },
+    {
+      "title": "Cache Hit Ratio",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "targets": [
+        {
+          "expr": "rate(pg_stat_database_blks_hit{datname=~\"echotrace.*\"}[5m]) / (rate(pg_stat_database_blks_hit{datname=~\"echotrace.*\"}[5m]) + rate(pg_stat_database_blks_read{datname=~\"echotrace.*\"}[5m])) * 100",
+          "legendFormat": "{{datname}} Cache Hit %",
+          "interval": "30s"
+        }
+      ],
+      "description": "PostgreSQL buffer cache hit ratio as a percentage. Values below 95% may indicate insufficient shared_buffers."
+    },
+    {
+      "title": "Database Size",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "targets": [
+        {
+          "expr": "pg_database_size_bytes{datname=~\"echotrace.*\"}",
+          "legendFormat": "{{datname}}",
+          "interval": "60s"
+        }
+      ],
+      "description": "Database size in bytes per database."
+    },
+    {
+      "title": "Locks (Waiting Count)",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+      "targets": [
+        {
+          "expr": "pg_locks_waiting_count{datname=~\"echotrace.*\"}",
+          "legendFormat": "{{datname}}",
+          "interval": "30s"
+        }
+      ],
+      "description": "Number of queries currently waiting on locks."
+    },
+    {
+      "title": "Transactions Rate",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+      "targets": [
+        {
+          "expr": "rate(pg_stat_database_xact_commit{datname=~\"echotrace.*\"}[5m])",
+          "legendFormat": "{{datname}} Commits/sec",
+          "interval": "30s"
+        },
+        {
+          "expr": "rate(pg_stat_database_xact_rollback{datname=~\"echotrace.*\"}[5m])",
+          "legendFormat": "{{datname}} Rollbacks/sec",
+          "interval": "30s"
+        }
+      ],
+      "description": "Transaction commit and rollback rates per second."
+    }
+  ]
+}

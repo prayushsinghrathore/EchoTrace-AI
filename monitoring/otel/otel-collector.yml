@@ -1,0 +1,116 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EchoTrace AI — OpenTelemetry Collector Configuration
+# ═══════════════════════════════════════════════════════════════════════════════
+# Production-grade OTel collector with traces, metrics, and logs pipeline.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+receivers:
+  # OTLP receiver — accepts traces/metrics/logs from instrumented apps
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  # Prometheus receiver — scrapes metrics from application endpoints
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: "otel-collector"
+          scrape_interval: 15s
+          static_configs:
+            - targets: ["0.0.0.0:8888"]
+
+  # Host metrics receiver
+  hostmetrics:
+    collection_interval: 30s
+    scrapers:
+      cpu:
+      memory:
+      disk:
+      network:
+      load:
+
+processors:
+  # Batch processing for efficiency
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+    send_batch_max_size: 2048
+
+  # Memory-limited processing
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+  # Attribute enrichment
+  attributes:
+    actions:
+      - key: environment
+        value: "${ENVIRONMENT:-production}"
+        action: upsert
+      - key: service.namespace
+        value: "echotrace-ai"
+        action: upsert
+
+  # Resource detection
+  resourcedetection:
+    detectors: [env, docker, ecs, ec2]
+    timeout: 5s
+
+  # Sampling — keep 100% in production for full observability
+  # Adjust sampling rate for cost optimization at scale (>1000 req/s)
+  probabilistic_sampler:
+    hash_seed: 42
+    sampling_percentage: 100.0
+
+  # Transform processor for span/trace enrichment
+  transform:
+    trace_statements:
+      - context: span
+        statements:
+          - set(attributes["service.version"], "${APP_VERSION:-0.1.0}")
+
+exporters:
+  # Logging exporter — for debugging OTel pipeline
+  logging:
+    loglevel: warn
+    sampling_initial: 5
+    sampling_thereafter: 100
+
+  # OTLP gRPC exporters
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+
+  # Prometheus exporter (for OTel-collected host metrics)
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    namespace: echotrace
+    const_labels:
+      environment: "${ENVIRONMENT:-production}"
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resourcedetection, attributes, batch, transform]
+      exporters: [otlp/jaeger, otlp/tempo, logging]
+
+    metrics:
+      receivers: [otlp, prometheus, hostmetrics]
+      processors: [memory_limiter, resourcedetection, attributes, batch]
+      exporters: [prometheus, logging]
+
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, resourcedetection, attributes, batch]
+      exporters: [logging]

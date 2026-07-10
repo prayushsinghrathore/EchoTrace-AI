@@ -1,0 +1,35 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EchoTrace AI — Frontend Recording & Alert Rules
+# ═══════════════════════════════════════════════════════════════════════════════
+
+groups:
+  - name: frontend_alerts
+    interval: 30s
+    rules:
+      # Service unavailable
+      - alert: FrontendServiceUnavailable
+        expr: up{job="echotrace-frontend"} == 0
+        for: 30s
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          title: "Frontend service is unavailable"
+          description: >
+            Frontend service {{ $labels.instance }} has been unreachable for over 30 seconds.
+
+      # High client error rate (>10% 4xx over 5m)
+      - alert: FrontendHighClientErrorRate
+        expr: |
+          rate(echotrace_frontend_errors_total{status=~"4.*"}[5m])
+          /
+          (rate(echotrace_frontend_requests_total[5m]) + 1) > 0.10
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          title: "Frontend client error rate exceeds 10%"
+          description: >
+            Frontend 4xx error rate is {{ $value | humanizePercentage }} over the last 5 minutes.
+            Instance: {{ $labels.instance }}

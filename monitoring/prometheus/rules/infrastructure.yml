@@ -1,0 +1,106 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EchoTrace AI — Infrastructure Recording & Alert Rules
+# ═══════════════════════════════════════════════════════════════════════════════
+
+groups:
+  - name: infrastructure_alerts
+    interval: 30s
+    rules:
+      # High CPU (>80% for 10m)
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          title: "CPU usage exceeds 80%"
+          description: >
+            CPU usage on {{ $labels.instance }} is {{ $value | humanize }}% over 10 minutes.
+
+      # Critical CPU (>95% for 5m)
+      - alert: CriticalCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 95
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          title: "CPU usage exceeds 95%"
+          description: >
+            CPU usage on {{ $labels.instance }} is {{ $value | humanize }}% over 5 minutes.
+
+      # High memory (>85%)
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          title: "Memory usage exceeds 85%"
+          description: >
+            Memory usage on {{ $labels.instance }} is {{ $value | humanize }}%.
+
+      # Low disk space (>85%)
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 15
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          title: "Disk space below 15%"
+          description: >
+            Disk usage on {{ $labels.instance }} is at
+            {{ 100 - $value | humanize }}% capacity.
+
+      # Critical disk space (>95%)
+      - alert: CriticalLowDiskSpace
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 5
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          title: "Disk space critically low"
+          description: >
+            Disk usage on {{ $labels.instance }} is at
+            {{ 100 - $value | humanize }}% capacity. Immediate action required.
+
+      # Node down
+      - alert: NodeDown
+        expr: up{job="node-exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          title: "Node is down"
+          description: >
+            Node {{ $labels.instance }} has been unreachable for over 1 minute.
+
+      # Pod in CrashLoop
+      - alert: PodCrashLooping
+        expr: rate(kube_pod_container_status_restarts_total[15m]) > 3
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          title: "Pod is crash-looping"
+          description: >
+            Pod {{ $labels.pod }} in namespace {{ $labels.namespace }}
+            has restarted {{ $value | humanize }} times in 15 minutes.
+
+      # Container high CPU (>90%)
+      - alert: ContainerHighCPU
+        expr: rate(container_cpu_usage_seconds_total[5m]) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          title: "Container CPU usage exceeds 90%"
+          description: >
+            Container {{ $labels.name }} CPU usage is {{ $value | humanize }}%.

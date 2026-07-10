@@ -13,9 +13,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.api import api_v1_router
+from app.core.cache import close as close_cache
+from app.core.compression import add_compression_middleware
 from app.core.config import settings
 from app.core.logging import get_logger, setup_logging
 from app.core.middleware import add_security_headers_middleware
+from app.core.otel import setup_opentelemetry, shutdown_opentelemetry
 from app.core.rate_limiter import initialize_limiters
 from app.graph.neo4j import neo4j_manager
 
@@ -32,6 +35,7 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     # ── Startup ──────────────────────────────────────────────────────────
     setup_logging()
     initialize_limiters()
+    setup_opentelemetry(app=_app)
     logger.info(
         "Starting EchoTrace AI",
         version=settings.VERSION,
@@ -59,6 +63,9 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     from app.db.session import async_engine, sync_engine
     await async_engine.dispose()
     sync_engine.dispose()
+
+    await close_cache()
+    shutdown_opentelemetry()
 
     logger.info("Shutdown complete")
 
@@ -95,6 +102,10 @@ def create_application() -> FastAPI:
 
     # ── Security Headers, Metrics, and Tracing Middleware ─────────────────
     add_security_headers_middleware(app)
+
+    # ── Compression Middleware ─────────────────────────────────────────────
+    if settings.COMPRESSION_ENABLED:
+        add_compression_middleware(app)
 
     # ── Routers ──────────────────────────────────────────────────────────
     app.include_router(api_v1_router, prefix=settings.API_V1_PREFIX)

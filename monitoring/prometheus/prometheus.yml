@@ -1,0 +1,127 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# EchoTrace AI — Prometheus Configuration
+# ═══════════════════════════════════════════════════════════════════════════════
+# Production-grade scraping configuration with service discovery, relabeling,
+# and recording rules.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+  external_labels:
+    environment: "${ENVIRONMENT:-production}"
+    project: "echotrace-ai"
+
+# ── Rule Files ────────────────────────────────────────────────────────────────
+rule_files:
+  - "rules/*.yml"
+
+# ── Scrape Configurations ─────────────────────────────────────────────────────
+scrape_configs:
+
+  # ── Backend API ────────────────────────────────────────────────────────────
+  - job_name: "echotrace-backend"
+    scrape_interval: 10s
+    metrics_path: /api/v1/metrics/prometheus
+    scheme: http
+    static_configs:
+      - targets: ["backend:8000"]
+        labels:
+          service: "backend"
+          component: "api"
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "backend"
+
+  # ── Frontend (Next.js) ────────────────────────────────────────────────────
+  - job_name: "echotrace-frontend"
+    scrape_interval: 15s
+    metrics_path: /api/metrics
+    scheme: http
+    static_configs:
+      - targets: ["frontend:3000"]
+        labels:
+          service: "frontend"
+          component: "web"
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "frontend"
+
+  # ── PostgreSQL Exporter ───────────────────────────────────────────────────
+  - job_name: "postgres-exporter"
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets: ["postgres-exporter:9187"]
+        labels:
+          service: "postgres"
+          component: "database"
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "postgres-exporter"
+
+  # ── Neo4j Exporter ───────────────────────────────────────────────────────
+  - job_name: "neo4j-exporter"
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets: ["neo4j-exporter:7474"]
+        labels:
+          service: "neo4j"
+          component: "graph-database"
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "neo4j-exporter"
+
+  # ── Node Exporter (Host Metrics) ─────────────────────────────────────────
+  - job_name: "node-exporter"
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets: ["node-exporter:9100"]
+        labels:
+          service: "infrastructure"
+          component: "host"
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "node-exporter"
+
+  # ── cAdvisor (Container Metrics) ─────────────────────────────────────────
+  - job_name: "cadvisor"
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets: ["cadvisor:8080"]
+        labels:
+          service: "infrastructure"
+          component: "container"
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "cadvisor"
+
+  # ── Docker Daemon ────────────────────────────────────────────────────────
+  - job_name: "docker-daemon"
+    scrape_interval: 30s
+    metrics_path: /metrics
+    scheme: http
+    static_configs:
+      - targets: ["docker-daemon:9323"]
+        labels:
+          service: "infrastructure"
+          component: "docker"
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: "docker-daemon"

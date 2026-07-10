@@ -1,0 +1,108 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "title": "EchoTrace AI — Neo4j",
+  "description": "Neo4j graph database dashboard — heap, transactions, query time.",
+  "uid": "echotrace-neo4j",
+  "tags": ["echotrace", "neo4j", "graph"],
+  "schemaVersion": 39,
+  "version": 1,
+  "timezone": "utc",
+  "editable": false,
+  "refresh": "30s",
+  "panels": [
+    {
+      "title": "Heap Memory Usage",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "targets": [
+        {
+          "expr": "neo4j_memory_pool_usage_bytes{pool=\"heap\"}",
+          "legendFormat": "Heap Used",
+          "interval": "15s"
+        },
+        {
+          "expr": "neo4j_memory_pool_max_bytes{pool=\"heap\"}",
+          "legendFormat": "Heap Max",
+          "interval": "15s"
+        }
+      ],
+      "description": "Neo4j heap memory usage: used vs. maximum allocation."
+    },
+    {
+      "title": "Transaction Rate",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "targets": [
+        {
+          "expr": "rate(neo4j_transactions_started_total[5m])",
+          "legendFormat": "Started/sec",
+          "interval": "15s"
+        },
+        {
+          "expr": "rate(neo4j_transactions_committed_total[5m])",
+          "legendFormat": "Committed/sec",
+          "interval": "15s"
+        },
+        {
+          "expr": "rate(neo4j_transactions_rolled_back_total[5m])",
+          "legendFormat": "Rolled Back/sec",
+          "interval": "15s"
+        }
+      ],
+      "description": "Neo4j transaction throughput: started, committed, and rolled back per second."
+    },
+    {
+      "title": "Query Execution Time",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "targets": [
+        {
+          "expr": "rate(neo4j_query_duration_seconds_sum[5m]) / rate(neo4j_query_duration_seconds_count[5m]) * 1000",
+          "legendFormat": "Avg Query Time (ms)",
+          "interval": "15s"
+        }
+      ],
+      "description": "Average Neo4j query execution time in milliseconds over a 5-minute window."
+    },
+    {
+      "title": "Open Connections",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "targets": [
+        {
+          "expr": "neo4j_connections_open",
+          "legendFormat": "Open Connections",
+          "interval": "15s"
+        }
+      ],
+      "description": "Number of currently open Neo4j connections."
+    },
+    {
+      "title": "Page Cache Hits",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+      "targets": [
+        {
+          "expr": "rate(neo4j_page_cache_hits_total[5m]) / (rate(neo4j_page_cache_hits_total[5m]) + rate(neo4j_page_cache_misses_total[5m])) * 100",
+          "legendFormat": "Page Cache Hit %",
+          "interval": "15s"
+        }
+      ],
+      "description": "Neo4j page cache hit ratio. Values below 90% may indicate insufficient page cache sizing."
+    },
+    {
+      "title": "Failed Transactions",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+      "targets": [
+        {
+          "expr": "rate(neo4j_transactions_failed_total[5m])",
+          "legendFormat": "Failed/sec",
+          "interval": "15s"
+        }
+      ],
+      "description": "Rate of failed Neo4j transactions per second."
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "title": "EchoTrace AI — Frontend",
+  "description": "Frontend performance dashboard — response time, client errors, asset loading.",
+  "uid": "echotrace-frontend",
+  "tags": ["echotrace", "frontend", "web"],
+  "schemaVersion": 39,
+  "version": 1,
+  "timezone": "utc",
+  "editable": false,
+  "refresh": "30s",
+  "panels": [
+    {
+      "title": "Response Time",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "targets": [
+        {
+          "expr": "rate(echotrace_frontend_duration_seconds_sum[5m]) / rate(echotrace_frontend_duration_seconds_count[5m]) * 1000",
+          "legendFormat": "Avg Response Time",
+          "interval": "15s"
+        }
+      ],
+      "description": "Average frontend page/API response time in milliseconds over a 5-minute window."
+    },
+    {
+      "title": "Client Errors (4xx)",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "targets": [
+        {
+          "expr": "rate(echotrace_frontend_errors_total{status=~\"4.*\"}[5m])",
+          "legendFormat": "4xx Errors",
+          "interval": "15s"
+        }
+      ],
+      "description": "Rate of client-side 4xx errors over a 5-minute window."
+    },
+    {
+      "title": "Asset Loading Time",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+      "targets": [
+        {
+          "expr": "rate(echotrace_frontend_asset_load_duration_seconds_sum[5m]) / rate(echotrace_frontend_asset_load_duration_seconds_count[5m]) * 1000",
+          "legendFormat": "Avg Asset Load Time",
+          "interval": "15s"
+        }
+      ],
+      "description": "Average frontend asset loading time in milliseconds over a 5-minute window."
+    },
+    {
+      "title": "Request Volume",
+      "type": "graph",
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+      "targets": [
+        {
+          "expr": "rate(echotrace_frontend_requests_total[5m])",
+          "legendFormat": "Requests/sec",
+          "interval": "15s"
+        }
+      ],
+      "description": "Frontend request volume in requests per second over a 5-minute window."
+    }
+  ]
+}

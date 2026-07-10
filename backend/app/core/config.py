@@ -191,9 +191,23 @@ class Settings(BaseSettings):
     AZURE_OPENAI_API_VERSION: str = "2024-02-15-preview"
 
     # ── Database Pool ──────────────────────────────────────────────────
-    DB_POOL_SIZE: int = Field(default=20, ge=1, le=100)
-    DB_MAX_OVERFLOW: int = Field(default=10, ge=0, le=50)
+    DB_POOL_SIZE: int = Field(default=10, ge=1, le=100)
+    DB_MAX_OVERFLOW: int = Field(default=5, ge=0, le=50)
     DB_ECHO: bool = False
+    DB_POOL_RECYCLE: int = Field(default=3600, ge=60, le=86400)
+
+    # ── Compression ────────────────────────────────────────────────────
+    COMPRESSION_ENABLED: bool = True
+    COMPRESSION_MINIMUM_SIZE: int = Field(default=1000, ge=100, le=10000)
+
+    # ── Redis / Caching ────────────────────────────────────────────────
+    REDIS_URL: str = "redis://redis:6379/0"
+    REDIS_ENABLED: bool = False
+
+    # ── OpenTelemetry ───────────────────────────────────────────────────
+    OTEL_ENABLED: bool = False
+    OTEL_EXPORTER_OTLP_ENDPOINT: str = "http://otel-collector:4317"
+    OTEL_SERVICE_NAME: str = "echotrace-backend"
 
     @property
     def is_development(self) -> bool:
