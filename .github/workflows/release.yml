@@ -11,8 +11,9 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  BACKEND_IMAGE: ${{ github.repository }}/echotrace-backend
-  FRONTEND_IMAGE: ${{ github.repository }}/echotrace-frontend
+  # Must be lowercase — GHCR rejects uppercase image names.
+  BACKEND_IMAGE: ${{ github.repository_owner }}/echotrace-ai/echotrace-backend
+  FRONTEND_IMAGE: ${{ github.repository_owner }}/echotrace-ai/echotrace-frontend
 
 jobs:
   # ── Create GitHub Release ─────────────────────────────────────────────────
