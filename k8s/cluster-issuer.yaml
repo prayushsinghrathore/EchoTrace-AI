@@ -1,0 +1,48 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  labels:
+    app.kubernetes.io/name: echotrace-ai
+    app.kubernetes.io/part-of: echotrace
+    app.kubernetes.io/managed-by: kubectl
+    environment: production
+spec:
+  acme:
+    # You MUST replace this with your actual email address
+    email: admin@echotrace.example.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
+    solvers:
+      - http01:
+          ingress:
+            class: nginx
+            podTemplate:
+              spec:
+                securityContext:
+                  runAsNonRoot: true
+                  runAsUser: 1001
+                  runAsGroup: 1001
+                  seccompProfile:
+                    type: RuntimeDefault
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+  labels:
+    app.kubernetes.io/name: echotrace-ai
+    app.kubernetes.io/part-of: echotrace
+    app.kubernetes.io/managed-by: kubectl
+    environment: staging
+spec:
+  acme:
+    email: admin@echotrace.example.com
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
+    solvers:
+      - http01:
+          ingress:
+            class: nginx

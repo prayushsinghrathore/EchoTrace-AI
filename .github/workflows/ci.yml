@@ -9,7 +9,6 @@ on:
 env:
   NODE_VERSION: "20"
   PYTHON_VERSION: "3.12"
-  REGISTRY: ghcr.io
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -40,10 +39,7 @@ jobs:
           pip install ruff mypy
           pip install -r requirements.txt
 
-      - name: Run Ruff auto-fix (safe fixes)
-        run: ruff check . --fix --output-format=github || true
-
-      - name: Run Ruff lint check (strict)
+      - name: Run Ruff lint check
         run: ruff check . --output-format=github
 
       - name: Run Ruff format check
@@ -51,6 +47,9 @@ jobs:
 
       - name: Run mypy
         run: mypy app --ignore-missing-imports
+
+      - name: Run bandit security scan
+        run: pip install bandit && bandit -r app/ -ll -f github || true
 
   # ── Backend Tests ─────────────────────────────────────────────────────────
   backend-test:
@@ -160,7 +159,7 @@ jobs:
           NEXT_PUBLIC_APP_URL: http://localhost:3000
           NEXT_PUBLIC_ENVIRONMENT: ci
 
-  # ── Docker Build ──────────────────────────────────────────────────────────
+  # ── Docker Build (CI-only, no push) ───────────────────────────────────────
   docker-build:
     name: Docker Build
     runs-on: ubuntu-latest
@@ -189,3 +188,18 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: echotrace-frontend:ci
+
+  # ── YAML Validation ───────────────────────────────────────────────────────
+  yaml-validate:
+    name: YAML Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Validate YAML files
+        run: |
+          yamllint -d "{extends: relaxed, rules: {line-length: {max: 200}}}" .

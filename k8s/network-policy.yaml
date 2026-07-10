@@ -1,0 +1,145 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: echotrace
+  labels:
+    app.kubernetes.io/name: echotrace-ai
+    app.kubernetes.io/part-of: echotrace
+    app.kubernetes.io/managed-by: kubectl
+    environment: production
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: echotrace
+  labels:
+    app.kubernetes.io/name: echotrace-ai
+    app.kubernetes.io/part-of: echotrace
+    app.kubernetes.io/managed-by: kubectl
+    environment: production
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-controller
+  namespace: echotrace
+  labels:
+    app.kubernetes.io/name: echotrace-ai
+    app.kubernetes.io/part-of: echotrace
+    app.kubernetes.io/managed-by: kubectl
+    environment: production
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: echotrace-ai
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 8000
+          protocol: TCP
+        - port: 3000
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-to-postgres
+  namespace: echotrace
+  labels:
+    app.kubernetes.io/name: echotrace-ai
+    app.kubernetes.io/part-of: echotrace
+    app.kubernetes.io/managed-by: kubectl
+    environment: production
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: postgres
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: backend
+      ports:
+        - port: 5432
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-to-neo4j
+  namespace: echotrace
+  labels:
+    app.kubernetes.io/name: echotrace-ai
+    app.kubernetes.io/part-of: echotrace
+    app.kubernetes.io/managed-by: kubectl
+    environment: production
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: neo4j
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: backend
+      ports:
+        - port: 7687
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-healthcheck
+  namespace: echotrace
+  labels:
+    app.kubernetes.io/name: echotrace-ai
+    app.kubernetes.io/part-of: echotrace
+    app.kubernetes.io/managed-by: kubectl
+    environment: production
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: backend
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: postgres
+      ports:
+        - port: 5432
+          protocol: TCP
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: neo4j
+      ports:
+        - port: 7687
+          protocol: TCP

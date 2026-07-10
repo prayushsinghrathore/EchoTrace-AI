@@ -1,0 +1,67 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: echotrace-backend-pdb
+  namespace: echotrace
+  labels:
+    app.kubernetes.io/name: echotrace-ai
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: echotrace
+    app.kubernetes.io/managed-by: kubectl
+    environment: production
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: backend
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: echotrace-frontend-pdb
+  namespace: echotrace
+  labels:
+    app.kubernetes.io/name: echotrace-ai
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/part-of: echotrace
+    app.kubernetes.io/managed-by: kubectl
+    environment: production
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: frontend
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: postgres-pdb
+  namespace: echotrace
+  labels:
+    app.kubernetes.io/name: echotrace-ai
+    app.kubernetes.io/component: postgres
+    app.kubernetes.io/part-of: echotrace
+    app.kubernetes.io/managed-by: kubectl
+    environment: production
+spec:
+  maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: postgres
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: neo4j-pdb
+  namespace: echotrace
+  labels:
+    app.kubernetes.io/name: echotrace-ai
+    app.kubernetes.io/component: neo4j
+    app.kubernetes.io/part-of: echotrace
+    app.kubernetes.io/managed-by: kubectl
+    environment: production
+spec:
+  maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: neo4j

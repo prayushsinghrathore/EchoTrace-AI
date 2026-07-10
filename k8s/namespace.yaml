@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: echotrace
+  labels:
+    name: echotrace
+    environment: production
+    app.kubernetes.io/name: echotrace-ai
+    app.kubernetes.io/part-of: echotrace

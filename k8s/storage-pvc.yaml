@@ -1,0 +1,75 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: echotrace-postgres
+  namespace: echotrace
+  labels:
+    app.kubernetes.io/name: echotrace-ai
+    app.kubernetes.io/component: postgres
+    app.kubernetes.io/part-of: echotrace
+    app.kubernetes.io/managed-by: kubectl
+    environment: production
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: echotrace-neo4j-data
+  namespace: echotrace
+  labels:
+    app.kubernetes.io/name: echotrace-ai
+    app.kubernetes.io/component: neo4j
+    app.kubernetes.io/part-of: echotrace
+    app.kubernetes.io/managed-by: kubectl
+    environment: production
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: standard
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: echotrace-neo4j-logs
+  namespace: echotrace
+  labels:
+    app.kubernetes.io/name: echotrace-ai
+    app.kubernetes.io/component: neo4j
+    app.kubernetes.io/part-of: echotrace
+    app.kubernetes.io/managed-by: kubectl
+    environment: production
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: standard
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: echotrace-storage
+  namespace: echotrace
+  labels:
+    app.kubernetes.io/name: echotrace-ai
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: echotrace
+    app.kubernetes.io/managed-by: kubectl
+    environment: production
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: standard
