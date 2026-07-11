@@ -21,8 +21,14 @@ logger = get_logger(__name__)
 
 # ── Async Engine & Session ──────────────────────────────────────────────────
 
+# Build connect_args based on SSL configuration
+_async_connect_args: dict[str, str] = {}
+if settings.DB_SSL_MODE == "require":
+    _async_connect_args["ssl"] = "require"
+
 async_engine = create_async_engine(
     str(settings.ASYNC_DATABASE_URI),
+    connect_args=_async_connect_args,
     pool_size=settings.DB_POOL_SIZE,
     max_overflow=settings.DB_MAX_OVERFLOW,
     echo=settings.DB_ECHO,
@@ -107,8 +113,13 @@ async def check_database_connection() -> bool:
 
 # ── Sync Engine & Session (for Alembic and scripts) ─────────────────────────
 
+_sync_connect_args: dict[str, str] = {}
+if settings.DB_SSL_MODE == "require":
+    _sync_connect_args["sslmode"] = "require"
+
 sync_engine = create_engine(
     str(settings.SYNC_DATABASE_URI),
+    connect_args=_sync_connect_args,
     pool_size=settings.DB_POOL_SIZE,
     max_overflow=settings.DB_MAX_OVERFLOW,
     echo=settings.DB_ECHO,

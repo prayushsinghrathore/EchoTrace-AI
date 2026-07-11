@@ -197,6 +197,8 @@ class Settings(BaseSettings):
     DB_MAX_OVERFLOW: int = Field(default=5, ge=0, le=50)
     DB_ECHO: bool = False
     DB_POOL_RECYCLE: int = Field(default=3600, ge=60, le=86400)
+    DB_SSL_MODE: str = Field(default="disable", pattern="^(disable|require)$",
+                             description="SSL mode for asyncpg: disable | require")
 
     # ── Request Limits ─────────────────────────────────────────────────
     MAX_REQUEST_BODY_SIZE: int = Field(default=10_485_760, ge=65_536, le=1_073_741_824,
