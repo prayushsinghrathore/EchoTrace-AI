@@ -85,8 +85,8 @@ Update the version in the following locations:
    ```bash
    git checkout main
    git pull origin main
-   git tag v0.1.0                    # Use the new version
-   git push origin v0.1.0
+   git tag v1.0.0                    # Use the new version
+   git push origin v1.0.0
    ```
 3. The [Release workflow](.github/workflows/release.yml) automatically:
    - Generates changelog
@@ -129,7 +129,7 @@ ghcr.io/prayushsinghrathore/echotrace-ai/echotrace-frontend
 
 | Tag Pattern | Example | Description |
 |-------------|---------|-------------|
-| `x.y.z` | `0.1.0` | Exact version release |
+| `x.y.z` | `1.0.0` | Exact version release |
 | `latest` | `latest` | Latest stable release |
 | `sha-XXXXXX` | `sha-a1b2c3` | Commit SHA (development) |
 
@@ -140,15 +140,15 @@ For manual publishing:
 
 ```bash
 # Build and tag
-docker build -t ghcr.io/prayushsinghrathore/echotrace-ai/echotrace-backend:0.1.0 ./backend
-docker build -t ghcr.io/prayushsinghrathore/echotrace-ai/echotrace-frontend:0.1.0 ./frontend
+docker build -t ghcr.io/prayushsinghrathore/echotrace-ai/echotrace-backend:1.0.0 ./backend
+docker build -t ghcr.io/prayushsinghrathore/echotrace-ai/echotrace-frontend:1.0.0 ./frontend
 
 # Push
-docker push ghcr.io/prayushsinghrathore/echotrace-ai/echotrace-backend:0.1.0
-docker push ghcr.io/prayushsinghrathore/echotrace-ai/echotrace-frontend:0.1.0
+docker push ghcr.io/prayushsinghrathore/echotrace-ai/echotrace-backend:1.0.0
+docker push ghcr.io/prayushsinghrathore/echotrace-ai/echotrace-frontend:1.0.0
 
 # Tag as latest (if this is the latest release)
-docker tag ghcr.io/prayushsinghrathore/echotrace-ai/echotrace-backend:0.1.0 \
+docker tag ghcr.io/prayushsinghrathore/echotrace-ai/echotrace-backend:1.0.0 \
   ghcr.io/prayushsinghrathore/echotrace-ai/echotrace-backend:latest
 docker push ghcr.io/prayushsinghrathore/echotrace-ai/echotrace-backend:latest
 ```
@@ -175,11 +175,11 @@ To view releases: `https://github.com/prayushsinghrathore/EchoTrace-AI/releases`
 ```bash
 # Update image version in deployment manifest
 kubectl set image deployment/echotrace-backend \
-  echotrace-backend=ghcr.io/prayushsinghrathore/echotrace-ai/echotrace-backend:0.1.0 \
+  echotrace-backend=ghcr.io/prayushsinghrathore/echotrace-ai/echotrace-backend:1.0.0 \
   -n echotrace
 
 kubectl set image deployment/echotrace-frontend \
-  echotrace-frontend=ghcr.io/prayushsinghrathore/echotrace-ai/echotrace-frontend:0.1.0 \
+  echotrace-frontend=ghcr.io/prayushsinghrathore/echotrace-ai/echotrace-frontend:1.0.0 \
   -n echotrace
 
 # Monitor rollout
@@ -245,8 +245,8 @@ git revert <release-commit-hash>
 git push origin main
 
 # Remove the tag (if needed)
-git tag -d v0.1.0
-git push origin :refs/tags/v0.1.0
+git tag -d v1.0.0
+git push origin :refs/tags/v1.0.0
 
 # Create a hotfix release with the revert
 git tag v0.1.1
@@ -261,7 +261,7 @@ For critical bug fixes that cannot wait for the next scheduled release:
 
 1. **Branch from the release tag**:
    ```bash
-   git checkout -b hotfix/issue-description v0.1.0
+   git checkout -b hotfix/issue-description v1.0.0
    ```
 
 2. **Fix and commit**:

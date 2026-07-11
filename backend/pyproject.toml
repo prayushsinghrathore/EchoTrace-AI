@@ -1,6 +1,6 @@
 [project]
 name = "echotrace-ai-backend"
-version = "0.1.0"
+version = "1.0.0"
 description = "EchoTrace AI — Backend Application"
 requires-python = ">=3.12"
 

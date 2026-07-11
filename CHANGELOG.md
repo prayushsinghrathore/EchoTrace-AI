@@ -7,19 +7,85 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [1.0.0] — 2026-07-11
 
-### Added
+### Stage 13 — Final Release Engineering & Documentation
 
-- Enterprise release finalization
-- SECURITY.md with vulnerability reporting and security best practices
-- CONTRIBUTING.md with comprehensive contributor guide
-- RELEASE.md with versioning, release checklist, and rollback procedures
-- CHANGELOG.md following Keep a Changelog format
-- GitHub issue templates (bug report, feature request, security report, documentation issue)
-- Pull request template with checklists for code quality, testing, security
-- CODEOWNERS file for repository governance
-- MIT LICENSE file
+#### Added
+
+- ARCHITECTURE.md with Mermaid system diagrams (auth, AI pipeline, DB ER, deployment)
+- ROADMAP.md with 3-phase development plan
+- v1.0.0 version tagging across all modules
+
+### Stage 12 — Security Hardening
+
+#### Added
+
+- Server-side MIME type validation via magic bytes (14 format signatures)
+- Upload MIME enforcement against ALLOWED_MIME_TYPES (415 on rejection)
+- Concurrent upload semaphore with configurable UPLOAD_CONCURRENCY_LIMIT
+- Filename sanitization for Content-Disposition headers
+- Zero-byte upload rejection
+
+#### Security
+
+- 🛡️ Magic byte detection prevents MIME spoofing (CWE-434)
+- 🛡️ Content-Disposition header injection eliminated (CWE-79)
+- 🛡️ Upload resource exhaustion guarded via semaphore (CWE-400)
+
+### Stage 11 — Performance Optimization
+
+#### Added
+
+- Circuit breaker pattern for AI provider calls
+- Request body size protection middleware (10MB default, 413 rejection)
+- Database connection pool health monitoring (`get_pool_status()`)
+- Composite indexes migration (5 indexes for workspace/project queries)
+- Frontend API client retry (2 retries, exponential backoff, AbortController timeout)
+
+#### Changed
+
+- **N+1 elimination**: EvidenceService batch tag loading, GROUP BY stats, EXISTS tag filter
+- **N+1 elimination**: InvestigationService batch counting, paginated list
+- **Batch Neo4j writes**: UNWIND replaces per-item CREATE in GraphSync
+- **AI job session reuse**: Shared DB sessions in background jobs
+- **AI provider timeout**: `asyncio.wait_for` protection on all provider calls
+- **Prepared statement cache**: SQLAlchemy `query_cache_size=500`
+
+#### Performance
+
+- ⚡ Evidence listing: ~50× fewer DB round-trips (N+1→1)
+- ⚡ Investigation listing: ~3×N→3 queries per list
+- ⚡ Graph sync: ~N× faster via batch UNWIND
+- ⚡ Evidence stats: 6 queries→1 GROUP BY
+
+### Stage 10 — Enterprise Observability & Security
+
+#### Added
+
+- Enterprise security headers: CSP, COOP, COEP, CORP, enhanced Permissions-Policy, HSTS preload
+- CodeQL GitHub Actions workflow for security scanning
+- python-multipart security update (0.0.18→0.0.31)
+
+#### Observability
+
+- Prometheus: 7 scrape targets, 5 rule files, 32 alert rules
+- Grafana: 5 dashboards (30 panels), 3 auto-provisioned datasources
+- OpenTelemetry: collector, Jaeger, Tempo, FastAPI/HTTPX/SQLAlchemy instrumentation
+- Structured logging: env metadata, correlation IDs, trace/span IDs
+- 11 runbooks (backend, frontend, Neo4j, PostgreSQL, crashloop, etc.)
+- SRE guide, operations guide, monitoring architecture doc
+
+#### Performance
+
+- Redis-backed caching layer with graceful degradation
+- GZip compression middleware
+- 13 database indexes across 8 tables
+- Tuned connection pooling (10+5)
+- k6 load test suite (smoke, load, stress)
+- Locust alternative load test
+- Dependabot config
+- Performance baselines with measurable targets
 
 ---
 
@@ -194,6 +260,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-[unreleased]: https://github.com/prayushsinghrathore/EchoTrace-AI/compare/v0.1.0...HEAD
+[1.0.0]: https://github.com/prayushsinghrathore/EchoTrace-AI/releases/tag/v1.0.0
 [0.1.0]: https://github.com/prayushsinghrathore/EchoTrace-AI/releases/tag/v0.1.0
 [0.0.1]: https://github.com/prayushsinghrathore/EchoTrace-AI/releases/tag/v0.0.1
