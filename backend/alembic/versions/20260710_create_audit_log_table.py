@@ -47,8 +47,8 @@ def upgrade() -> None:
         sa.Column("success", sa.Boolean, nullable=False, server_default=sa.text("true")),
         sa.Column("error_detail", sa.Text, nullable=True),
         sa.Column("timestamp", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False, index=True),
-        sa.Comment("Immutable enterprise audit trail"),
     )
+    op.create_table_comment("audit_logs", "Immutable enterprise audit trail", existing_comment=None)
 
     op.create_index("ix_audit_logs_workspace_action", "audit_logs", ["workspace_id", "action"])
     op.create_index("ix_audit_logs_user_timestamp", "audit_logs", ["user_id", "timestamp"])

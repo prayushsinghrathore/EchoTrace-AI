@@ -40,8 +40,8 @@ def upgrade() -> None:
         sa.Column("reference_type", sa.String(50), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Comment("User notifications"),
     )
+    op.create_table_comment("notifications", "User notifications", existing_comment=None)
 
     # ── activity_events ──────────────────────────────────────────────────
     op.create_table(
@@ -57,8 +57,8 @@ def upgrade() -> None:
         sa.Column("occurred_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False, index=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Comment("Activity timeline events across workspaces"),
     )
+    op.create_table_comment("activity_events", "Activity timeline events across workspaces", existing_comment=None)
 
     # ── export_jobs ──────────────────────────────────────────────────────
     op.create_table(
@@ -78,8 +78,8 @@ def upgrade() -> None:
         sa.Column("completed_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Comment("Background export jobs with download tokens"),
     )
+    op.create_table_comment("export_jobs", "Background export jobs with download tokens", existing_comment=None)
 
     # Indexes
     op.create_index("ix_notifications_user_read", "notifications", ["user_id", "is_read"])

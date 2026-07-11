@@ -48,8 +48,8 @@ def upgrade() -> None:
         sa.Column("cancelled_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Comment("Asynchronous AI processing jobs"),
     )
+    op.create_table_comment("ai_jobs", "Asynchronous AI processing jobs", existing_comment=None)
 
     # ── ai_suggestions ────────────────────────────────────────────────────
     op.create_table(
@@ -66,8 +66,8 @@ def upgrade() -> None:
         sa.Column("review_notes", sa.Text, nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Comment("AI-generated suggestions pending human review"),
     )
+    op.create_table_comment("ai_suggestions", "AI-generated suggestions pending human review", existing_comment=None)
 
     # ── prompt_versions ───────────────────────────────────────────────────
     op.create_table(
@@ -81,8 +81,8 @@ def upgrade() -> None:
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.UniqueConstraint("name", "version", name="uq_prompt_name_version"),
-        sa.Comment("Versioned AI prompt templates"),
     )
+    op.create_table_comment("prompt_versions", "Versioned AI prompt templates", existing_comment=None)
 
 
 def downgrade() -> None:
