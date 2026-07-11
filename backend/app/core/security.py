@@ -194,6 +194,20 @@ def decode_password_reset_token(token: str) -> dict[str, Any]:
 # ── Utilities ──────────────────────────────────────────────────────────────
 
 
+def sanitize_filename(filename: str) -> str:
+    """Sanitize a filename for safe Content-Disposition and filesystem use.
+
+    Strips path separators, control characters, and limits extension length.
+    """
+    # Remove path separators
+    safe = filename.replace("/", "_").replace("\\", "_")
+    # Remove null bytes and control characters
+    safe = "".join(c for c in safe if c.isprintable() and ord(c) >= 32)
+    # Limit total length
+    safe = safe[:255]
+    return safe or "unnamed"
+
+
 def generate_secret_key(length: int = 32) -> str:
     """Generate a cryptographically secure random key."""
     return secrets.token_hex(length)

@@ -1,11 +1,11 @@
-"""
-Evidence service — core business logic for evidence management.
+"""Evidence service — core business logic for evidence management.
 
 Handles CRUD, upload, download, verification, versioning, search, tags, and comments.
 """
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import secrets
 import uuid
@@ -19,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.logging import get_logger
+from app.core.security import sanitize_filename
 from app.models.evidence import Evidence
 from app.models.evidence_comment import EvidenceComment
 from app.models.evidence_tag import EvidenceTag
@@ -32,6 +33,43 @@ from app.storage.local import LocalStorageProvider
 
 logger = get_logger(__name__)
 
+# Common file magic bytes for server-side content-type validation
+# (bytes, offset, MIME type)
+_MIME_MAGIC_BYTES: list[tuple[bytes, int, str]] = [
+    (b"\x89PNG\r\n\x1a\n", 0, "image/png"),
+    (b"\xff\xd8\xff", 0, "image/jpeg"),
+    (b"GIF87a", 0, "image/gif"),
+    (b"GIF89a", 0, "image/gif"),
+    (b"RIFF", 0, "image/webp"),        # WEBP header
+    (b"%PDF", 0, "application/pdf"),
+    (b"PK\x03\x04", 0, "application/zip"),
+    (b"\x1f\x8b\x08", 0, "application/gzip"),
+    (b"ustar\x00", 257, "application/x-tar"),
+    (b"Rar!\x1a\x07\x00", 0, "application/x-rar-compressed"),
+    (b"\x00\x00\x00\x18ftypmp42", 0, "video/mp4"),
+    (b"\x00\x00\x00\x1cftypmp42", 0, "video/mp4"),
+    (b"\x00\x00\x00 ftypisom", 0, "video/mp4"),
+    (b"\x1aE\xdf\xa3", 0, "video/x-matroska"),  # MKV
+    (b"ID3", 0, "audio/mpeg"),
+    (b"\xff\xfb", 0, "audio/mpeg"),
+    (b"\xff\xf3", 0, "audio/mpeg"),
+    (b"OggS", 0, "audio/ogg"),
+    (b"RIFF", 0, "audio/wav"),
+    (b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1", 0, "application/vnd.ms-excel"),   # OLE2 (xls/doc/ppt)
+    (b"Microsoft Office", 0, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),  # Approximate
+]
+
+
+def _detect_mime_from_magic(content: bytes) -> str | None:
+    """Detect MIME type from file magic bytes.
+
+    Returns None if no magic signature matches.
+    """
+    for signature, offset, mime in _MIME_MAGIC_BYTES:
+        if len(content) >= offset + len(signature) and content[offset : offset + len(signature)] == signature:
+                return mime
+    return None
+
 
 class EvidenceService:
     """Business logic for evidence operations."""
@@ -41,6 +79,7 @@ class EvidenceService:
         self.repo = BaseRepository(db, Evidence)
         self.custody = CustodyService(db)
         self._storage: StorageProvider | None = None
+        self._upload_semaphore = asyncio.Semaphore(settings.UPLOAD_CONCURRENCY_LIMIT)
 
     @property
     def storage(self) -> StorageProvider:
@@ -197,66 +236,104 @@ class EvidenceService:
                           change_notes: str | None = None) -> Evidence:
         ev = await self.get(evidence_id, user_id)
 
-        # Validate file size
-        max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
-        file.file.seek(0, 2)
-        size = file.file.tell()
-        file.file.seek(0)
-        if size > max_bytes:
-            raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                                detail=f"File exceeds maximum size of {settings.MAX_UPLOAD_SIZE_MB}MB")
+        # Enforce concurrent upload limit (memory guard)
+        async with self._upload_semaphore:
+            # Validate file size
+            max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+            file.file.seek(0, 2)
+            size = file.file.tell()
+            file.file.seek(0)
+            if size > max_bytes:
+                raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                                    detail=f"File exceeds maximum size of {settings.MAX_UPLOAD_SIZE_MB}MB")
+            if size == 0:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                    detail="Uploaded file is empty")
 
-        # Compute hashes
-        content = await file.read()
-        sha256 = hashlib.sha256(content).hexdigest()
-        sha1 = hashlib.sha1(content).hexdigest()
-        md5 = hashlib.md5(content).hexdigest()
+            # Compute hashes
+            content = await file.read()
 
-        # Duplicate detection
-        existing = await self.repo.find_one(sha256_hash=sha256)
-        if existing and existing.id != evidence_id:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT,
-                                detail=f"Duplicate file detected (SHA256: {sha256[:16]}...) already exists as evidence {existing.evidence_number}")
+            # Server-side MIME type detection via magic bytes
+            detected_mime = _detect_mime_from_magic(content)
+            declared_mime = (file.content_type or "application/octet-stream").lower()
 
-        # Store file
-        mime = file.content_type or "application/octet-stream"
-        stored = await self.storage.store(content, file.filename or "unnamed", mime)
+            # Resolve MIME: prefer magic byte detection over client declaration
+            resolved_mime = detected_mime or declared_mime
 
-        # Update evidence record
-        ev.sha256_hash = sha256
-        ev.sha1_hash = sha1
-        ev.md5_hash = md5
-        ev.mime_type = mime
-        ev.file_size = size
-        ev.original_filename = file.filename
-        ev.stored_filename = stored.filename
-        ev.storage_path = stored.path
-        ev.upload_timestamp = datetime.now(UTC)
-        ev.current_version_number += 1
+            # Validate against allowed MIME types
+            if resolved_mime not in settings.ALLOWED_MIME_TYPES:
+                logger.warning(
+                    "Upload rejected — invalid MIME type",
+                    declared=declared_mime,
+                    detected=detected_mime,
+                    filename=file.filename,
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                    detail=f"File type '{resolved_mime}' is not allowed. "
+                           f"Allowed types: {', '.join(settings.ALLOWED_MIME_TYPES[:10])}",
+                )
 
-        # Create version record
-        version = EvidenceVersion(
-            evidence_id=ev.id,
-            version_number=ev.current_version_number,
-            created_by=user_id,
-            original_filename=file.filename,
-            stored_filename=stored.filename,
-            storage_path=stored.path,
-            mime_type=mime,
-            file_size=size,
-            sha256_hash=sha256,
-            sha1_hash=sha1,
-            md5_hash=md5,
-            change_notes=change_notes,
-        )
-        self.db.add(version)
-        await self.db.commit()
+            # If magic bytes detected a different type than declared, log it
+            if detected_mime and declared_mime not in (detected_mime, "application/octet-stream"):
+                logger.warning(
+                    "MIME type mismatch",
+                    declared=declared_mime,
+                    detected=detected_mime,
+                    filename=file.filename,
+                )
 
-        await self.custody.record(ev.id, user_id, "upload",
-                                  notes=f"File uploaded: {file.filename} ({size} bytes)",
-                                  details=f"sha256={sha256}")
-        await self.db.refresh(ev)
-        return ev
+            sha256 = hashlib.sha256(content).hexdigest()
+            sha1 = hashlib.sha1(content).hexdigest()
+            md5 = hashlib.md5(content).hexdigest()
+
+            # Duplicate detection
+            existing = await self.repo.find_one(sha256_hash=sha256)
+            if existing and existing.id != evidence_id:
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                                    detail=f"Duplicate file detected (SHA256: {sha256[:16]}...) already exists as evidence {existing.evidence_number}")
+
+            # Sanitize filename
+            safe_filename = sanitize_filename(file.filename or "unnamed")
+
+            # Store file with detected MIME
+            stored = await self.storage.store(content, safe_filename, resolved_mime)
+
+            # Update evidence record
+            ev.sha256_hash = sha256
+            ev.sha1_hash = sha1
+            ev.md5_hash = md5
+            ev.mime_type = resolved_mime
+            ev.file_size = size
+            ev.original_filename = safe_filename
+            ev.stored_filename = stored.filename
+            ev.storage_path = stored.path
+            ev.upload_timestamp = datetime.now(UTC)
+            ev.current_version_number += 1
+
+            # Create version record
+            version = EvidenceVersion(
+                evidence_id=ev.id,
+                version_number=ev.current_version_number,
+                created_by=user_id,
+                original_filename=safe_filename,
+                stored_filename=stored.filename,
+                storage_path=stored.path,
+                mime_type=resolved_mime,
+                file_size=size,
+                sha256_hash=sha256,
+                sha1_hash=sha1,
+                md5_hash=md5,
+                change_notes=change_notes,
+            )
+            self.db.add(version)
+            await self.db.commit()
+
+            await self.custody.record(ev.id, user_id, "upload",
+                                      notes=f"File uploaded: {safe_filename} ({size} bytes)",
+                                      details=f"sha256={sha256}")
+            await self.db.refresh(ev)
+            return ev
 
     # ── Download ────────────────────────────────────────────────────────
 

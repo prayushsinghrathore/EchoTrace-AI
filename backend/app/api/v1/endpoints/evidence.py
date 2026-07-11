@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db_session
 from app.core.auth import get_current_user
+from app.core.security import sanitize_filename
 from app.models.user import User
 from app.schemas.evidence import (
     BulkActionRequest,
@@ -193,8 +194,9 @@ async def download_file(
 ):
     svc = EvidenceService(db)
     data, filename, mime = await svc.download_file(evidence_id, user.id)
+    safe_name = sanitize_filename(filename)
     return StreamingResponse(iter([data]), media_type=mime,
-                             headers={"Content-Disposition": f'attachment; filename="{filename}"'})
+                             headers={"Content-Disposition": f'attachment; filename="{safe_name}"'})
 
 
 @router.post("/{evidence_id}/verify", response_model=dict)

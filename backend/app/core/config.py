@@ -138,6 +138,8 @@ class Settings(BaseSettings):
     STORAGE_S3_SECRET_KEY: str = ""
     STORAGE_S3_ENDPOINT: str = ""
     MAX_UPLOAD_SIZE_MB: int = Field(default=500, ge=1, le=10240)
+    UPLOAD_CONCURRENCY_LIMIT: int = Field(default=5, ge=1, le=50,
+                                          description="Max concurrent uploads (memory guard)")
     ALLOWED_MIME_TYPES: list[str] = [
         "application/pdf", "application/zip", "application/x-tar", "application/gzip",
         "application/x-7z-compressed", "application/x-rar-compressed",
