@@ -90,10 +90,12 @@ class InvestigationService:
         await self.db.execute(sa_delete(Investigation).where(Investigation.id == inv_id))
         await self.db.commit()
 
-    async def list_for_workspace(self, workspace_id: uuid.UUID, user_id: uuid.UUID) -> list[dict]:
+    async def list_for_workspace(self, workspace_id: uuid.UUID, user_id: uuid.UUID,
+                                   skip: int = 0, limit: int = 100) -> list[dict]:
         await self._check_member(workspace_id, user_id)
         invs = await self.inv_repo.find_many(
-            workspace_id=workspace_id, order_by="created_at", descending=True
+            workspace_id=workspace_id, order_by="created_at", descending=True,
+            skip=skip, limit=limit,
         )
         return await self._enrich_list(invs)
 
@@ -129,12 +131,45 @@ class InvestigationService:
         items = await self._enrich_list(invs)
         return items, total
 
+    async def _batch_count_entities(self, inv_ids: list[uuid.UUID]) -> dict[uuid.UUID, int]:
+        """Return {investigation_id: count} for all given investigation IDs."""
+        if not inv_ids:
+            return {}
+        stmt = select(Entity.investigation_id, sa_func.count(Entity.id)).where(
+            Entity.investigation_id.in_(inv_ids)
+        ).group_by(Entity.investigation_id)
+        result = await self.db.execute(stmt)
+        return {row[0]: row[1] for row in result}
+
+    async def _batch_count_relationships(self, inv_ids: list[uuid.UUID]) -> dict[uuid.UUID, int]:
+        if not inv_ids:
+            return {}
+        stmt = select(Relationship.investigation_id, sa_func.count(Relationship.id)).where(
+            Relationship.investigation_id.in_(inv_ids)
+        ).group_by(Relationship.investigation_id)
+        result = await self.db.execute(stmt)
+        return {row[0]: row[1] for row in result}
+
+    async def _batch_count_timeline_events(self, inv_ids: list[uuid.UUID]) -> dict[uuid.UUID, int]:
+        if not inv_ids:
+            return {}
+        stmt = select(TimelineEvent.investigation_id, sa_func.count(TimelineEvent.id)).where(
+            TimelineEvent.investigation_id.in_(inv_ids)
+        ).group_by(TimelineEvent.investigation_id)
+        result = await self.db.execute(stmt)
+        return {row[0]: row[1] for row in result}
+
     async def _enrich_list(self, invs: list[Investigation]) -> list[dict]:
         result = []
+        inv_ids = [inv.id for inv in invs]
+        # Batch-load all counts (eliminates 3xN queries)
+        ec_map = await self._batch_count_entities(inv_ids) if inv_ids else {}
+        rc_map = await self._batch_count_relationships(inv_ids) if inv_ids else {}
+        tc_map = await self._batch_count_timeline_events(inv_ids) if inv_ids else {}
         for inv in invs:
-            ec = await self.entity_repo.count(investigation_id=inv.id)
-            rc = await self.rel_repo.count(investigation_id=inv.id)
-            tc = await self.timeline_repo.count(investigation_id=inv.id)
+            ec = ec_map.get(inv.id, 0)
+            rc = rc_map.get(inv.id, 0)
+            tc = tc_map.get(inv.id, 0)
             result.append({
                 "id": inv.id,
                 "workspace_id": inv.workspace_id,
@@ -162,22 +197,20 @@ class InvestigationService:
         in_progress = sum(1 for i in invs if i.status == InvestigationStatus.IN_PROGRESS)
         closed = sum(1 for i in invs if i.status == InvestigationStatus.CLOSED)
 
-        entity_total = 0
-        rel_total = 0
-        timeline_total = 0
-        for inv in invs:
-            entity_total += await self.entity_repo.count(investigation_id=inv.id)
-            rel_total += await self.rel_repo.count(investigation_id=inv.id)
-            timeline_total += await self.timeline_repo.count(investigation_id=inv.id)
+        inv_ids = [inv.id for inv in invs]
+        # Batch-load all aggregate counts (eliminates 3xN queries)
+        ec_map = await self._batch_count_entities(inv_ids) if inv_ids else {}
+        rc_map = await self._batch_count_relationships(inv_ids) if inv_ids else {}
+        tc_map = await self._batch_count_timeline_events(inv_ids) if inv_ids else {}
 
         return {
             "total": total,
             "open": open_count,
             "in_progress": in_progress,
             "closed": closed,
-            "entities": entity_total,
-            "relationships": rel_total,
-            "timeline_events": timeline_total,
+            "entities": sum(ec_map.values()),
+            "relationships": sum(rc_map.values()),
+            "timeline_events": sum(tc_map.values()),
         }
 
     # ── Entities ────────────────────────────────────────────────────────

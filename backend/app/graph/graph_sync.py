@@ -109,24 +109,34 @@ class GraphSyncService:
                 select(Entity).where(Entity.investigation_id == investigation_id)
             )
             entities = result.scalars().all()
+            if not entities:
+                return
 
-            for entity in entities:
-                etype = entity.type.value if hasattr(entity.type, "value") else entity.type
-                await neo4j_manager.execute_write(
-                    """CREATE (n:EntityNode {
-                        entity_id: $eid, investigation_id: $inv_id,
-                        label: $label, type: $type,
-                        color: $color, icon: $icon
-                    })""",
-                    {
-                        "eid": str(entity.id),
-                        "inv_id": str(investigation_id),
-                        "label": entity.label,
-                        "type": etype,
-                        "color": ENTITY_COLORS.get(etype, "#6b7280"),
-                        "icon": ENTITY_ICONS.get(etype, "📌"),
-                    },
-                )
+            # Batch-insert all entities with a single UNWIND query
+            entity_params = [
+                {
+                    "eid": str(e.id),
+                    "inv_id": str(investigation_id),
+                    "label": e.label,
+                    "type": e.type.value if hasattr(e.type, "value") else e.type,
+                    "color": ENTITY_COLORS.get(
+                        e.type.value if hasattr(e.type, "value") else e.type, "#6b7280"
+                    ),
+                    "icon": ENTITY_ICONS.get(
+                        e.type.value if hasattr(e.type, "value") else e.type, "📌"
+                    ),
+                }
+                for e in entities
+            ]
+            await neo4j_manager.execute_write(
+                """UNWIND $batch AS row
+                   CREATE (n:EntityNode {
+                       entity_id: row.eid, investigation_id: row.inv_id,
+                       label: row.label, type: row.type,
+                       color: row.color, icon: row.icon
+                   })""",
+                {"batch": entity_params},
+            )
 
     async def _sync_relationships(self, investigation_id: uuid.UUID) -> None:
         from app.db.session import AsyncSessionLocal
@@ -136,25 +146,31 @@ class GraphSyncService:
                 select(Relationship).where(Relationship.investigation_id == investigation_id)
             )
             rels = result.scalars().all()
+            if not rels:
+                return
 
-            for rel in rels:
-                rtype = rel.relationship_type.value if hasattr(rel.relationship_type, "value") else rel.relationship_type
-                await neo4j_manager.execute_write(
-                    """MATCH (a:EntityNode {entity_id: $src})
-                       MATCH (b:EntityNode {entity_id: $tgt})
-                       CREATE (a)-[r:RELATIONSHIP {
-                           relationship_id: $rid, investigation_id: $inv_id,
-                           type: $rtype, confidence: $confidence
-                       }]->(b)""",
-                    {
-                        "rid": str(rel.id),
-                        "inv_id": str(investigation_id),
-                        "src": str(rel.source_entity_id),
-                        "tgt": str(rel.target_entity_id),
-                        "rtype": rtype,
-                        "confidence": rel.confidence or 0.5,
-                    },
-                )
+            # Batch-insert all relationships with a single UNWIND query
+            rel_params = [
+                {
+                    "rid": str(r.id),
+                    "inv_id": str(investigation_id),
+                    "src": str(r.source_entity_id),
+                    "tgt": str(r.target_entity_id),
+                    "rtype": r.relationship_type.value if hasattr(r.relationship_type, "value") else r.relationship_type,
+                    "confidence": r.confidence or 0.5,
+                }
+                for r in rels
+            ]
+            await neo4j_manager.execute_write(
+                """UNWIND $batch AS row
+                   MATCH (a:EntityNode {entity_id: row.src})
+                   MATCH (b:EntityNode {entity_id: row.tgt})
+                   CREATE (a)-[r:RELATIONSHIP {
+                       relationship_id: row.rid, investigation_id: row.inv_id,
+                       type: row.rtype, confidence: row.confidence
+                   }]->(b)""",
+                {"batch": rel_params},
+            )
 
     async def rebuild_all(self) -> None:
         """Rebuild the entire Neo4j graph from SQL data."""

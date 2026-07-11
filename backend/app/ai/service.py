@@ -9,6 +9,7 @@ investigation data.
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from datetime import UTC, datetime
 from typing import Any
@@ -28,6 +29,7 @@ from app.ai.schemas import (
     PromptVersionResponse,
 )
 from app.ai.tokenizer import count_tokens, estimate_cost, truncate_to_token_limit
+from app.core.circuit_breaker import ai_provider_breaker
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.models.ai_job import AIJob, AIJobType
@@ -308,6 +310,31 @@ class AIService:
 
     # ── Core AI Operations ────────────────────────────────────────────────────
 
+    async def _call_with_timeout(
+        self, provider: BaseProvider, method: str, *,
+        timeout: int | None = None, **kwargs: Any,
+    ) -> Any:
+        """Call an AI provider method with timeout and circuit breaker protection."""
+        timeout_s = timeout or settings.AI_TIMEOUT_SECONDS
+        call_fn = getattr(provider, method)
+        async with ai_provider_breaker:
+            try:
+                result = await asyncio.wait_for(
+                    call_fn(**kwargs),
+                    timeout=timeout_s,
+                )
+                return result
+            except TimeoutError as exc:
+                logger.error(
+                    "AI provider timed out",
+                    provider=provider.name,
+                    method=method,
+                    timeout=timeout_s,
+                )
+                raise TimeoutError(
+                    f"AI provider '{provider.name}' timed out after {timeout_s}s"
+                ) from exc
+
     async def summarize(
         self,
         evidence_id: uuid.UUID,
@@ -351,7 +378,9 @@ class AIService:
             text = truncate_to_token_limit(text, settings.AI_MAX_INPUT_TOKENS, provider.model)
 
         try:
-            result = await provider.summarize(text, prompt_template=prompt, max_length=max_length)
+            result = await self._call_with_timeout(
+                provider, "summarize", evidence_text=text, prompt_template=prompt, max_length=max_length,
+            )
         except Exception as exc:
             job.mark_failed(str(exc))
             await self.db.commit()
@@ -417,7 +446,9 @@ class AIService:
             text = truncate_to_token_limit(text, settings.AI_MAX_INPUT_TOKENS, provider.model)
 
         try:
-            result = await provider.extract_entities(text, prompt_template=prompt)
+            result = await self._call_with_timeout(
+                provider, "extract_entities", evidence_text=text, prompt_template=prompt,
+            )
         except Exception as exc:
             job.mark_failed(str(exc))
             await self.db.commit()
@@ -501,7 +532,10 @@ class AIService:
             return AIJobResponse.model_validate(job)
 
         try:
-            result = await provider.suggest_relationships(entities_context, evidence_text, prompt_template=prompt)
+            result = await self._call_with_timeout(
+                provider, "suggest_relationships",
+                entities_context=entities_context, evidence_text=evidence_text, prompt_template=prompt,
+            )
         except Exception as exc:
             job.mark_failed(str(exc))
             await self.db.commit()
@@ -573,7 +607,9 @@ class AIService:
             return AIJobResponse.model_validate(job)
 
         try:
-            result = await provider.generate_timeline(combined_text, prompt_template=prompt)
+            result = await self._call_with_timeout(
+                provider, "generate_timeline", evidence_text=combined_text, prompt_template=prompt,
+            )
         except Exception as exc:
             job.mark_failed(str(exc))
             await self.db.commit()
@@ -626,7 +662,9 @@ class AIService:
             return AIJobResponse.model_validate(job)
 
         try:
-            result = await provider.generate_report(context, prompt_template=prompt)
+            result = await self._call_with_timeout(
+                provider, "generate_report", investigation_context=context, prompt_template=prompt,
+            )
         except Exception as exc:
             job.mark_failed(str(exc))
             await self.db.commit()

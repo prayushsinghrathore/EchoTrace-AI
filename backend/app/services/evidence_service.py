@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.logging import get_logger
-from app.models.evidence import Evidence, EvidenceStatus
+from app.models.evidence import Evidence
 from app.models.evidence_comment import EvidenceComment
 from app.models.evidence_tag import EvidenceTag
 from app.models.evidence_version import EvidenceVersion
@@ -84,6 +84,22 @@ class EvidenceService:
         tag_repo = BaseRepository(self.db, EvidenceTag)
         tags = await tag_repo.find_many(evidence_id=evidence_id)
         return [t.tag for t in tags]
+
+    async def _batch_load_tags(self, evidence_ids: list[uuid.UUID]) -> dict[uuid.UUID, list[str]]:
+        """Load tags for multiple evidence items in a single query.
+
+        Returns a dict mapping evidence_id -> [tag_names].
+        Eliminates N+1 queries when listing/searching evidence.
+        """
+        if not evidence_ids:
+            return {}
+        stmt = select(EvidenceTag).where(EvidenceTag.evidence_id.in_(evidence_ids))
+        result = await self.db.execute(stmt)
+        tag_rows = list(result.scalars().all())
+        tag_map: dict[uuid.UUID, list[str]] = {eid: [] for eid in evidence_ids}
+        for tag in tag_rows:
+            tag_map.setdefault(tag.evidence_id, []).append(tag.tag)
+        return tag_map
 
     async def create(self, project_id: uuid.UUID, user_id: uuid.UUID, **kwargs) -> Evidence:
         proj = await self._check_project_belongs_to_workspace(project_id)
@@ -298,9 +314,11 @@ class EvidenceService:
         ev_list = await self.repo.find_many(project_id=project_id, is_deleted=False,
                                               order_by="created_at", descending=True,
                                               skip=skip, limit=limit)
+        # Batch-load tags for all evidence items (eliminates N+1)
+        tag_map = await self._batch_load_tags([ev.id for ev in ev_list])
         result = []
         for ev in ev_list:
-            tags = await self._get_tag_names(ev.id)
+            tags = tag_map.get(ev.id, [])
             result.append({
                 "id": ev.id,
                 "project_id": ev.project_id,
@@ -364,10 +382,13 @@ class EvidenceService:
             query = query.where(Evidence.created_at <= params["date_to"])
         if params.get("tags"):
             tag_list = params["tags"]
+            # Single EXISTS clause matching all required tags (eliminates N correlated subqueries)
             for tag in tag_list:
-                query = query.where(
-                    Evidence.id.in_(select(EvidenceTag.evidence_id).where(EvidenceTag.tag == tag))
-                )
+                tag_subq = select(EvidenceTag.evidence_id).where(
+                    EvidenceTag.tag == tag,
+                    EvidenceTag.evidence_id == Evidence.id,
+                ).correlate(Evidence).exists()
+                query = query.where(tag_subq)
 
         # Count
         count_query = select(func.count()).select_from(query.subquery())
@@ -385,9 +406,11 @@ class EvidenceService:
         result = await self.db.execute(query)
         ev_list = list(result.scalars().all())
 
+        # Batch-load tags for all evidence items (eliminates N+1)
+        tag_map = await self._batch_load_tags([ev.id for ev in ev_list])
         items = []
         for ev in ev_list:
-            tags = await self._get_tag_names(ev.id)
+            tags = tag_map.get(ev.id, [])
             items.append({
                 "id": ev.id,
                 "project_id": ev.project_id,
@@ -413,14 +436,24 @@ class EvidenceService:
         await self._check_project_belongs_to_workspace(project_id, None)
         del user_id
 
-        total = await self.repo.count(project_id=project_id, is_deleted=False)
+        # Single aggregated stats query replacing 6 sequential per-status queries
+        base_filters = (Evidence.project_id == project_id, Evidence.is_deleted == False)
 
-        # Per status
-        status_counts = {}
-        for s in EvidenceStatus:
-            cnt = await self.repo.count(project_id=project_id, is_deleted=False, status=s)
-            if cnt > 0:
-                status_counts[s.value] = cnt
+        agg_query = select(
+            func.count(Evidence.id).label("total"),
+            func.coalesce(func.sum(Evidence.file_size), 0).label("total_size"),
+        ).where(*base_filters)
+        agg_result = await self.db.execute(agg_query)
+        agg_row = agg_result.one()
+        total = agg_row.total
+        total_size = agg_row.total_size
+
+        # Per status (single GROUP BY query instead of 6 separate count queries)
+        status_query = select(
+            Evidence.status, func.count(Evidence.id)
+        ).where(*base_filters).group_by(Evidence.status)
+        status_result = await self.db.execute(status_query)
+        status_counts = {row[0].value if hasattr(row[0], 'value') else row[0]: row[1] for row in status_result}
 
         # Per category
         cat_query = select(Evidence.category, func.count(Evidence.id)).where(
@@ -435,14 +468,6 @@ class EvidenceService:
         ).group_by(Evidence.priority)
         pri_result = await self.db.execute(pri_query)
         by_priority = {row[0].value if hasattr(row[0], 'value') else row[0]: row[1] for row in pri_result}
-
-        # Total size
-        size_result = await self.db.execute(
-            select(func.coalesce(func.sum(Evidence.file_size), 0)).where(
-                Evidence.project_id == project_id, Evidence.is_deleted == False,
-            )
-        )
-        total_size = size_result.scalar() or 0
 
         # Recent uploads (last 7 days)
         from datetime import timedelta

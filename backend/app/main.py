@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.api import api_v1_router
+from app.core.body_size_limit import add_body_size_limit_middleware
 from app.core.cache import close as close_cache
 from app.core.compression import add_compression_middleware
 from app.core.config import settings
@@ -89,6 +90,9 @@ def create_application() -> FastAPI:
         openapi_url=f"{settings.API_V1_PREFIX}/openapi.json" if not settings.is_production else None,
         lifespan=lifespan,
     )
+
+    # ── Request Body Size Limit (applied first, before other middleware) ─────
+    add_body_size_limit_middleware(app)
 
     # ── CORS ─────────────────────────────────────────────────────────────
     app.add_middleware(

@@ -196,6 +196,10 @@ class Settings(BaseSettings):
     DB_ECHO: bool = False
     DB_POOL_RECYCLE: int = Field(default=3600, ge=60, le=86400)
 
+    # ── Request Limits ─────────────────────────────────────────────────
+    MAX_REQUEST_BODY_SIZE: int = Field(default=10_485_760, ge=65_536, le=1_073_741_824,
+                                       description="Max request body size in bytes (default 10MB)")
+
     # ── Compression ────────────────────────────────────────────────────
     COMPRESSION_ENABLED: bool = True
     COMPRESSION_MINIMUM_SIZE: int = Field(default=1000, ge=100, le=10000)

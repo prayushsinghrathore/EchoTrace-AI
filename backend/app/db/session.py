@@ -28,6 +28,9 @@ async_engine = create_async_engine(
     echo=settings.DB_ECHO,
     pool_pre_ping=True,
     pool_recycle=3600,
+    # Enable query cache for compiled statement reuse
+    # The cache is shared across all connections in the pool
+    query_cache_size=500,
 )
 
 AsyncSessionLocal = async_sessionmaker(
@@ -55,6 +58,34 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
         raise
     finally:
         await session.close()
+
+
+def get_pool_status() -> dict:
+    """
+    Return connection pool health metrics.
+
+    Returns:
+        Dict with pool utilization, checked_out, size, overflow, etc.
+    """
+    pool = async_engine.pool
+    try:
+        return {
+            "size": pool.size(),  # type: ignore[attr-defined]
+            "checked_in": pool.checkedin(),  # type: ignore[attr-defined]
+            "checked_out": pool.checkedout(),  # type: ignore[attr-defined]
+            "overflow": pool.overflow(),  # type: ignore[attr-defined]
+            "total": pool.total(),  # type: ignore[attr-defined]
+        }
+    except Exception as exc:
+        logger.warning("Failed to read pool status", error=str(exc))
+        return {
+            "size": 0,
+            "checked_in": 0,
+            "checked_out": 0,
+            "overflow": 0,
+            "total": 0,
+            "error": str(exc),
+        }
 
 
 async def check_database_connection() -> bool:

@@ -13,6 +13,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.core.logging import get_logger
+from app.core.metrics import metrics
 from app.core.prometheus_metrics import record_request as prom_record_request
 
 logger = get_logger(__name__)
@@ -126,8 +127,6 @@ def add_security_headers_middleware(app: FastAPI) -> None:
         response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
 
         # Record metrics (both JSON snapshot and Prometheus exposition format)
-        from app.core.metrics import metrics
-
         metrics.record_request(
             request.method,
             request.url.path,

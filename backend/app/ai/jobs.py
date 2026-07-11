@@ -73,7 +73,7 @@ async def _execute_job(job_id: uuid.UUID) -> None:
             prompt = await svc._load_prompt(job.job_type.value)
 
             result, usage_meta = await _run_job_operation(
-                svc, provider, prompt, job
+                svc, provider, prompt, job, db
             )
 
             # Cache and finalize
@@ -118,8 +118,11 @@ async def _run_job_operation(
     provider: BaseProvider,
     prompt: str,
     job: AIJob,
+    db: Any = None,  # Reuse existing session when available
 ) -> tuple[Any, dict[str, Any]]:
     """Route the job to the correct AI operation based on job type."""
+    # Use the session from AIService when db is not explicitly passed
+    session = db or svc.db
 
     result: Any = None
 
@@ -132,19 +135,18 @@ async def _run_job_operation(
         evidence_text = await _load_evidence_batch(job.evidence_ids or [])
         result = await provider.extract_entities(evidence_text, prompt_template=prompt)
 
-        # Create pending suggestions
+        # Create pending suggestions reusing the existing session
         if result.entities and job.investigation_id:
-            async with AsyncSessionLocal() as sug_db:
-                for entity_data in result.model_dump().get("entities", []):
-                    sug = AISuggestion(
-                        job_id=job.id,
-                        investigation_id=job.investigation_id,
-                        workspace_id=job.workspace_id,
-                        suggestion_type=SuggestionType.ENTITY,
-                        data=entity_data,
-                    )
-                    sug_db.add(sug)
-                await sug_db.commit()
+            for entity_data in result.model_dump().get("entities", []):
+                sug = AISuggestion(
+                    job_id=job.id,
+                    investigation_id=job.investigation_id,
+                    workspace_id=job.workspace_id,
+                    suggestion_type=SuggestionType.ENTITY,
+                    data=entity_data,
+                )
+                session.add(sug)
+            await session.commit()
 
         return result, {}
 
@@ -156,17 +158,16 @@ async def _run_job_operation(
         )
 
         if result.relationships and job.investigation_id:
-            async with AsyncSessionLocal() as sug_db:
-                for rel_data in result.model_dump().get("relationships", []):
-                    sug = AISuggestion(
-                        job_id=job.id,
-                        investigation_id=job.investigation_id,
-                        workspace_id=job.workspace_id,
-                        suggestion_type=SuggestionType.RELATIONSHIP,
-                        data=rel_data,
-                    )
-                    sug_db.add(sug)
-                await sug_db.commit()
+            for rel_data in result.model_dump().get("relationships", []):
+                sug = AISuggestion(
+                    job_id=job.id,
+                    investigation_id=job.investigation_id,
+                    workspace_id=job.workspace_id,
+                    suggestion_type=SuggestionType.RELATIONSHIP,
+                    data=rel_data,
+                )
+                session.add(sug)
+            await session.commit()
 
         return result, {}
 
@@ -175,17 +176,16 @@ async def _run_job_operation(
         result = await provider.generate_timeline(evidence_text, prompt_template=prompt)
 
         if result.events and job.investigation_id:
-            async with AsyncSessionLocal() as sug_db:
-                for event_data in result.model_dump().get("events", []):
-                    sug = AISuggestion(
-                        job_id=job.id,
-                        investigation_id=job.investigation_id,
-                        workspace_id=job.workspace_id,
-                        suggestion_type=SuggestionType.TIMELINE_EVENT,
-                        data=event_data,
-                    )
-                    sug_db.add(sug)
-                await sug_db.commit()
+            for event_data in result.model_dump().get("events", []):
+                sug = AISuggestion(
+                    job_id=job.id,
+                    investigation_id=job.investigation_id,
+                    workspace_id=job.workspace_id,
+                    suggestion_type=SuggestionType.TIMELINE_EVENT,
+                    data=event_data,
+                )
+                session.add(sug)
+            await session.commit()
 
         return result, {}
 
