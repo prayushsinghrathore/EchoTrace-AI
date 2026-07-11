@@ -32,7 +32,7 @@ class Settings(BaseSettings):
 
     # ── General ─────────────────────────────────────────────────────────
     PROJECT_NAME: str = "EchoTrace AI"
-    VERSION: str = "0.1.0"
+    VERSION: str = "1.0.0"
     ENVIRONMENT: str = Field(default="development", pattern="^(development|staging|production|test)$")
     DEBUG: bool = True
     LOG_LEVEL: str = Field(default="DEBUG", pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")
