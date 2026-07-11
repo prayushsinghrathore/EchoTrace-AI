@@ -221,6 +221,19 @@ class TestSecurityHeaders:
         resp = await client.get("/")
         assert "x-process-time" in resp.headers
 
+    async def test_enterprise_security_headers(self, client: AsyncClient) -> None:
+        """Verify enterprise-grade security headers (CSP, COOP, COEP, CORP, Permissions-Policy)."""
+        resp = await client.get("/")
+        headers = resp.headers
+        assert "content-security-policy" in headers
+        assert "cross-origin-resource-policy" in headers
+        assert "cross-origin-opener-policy" in headers
+        assert "cross-origin-embedder-policy" in headers
+        assert "permissions-policy" in headers
+        assert headers["cross-origin-resource-policy"] == "same-origin"
+        assert headers["cross-origin-opener-policy"] == "same-origin"
+        assert headers["cross-origin-embedder-policy"] == "require-corp"
+
 
 # ── Config / Settings Tests ─────────────────────────────────────────────────
 

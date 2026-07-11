@@ -98,9 +98,32 @@ def add_security_headers_middleware(app: FastAPI) -> None:
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        response.headers["Permissions-Policy"] = (
+            "camera=(), display-capture=(), document-domain=(), "
+            "encrypted-media=(), fullscreen=(), microphone=(), "
+            "midi=(), payment=(), picture-in-picture=(), "
+            "publickey-credentials-get=(), screen-wake-lock=(), "
+            "sync-xhr=(self), usb=(), web-share=(), "
+            "xr-spatial-tracking=()"
+        )
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: blob:; "
+            "font-src 'self' data:; "
+            "connect-src 'self' ws: wss:; "
+            "frame-ancestors 'none'; "
+            "base-uri 'self'; "
+            "object-src 'none'; "
+            "form-action 'self'; "
+            "upgrade-insecure-requests"
+        )
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
 
         # Record metrics (both JSON snapshot and Prometheus exposition format)
         from app.core.metrics import metrics
