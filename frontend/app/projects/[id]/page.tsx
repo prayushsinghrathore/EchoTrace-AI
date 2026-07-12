@@ -14,7 +14,7 @@ const FUTURE_MODULES = [
   { name: "AI Investigation", icon: "🤖", desc: "AI-powered analysis and anomaly detection", stage: "Stage 6" },
   { name: "Graph Visualization", icon: "🔗", desc: "Interactive relationship graphs", stage: "Stage 7" },
   { name: "Reports", icon: "📄", desc: "Generate and export investigation reports", stage: "Stage 8" },
-  { name: "MITRE ATT&CK Mapping", icon: "🛡️", desc: "Map findings to the MITRE ATT&CK framework", stage: "Stage 9" },
+  { name: "MITRE ATT&CK Mapping", icon: "🛡️", desc: "Map findings to the MITRE ATT&CK framework", stage: "Planned" },
 ];
 
 export default function ProjectDetailPage() {

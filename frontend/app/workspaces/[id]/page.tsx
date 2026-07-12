@@ -10,12 +10,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useParams, useRouter } from "next/navigation";
 
 const FUTURE_MODULES = [
-  { name: "Evidence", icon: "📎", stage: "Stage 4" },
-  { name: "Timeline", icon: "⏱️", stage: "Stage 5" },
-  { name: "AI Investigation", icon: "🤖", stage: "Stage 6" },
-  { name: "Graph Visualization", icon: "🔗", stage: "Stage 7" },
-  { name: "Reports", icon: "📄", stage: "Stage 8" },
-  { name: "MITRE ATT&CK", icon: "🛡️", stage: "Stage 9" },
+  { name: "Evidence", icon: "📎", stage: "Live" },
+  { name: "Timeline", icon: "⏱️", stage: "Live" },
+  { name: "AI Investigation", icon: "🤖", stage: "Live" },
+  { name: "Graph Visualization", icon: "🔗", stage: "Live" },
+  { name: "Reports", icon: "📄", stage: "Coming Soon" },
+  { name: "MITRE ATT&CK", icon: "🛡️", stage: "Planned" },
 ];
 
 export default function WorkspaceDetailPage() {
