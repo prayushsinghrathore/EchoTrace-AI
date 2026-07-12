@@ -162,11 +162,10 @@ class EvidenceService:
         if tags:
             await self._sync_tags(evidence, tags)
 
-        await self.db.commit()
-        await self.db.refresh(evidence)
-
         await self.custody.record(evidence.id, user_id, "create",
                                   notes=f"Evidence '{evidence.title}' created")
+        await self.db.commit()
+        await self.db.refresh(evidence)
         logger.info("Evidence created", ev_id=str(evidence.id), num=evidence.evidence_number)
         return evidence
 
@@ -197,10 +196,10 @@ class EvidenceService:
             await self._sync_tags(ev, tags)
             changed.append("tags")
 
-        await self.db.commit()
         if changed:
             await self.custody.record(ev.id, user_id, "update",
                                       notes=f"Fields updated: {', '.join(changed)}")
+        await self.db.commit()
         await self.db.refresh(ev)
         return ev
 
@@ -212,9 +211,9 @@ class EvidenceService:
 
         ev.is_deleted = True
         ev.deleted_at = datetime.now(UTC)
-        await self.db.commit()
         await self.custody.record(ev.id, user_id, "delete",
                                   notes=f"Evidence '{ev.title}' deleted")
+        await self.db.commit()
 
     async def restore(self, evidence_id: uuid.UUID, user_id: uuid.UUID) -> Evidence:
         ev = await self.repo.get(evidence_id)
@@ -224,10 +223,10 @@ class EvidenceService:
 
         ev.is_deleted = False
         ev.deleted_at = None
-        await self.db.commit()
-        await self.db.refresh(ev)
         await self.custody.record(ev.id, user_id, "restore",
                                   notes=f"Evidence '{ev.title}' restored")
+        await self.db.commit()
+        await self.db.refresh(ev)
         return ev
 
     # ── File Upload ─────────────────────────────────────────────────────
@@ -327,11 +326,12 @@ class EvidenceService:
                 change_notes=change_notes,
             )
             self.db.add(version)
-            await self.db.commit()
+            await self.db.flush()
 
             await self.custody.record(ev.id, user_id, "upload",
                                       notes=f"File uploaded: {safe_filename} ({size} bytes)",
                                       details=f"sha256={sha256}")
+            await self.db.commit()
             await self.db.refresh(ev)
             return ev
 
@@ -348,6 +348,7 @@ class EvidenceService:
 
         await self.custody.record(ev.id, user_id, "download",
                                   notes=f"File downloaded: {ev.original_filename}")
+        await self.db.commit()
         return data, ev.original_filename or "download", ev.mime_type or "application/octet-stream"
 
     # ── Hash Verification ───────────────────────────────────────────────
@@ -377,11 +378,10 @@ class EvidenceService:
                 results["verified"] = False
 
         ev.verification_timestamp = datetime.now(UTC)
-        await self.db.commit()
-
         await self.custody.record(ev.id, user_id, "verify",
                                   notes=f"Hash verification: {'passed' if results['verified'] else 'FAILED'}",
                                   details=str(results))
+        await self.db.commit()
         return results
 
     # ── List / Search ──────────────────────────────────────────────────
