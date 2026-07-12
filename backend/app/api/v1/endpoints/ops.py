@@ -28,40 +28,7 @@ _start_time: float = time.time()
 
 
 # ── Health ────────────────────────────────────────────────────────────────────
-
-
-@router.get("/health", response_model=HealthResponse)
-async def health_check(
-    db: AsyncSession = Depends(get_db_session),
-) -> HealthResponse:
-    """Comprehensive health check — database, cache, AI, storage."""
-    services: list[ServiceStatus] = []
-    all_healthy = True
-
-    pg_status = await _check_postgres(db)
-    services.append(pg_status)
-    if pg_status.status != "healthy":
-        all_healthy = False
-
-    neo4j_status = await _check_neo4j()
-    services.append(neo4j_status)
-    if neo4j_status.status != "healthy":
-        all_healthy = False
-
-    # AI provider check
-    ai_status = await _check_ai_provider()
-    services.append(ai_status)
-
-    uptime = time.time() - _start_time
-
-    overall = "healthy" if all_healthy else "degraded"
-    return HealthResponse(
-        status=overall,
-        version=settings.VERSION,
-        environment=settings.ENVIRONMENT,
-        services=services,
-        uptime_seconds=round(uptime, 2),
-    )
+# Note: /health is served by health.py (dedicated endpoint)
 
 
 @router.get("/live")

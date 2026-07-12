@@ -123,7 +123,7 @@ EXPOSE 8000
 USER ${APP_USER}
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl --fail --silent http://localhost:8000/api/v1/live || exit 1
+    CMD curl --fail --silent http://localhost:${PORT:-8000}/api/v1/live || exit 1
 
 STOPSIGNAL SIGTERM
 
