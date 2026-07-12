@@ -53,7 +53,7 @@ class ActivityEvent(Base, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False, index=True
     )
     event_type: Mapped[ActivityEventType] = mapped_column(
-        Enum(ActivityEventType, name="activity_event_type"), nullable=False, index=True
+        Enum(ActivityEventType, name="activity_event_type", values_callable=lambda x: [e.value for e in x]), nullable=False, index=True
     )
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -55,16 +55,16 @@ class ExportJob(Base, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True
     )
     entity_type: Mapped[ExportEntityType] = mapped_column(
-        Enum(ExportEntityType, name="export_entity_type"), nullable=False
+        Enum(ExportEntityType, name="export_entity_type", values_callable=lambda x: [e.value for e in x]), nullable=False
     )
     entity_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), nullable=False, index=True
     )
     format: Mapped[ExportFormat] = mapped_column(
-        Enum(ExportFormat, name="export_format"), nullable=False
+        Enum(ExportFormat, name="export_format", values_callable=lambda x: [e.value for e in x]), nullable=False
     )
     status: Mapped[ExportJobStatus] = mapped_column(
-        Enum(ExportJobStatus, name="export_job_status"),
+        Enum(ExportJobStatus, name="export_job_status", values_callable=lambda x: [e.value for e in x]),
         default=ExportJobStatus.QUEUED, nullable=False, index=True
     )
     file_path: Mapped[str | None] = mapped_column(String(1000), nullable=True)

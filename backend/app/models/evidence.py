@@ -70,10 +70,10 @@ class Evidence(Base, TimestampMixin):
 
     category: Mapped[str] = mapped_column(String(100), nullable=False, default="other", index=True)
     status: Mapped[EvidenceStatus] = mapped_column(
-        Enum(EvidenceStatus, name="evidence_status"), default=EvidenceStatus.DRAFT, nullable=False, index=True
+        Enum(EvidenceStatus, name="evidence_status", values_callable=lambda x: [e.value for e in x]), default=EvidenceStatus.DRAFT, nullable=False, index=True
     )
     priority: Mapped[EvidencePriority] = mapped_column(
-        Enum(EvidencePriority, name="evidence_priority"), default=EvidencePriority.MEDIUM, nullable=False
+        Enum(EvidencePriority, name="evidence_priority", values_callable=lambda x: [e.value for e in x]), default=EvidencePriority.MEDIUM, nullable=False
     )
     source: Mapped[str | None] = mapped_column(String(255), nullable=True)
 

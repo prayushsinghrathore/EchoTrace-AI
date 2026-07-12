@@ -42,7 +42,7 @@ class Entity(Base, TimestampMixin):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     investigation_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("investigations.id", ondelete="CASCADE"), nullable=False, index=True)
-    type: Mapped[EntityType] = mapped_column(SAEnum(EntityType, name="entity_type"), nullable=False, index=True)
+    type: Mapped[EntityType] = mapped_column(SAEnum(EntityType, name="entity_type", values_callable=lambda x: [e.value for e in x]), nullable=False, index=True)
     label: Mapped[str] = mapped_column(String(500), nullable=False, index=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     metadata_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)

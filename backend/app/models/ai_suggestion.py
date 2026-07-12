@@ -61,7 +61,7 @@ class AISuggestion(Base, TimestampMixin):
     )
 
     suggestion_type: Mapped[SuggestionType] = mapped_column(
-        Enum(SuggestionType, name="suggestion_type"),
+        Enum(SuggestionType, name="suggestion_type", values_callable=lambda x: [e.value for e in x]),
         nullable=False,
         index=True,
         comment="Type of suggestion",
@@ -72,7 +72,7 @@ class AISuggestion(Base, TimestampMixin):
     )
 
     status: Mapped[SuggestionStatus] = mapped_column(
-        Enum(SuggestionStatus, name="suggestion_status"),
+        Enum(SuggestionStatus, name="suggestion_status", values_callable=lambda x: [e.value for e in x]),
         default=SuggestionStatus.PENDING,
         nullable=False,
         index=True,

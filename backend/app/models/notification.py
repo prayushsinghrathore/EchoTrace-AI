@@ -43,7 +43,7 @@ class Notification(Base, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=True, index=True
     )
     notification_type: Mapped[NotificationType] = mapped_column(
-        Enum(NotificationType, name="notification_type"), nullable=False, index=True
+        Enum(NotificationType, name="notification_type", values_callable=lambda x: [e.value for e in x]), nullable=False, index=True
     )
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     body: Mapped[str | None] = mapped_column(Text, nullable=True)
