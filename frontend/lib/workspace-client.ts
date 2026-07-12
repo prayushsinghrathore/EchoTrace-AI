@@ -247,6 +247,10 @@ export function addComment(evId: string, body: string): Promise<EvidenceComment>
   return request(`${API}/evidence/${evId}/comments`, { method: "POST", body: JSON.stringify({ body }) });
 }
 
+export function editComment(commentId: string, body: string): Promise<EvidenceComment> {
+  return request(`${API}/evidence/comments/${commentId}`, { method: "PATCH", body: JSON.stringify({ body }) });
+}
+
 export function deleteComment(commentId: string): Promise<void> {
   return request(`${API}/evidence/comments/${commentId}`, { method: "DELETE" });
 }
