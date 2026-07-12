@@ -72,7 +72,7 @@ class Project(Base, TimestampMixin):
     )
 
     status: Mapped[ProjectStatus] = mapped_column(
-        Enum(ProjectStatus, name="project_status"),
+        Enum(ProjectStatus, name="project_status", values_callable=lambda x: [e.value for e in x]),
         default=ProjectStatus.ACTIVE,
         nullable=False,
         index=True,
