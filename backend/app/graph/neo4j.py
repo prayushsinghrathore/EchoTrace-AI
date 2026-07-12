@@ -45,6 +45,18 @@ class Neo4jConnectionManager:
             return
 
         try:
+            # DEBUG: Log Neo4j config before connecting
+            pw = settings.NEO4J_PASSWORD
+            logger.info(
+                "DEBUG: Attempting Neo4j connection",
+                enabled=settings.NEO4J_ENABLED,
+                uri=settings.NEO4J_URI,
+                user=settings.NEO4J_USER,
+                database=settings.NEO4J_DATABASE,
+                password_length=len(pw) if isinstance(pw, str) else 0,
+                password_empty=not bool(pw),
+                uri_has_whitespace=str(settings.NEO4J_URI) if str(settings.NEO4J_URI) != str(settings.NEO4J_URI).strip() else False,
+            )
             self._driver = AsyncGraphDatabase.driver(
                 settings.NEO4J_URI,
                 auth=(settings.NEO4J_USER, settings.NEO4J_PASSWORD),
