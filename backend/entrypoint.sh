@@ -33,8 +33,7 @@ echo "Migrations complete."
 # ── Application Server ─────────────────────────────────────────────────────
 # Use exec to replace shell with uvicorn so signals are forwarded correctly.
 exec uvicorn app.main:app \
-    --host "${BACKEND_HOST:-0.0.0.0}" \
-    --port "${BACKEND_PORT:-8000}" \
-    --workers "${UVICORN_WORKERS:-4}" \
-    --limit-max-requests "${UVICORN_LIMIT_MAX_REQUESTS:-10000}" \
-    --timeout-keep-alive "${UVICORN_TIMEOUT_KEEP_ALIVE:-30}"
+    --host 0.0.0.0 \
+    --port "${PORT}" \
+    --workers 1 \
+    --timeout-keep-alive 30
