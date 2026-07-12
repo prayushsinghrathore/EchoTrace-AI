@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.core.security import sanitize_filename
-from app.models.evidence import Evidence
+from app.models.evidence import Evidence, EvidenceStatus
 from app.models.evidence_comment import EvidenceComment
 from app.models.evidence_tag import EvidenceTag
 from app.models.evidence_version import EvidenceVersion
@@ -327,6 +327,12 @@ class EvidenceService:
             )
             self.db.add(version)
             await self.db.flush()
+
+            # Auto-transition from DRAFT to PENDING_REVIEW after upload
+            if ev.status == EvidenceStatus.DRAFT:
+                ev.status = EvidenceStatus.PENDING_REVIEW
+                await self.custody.record(ev.id, user_id, "status_change",
+                                          notes="Status changed from draft to pending_review (file uploaded)")
 
             await self.custody.record(ev.id, user_id, "upload",
                                       notes=f"File uploaded: {safe_filename} ({size} bytes)",
