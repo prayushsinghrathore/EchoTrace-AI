@@ -62,7 +62,7 @@ class WorkspaceMember(Base):
     )
 
     role: Mapped[WorkspaceRole] = mapped_column(
-        Enum(WorkspaceRole, name="workspace_role"),
+        Enum(WorkspaceRole, name="workspace_role", values_callable=lambda x: [e.value for e in x]),
         default=WorkspaceRole.VIEWER,
         nullable=False,
         comment="Role within the workspace",
