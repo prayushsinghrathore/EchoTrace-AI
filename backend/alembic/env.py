@@ -23,7 +23,7 @@ from app.db.base import Base
 config = context.config
 
 # Set database URL from settings
-config.set_main_option("sqlalchemy.url", settings.SYNC_DATABASE_URI)
+config.set_main_option("sqlalchemy.url", str(settings.SYNC_DATABASE_URI))
 
 # Set up logging
 if config.config_file_name is not None:
@@ -72,12 +72,17 @@ async def run_async_migrations() -> None:
     Creates a connection from the engine and runs all pending migrations.
     """
     configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = settings.ASYNC_DATABASE_URI
+    configuration["sqlalchemy.url"] = str(settings.ASYNC_DATABASE_URI)
+
+    alembic_connect_args: dict[str, str] = {}
+    if settings.DB_SSL_MODE == "require":
+        alembic_connect_args["ssl"] = "require"
 
     connectable = async_engine_from_config(
         configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=alembic_connect_args,
     )
 
     async with connectable.connect() as connection:

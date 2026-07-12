@@ -18,7 +18,7 @@ from app.core.metrics import metrics
 from app.core.prometheus_metrics import render_prometheus_metrics
 from app.graph.neo4j import check_neo4j_connection
 from app.models.user import User
-from app.schemas.health import HealthResponse, ServiceStatus
+from app.schemas.health import ServiceStatus
 
 logger = get_logger(__name__)
 
