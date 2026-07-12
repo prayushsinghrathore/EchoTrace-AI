@@ -154,6 +154,7 @@ class Settings(BaseSettings):
     ]
 
     # ── Neo4j ──────────────────────────────────────────────────────────
+    NEO4J_ENABLED: bool = Field(default=False, description="Enable Neo4j graph database sync")
     NEO4J_URI: str = "bolt://localhost:7687"
     NEO4J_USER: str = "neo4j"
     NEO4J_PASSWORD: str = "echotrace_neo4j"
