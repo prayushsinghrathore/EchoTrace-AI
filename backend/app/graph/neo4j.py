@@ -38,6 +38,9 @@ class Neo4jConnectionManager:
         Should be called during application startup.
         Safe to call multiple times — only initializes once.
         """
+        if not settings.NEO4J_ENABLED:
+            logger.info("Neo4j is disabled — skipping initialization")
+            return
         if self._initialized:
             return
 
