@@ -67,7 +67,7 @@ export default function HomePage() {
             &copy; {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>v0.1.0</span>
+            <span>v1.0.0</span>
             <span>Next.js 15</span>
             <span>FastAPI</span>
           </div>

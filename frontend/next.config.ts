@@ -6,8 +6,8 @@ const nextConfig: NextConfig = {
   // Enable React strict mode for development
   reactStrictMode: true,
 
-  // Output as standalone for Docker deployment
-  output: process.env.NODE_ENV === "production" ? "standalone" : undefined,
+  // Output as standalone for Docker deployment (not on Vercel)
+  output: process.env.VERCEL ? undefined : (process.env.NODE_ENV === "production" ? "standalone" : undefined),
 
   /* ── Image Configuration ──────────────────────────────────────────── */
   images: {

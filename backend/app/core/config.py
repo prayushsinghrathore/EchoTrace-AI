@@ -37,7 +37,10 @@ class Settings(BaseSettings):
     DEBUG: bool = True
     LOG_LEVEL: str = Field(default="DEBUG", pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")
     API_V1_PREFIX: str = "/api/v1"
-    BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8000"]
+    BACKEND_CORS_ORIGINS: list[str] = [
+        "http://localhost:3000", "http://localhost:8000",
+        "https://echotrace-ai.vercel.app",
+    ]
 
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
