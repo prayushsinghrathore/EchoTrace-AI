@@ -284,6 +284,22 @@ export function listCustody(evId: string): Promise<CustodyEvent[]> {
   return request(`${API}/evidence/${evId}/custody`);
 }
 
+export interface ActivityEventItem {
+  id: string;
+  workspace_id: string;
+  investigation_id: string | null;
+  actor_id: string;
+  event_type: string;
+  title: string;
+  description: string | null;
+  occurred_at: string;
+  created_at: string;
+}
+
+export function listActivityEvents(invId: string): Promise<{ items: ActivityEventItem[]; total: number }> {
+  return request(`${API}/reports/activity/investigation/${invId}`);
+}
+
 export function getEvidenceStats(projectId: string): Promise<EvidenceStats> {
   return request(`${API}/evidence/stats/project/${projectId}`);
 }
