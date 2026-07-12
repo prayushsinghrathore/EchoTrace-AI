@@ -161,8 +161,10 @@ async def check_neo4j_connection() -> bool:
     Verify Neo4j connectivity by running a simple query.
 
     Returns:
-        True if Neo4j is reachable and responding.
+        True if Neo4j is reachable and responding (or intentionally disabled).
     """
+    if not settings.NEO4J_ENABLED:
+        return True
     try:
         if not neo4j_manager._driver:
             await neo4j_manager.initialize()
