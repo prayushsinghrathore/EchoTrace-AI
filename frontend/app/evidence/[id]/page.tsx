@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getEvidence, listComments, addComment, editComment, deleteComment,
   listCustody, deleteEvidence, restoreEvidence, updateEvidence,
+  verifyEvidence, listVersions,
 } from "@/lib/workspace-client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,7 +25,7 @@ export default function EvidenceDetailPage() {
   const [commentText, setCommentText] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editCommentText, setEditCommentText] = useState("");
-  const [tab, setTab] = useState<"details" | "comments" | "custody">("details");
+  const [tab, setTab] = useState<"details" | "comments" | "custody" | "versions">("details");
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editDesc, setEditDesc] = useState("");
@@ -35,6 +36,12 @@ export default function EvidenceDetailPage() {
   const { data: ev, isLoading } = useQuery({ queryKey: ["evidence", evId], queryFn: () => getEvidence(evId) });
   const { data: comments } = useQuery({ queryKey: ["comments", evId], queryFn: () => listComments(evId), enabled: tab === "comments" });
   const { data: custody } = useQuery({ queryKey: ["custody", evId], queryFn: () => listCustody(evId), enabled: tab === "custody" });
+  const { data: versions } = useQuery({ queryKey: ["versions", evId], queryFn: () => listVersions(evId), enabled: tab === "versions" });
+
+  const verifyMut = useMutation({
+    mutationFn: () => verifyEvidence(evId, ev!.sha256_hash || undefined, ev!.sha1_hash || undefined, ev!.md5_hash || undefined),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["evidence"] }),
+  });
 
   const commentMut = useMutation({
     mutationFn: () => addComment(evId, commentText),
@@ -195,7 +202,15 @@ export default function EvidenceDetailPage() {
       {/* Hashes */}
       {(ev.sha256_hash || ev.md5_hash || ev.sha1_hash) && (
         <Card>
-          <CardHeader><CardTitle>File Hashes</CardTitle></CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>File Hashes</CardTitle>
+            <div className="flex items-center gap-2">
+              {verifyMut.isSuccess && <span className="text-xs text-green-500">✓ Verified</span>}
+              <Button variant="outline" size="sm" onClick={() => verifyMut.mutate()} disabled={verifyMut.isPending}>
+                {verifyMut.isPending ? "Verifying..." : "Verify"}
+              </Button>
+            </div>
+          </CardHeader>
           <CardContent className="space-y-1">
             {ev.sha256_hash && <div className="text-xs font-mono"><span className="font-semibold">SHA256:</span> {ev.sha256_hash}</div>}
             {ev.sha1_hash && <div className="text-xs font-mono"><span className="font-semibold">SHA1:</span> {ev.sha1_hash}</div>}
@@ -214,6 +229,9 @@ export default function EvidenceDetailPage() {
         </button>
         <button onClick={() => setTab("custody")} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "custody" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
           Chain of Custody
+        </button>
+        <button onClick={() => setTab("versions")} className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "versions" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+          Versions {versions ? `(${versions.length})` : ""}
         </button>
       </div>
 
@@ -280,6 +298,36 @@ export default function EvidenceDetailPage() {
       )}
 
       {/* Tab: Custody */}
+      {tab === "versions" && versions && (
+        <div className="space-y-2">
+          {versions.length > 0 ? versions.map((v) => (
+            <Card key={v.id}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-xs font-bold">
+                      v{v.version_number}
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium">{v.original_filename || "No file"}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(v.created_at).toLocaleString()}
+                        {v.file_size ? ` · ${(v.file_size / 1024).toFixed(1)} KB` : ""}
+                        {v.mime_type ? ` · ${v.mime_type}` : ""}
+                      </div>
+                      {v.change_notes && <div className="text-xs text-muted-foreground mt-1">{v.change_notes}</div>}
+                      {v.sha256_hash && <div className="text-xs font-mono text-muted-foreground mt-1">SHA256: {v.sha256_hash}</div>}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )) : (
+            <p className="text-sm text-muted-foreground text-center py-4">No versions recorded.</p>
+          )}
+        </div>
+      )}
+
       {tab === "custody" && custody && (
         <div className="space-y-2">
           {custody.map((c) => (

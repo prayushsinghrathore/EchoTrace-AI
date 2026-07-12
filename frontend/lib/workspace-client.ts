@@ -251,6 +251,31 @@ export function editComment(commentId: string, body: string): Promise<EvidenceCo
   return request(`${API}/evidence/comments/${commentId}`, { method: "PATCH", body: JSON.stringify({ body }) });
 }
 
+export function verifyEvidence(id: string, sha256?: string, sha1?: string, md5?: string): Promise<Record<string, unknown>> {
+  const body: Record<string, string | undefined> = {};
+  if (sha256) body.sha256_hash = sha256;
+  if (sha1) body.sha1_hash = sha1;
+  if (md5) body.md5_hash = md5;
+  return request(`${API}/evidence/${id}/verify`, { method: "POST", body: JSON.stringify(body) });
+}
+
+export function listVersions(evId: string): Promise<EvidenceVersion[]> {
+  return request(`${API}/evidence/${evId}/versions`);
+}
+
+export interface EvidenceVersion {
+  id: string;
+  evidence_id: string;
+  version_number: number;
+  created_by: string;
+  original_filename: string | null;
+  mime_type: string | null;
+  file_size: number | null;
+  sha256_hash: string | null;
+  change_notes: string | null;
+  created_at: string;
+}
+
 export function deleteComment(commentId: string): Promise<void> {
   return request(`${API}/evidence/comments/${commentId}`, { method: "DELETE" });
 }
