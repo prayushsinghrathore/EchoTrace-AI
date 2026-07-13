@@ -173,7 +173,7 @@ export default function EvidencePage() {
                     <Badge variant="outline" className="text-[10px]">{ev.priority}</Badge>
                   </div>
                   <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
-                    <span className="font-mono">{ev.evidence_number}</span>
+                    <span className="font-mono truncate max-w-[200px]" title={ev.evidence_number}>{ev.evidence_number}</span>
                     <span>{ev.category}</span>
                     {ev.original_filename && <span>{ev.original_filename}</span>}
                     {ev.sha256_hash && <span className="font-mono">SHA256:{ev.sha256_hash.slice(0, 12)}...</span>}

@@ -151,7 +151,7 @@ export default function EvidenceDetailPage() {
                 <Badge variant={STATUS_COLORS[ev.status] || "outline"}>{ev.status.replace("_", " ")}</Badge>
                 <Badge variant="outline">{ev.priority}</Badge>
               </div>
-              <p className="mt-1 text-sm text-muted-foreground font-mono">{ev.evidence_number}</p>
+              <p className="mt-1 text-sm text-muted-foreground font-mono truncate max-w-lg" title={ev.evidence_number}>{ev.evidence_number}</p>
             </>
           )}
         </div>
