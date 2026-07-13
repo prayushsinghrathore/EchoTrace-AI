@@ -176,14 +176,23 @@ async def restore_evidence(
 async def upload_file(
     evidence_id: uuid.UUID,
     file: UploadFile = File(...),
-    investigation_id: uuid.UUID | None = Form(None),
+    investigation_id: str | None = Form(None),
     change_notes: str | None = Form(None),
     db: AsyncSession = Depends(get_db_session),
     user: User = Depends(get_current_user),
 ):
     svc = EvidenceService(db)
+    # Parse investigation_id from string — handles empty string and None
+    parsed_inv_id: uuid.UUID | None = None
+    if investigation_id and investigation_id.strip():
+        try:
+            parsed_inv_id = uuid.UUID(investigation_id.strip())
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                                detail="Invalid investigation_id format")
+
     ev = await svc.upload_file(evidence_id, file, user.id,
-                                investigation_id=investigation_id,
+                                investigation_id=parsed_inv_id,
                                 change_notes=change_notes)
     tags = await svc._get_tag_names(ev.id)
     enriched = _enrich_evidence(ev, tags=tags)
@@ -196,8 +205,8 @@ async def upload_file(
             "md5_hash": ev.md5_hash,
             "verified_at": ev.verification_timestamp.isoformat() if ev.verification_timestamp else None,
         },
-        "investigation_id": str(investigation_id) if investigation_id else None,
-        "redirect_url": f"/investigations/{investigation_id}" if investigation_id else f"/evidence/{evidence_id}",
+        "investigation_id": str(parsed_inv_id) if parsed_inv_id else None,
+        "redirect_url": f"/investigations/{parsed_inv_id}" if parsed_inv_id else f"/evidence/{evidence_id}",
     }
 
 

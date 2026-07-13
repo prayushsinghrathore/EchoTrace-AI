@@ -220,6 +220,21 @@ async def run_ai_pipeline(
 
 # ── Job Management ────────────────────────────────────────────────────────────
 
+# IMPORTANT: /jobs (exact match) MUST come before /jobs/{job_id}
+# Otherwise FastAPI tries to parse 'jobs' as a UUID for {job_id} → 422
+
+
+@router.get("/jobs", response_model=list[AIJobResponse])
+async def list_jobs(
+    workspace_id: uuid.UUID | None = Query(None),
+    limit: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db_session),
+    user: User = Depends(get_current_user),
+) -> list[AIJobResponse]:
+    """List recent AI jobs for a workspace (or all jobs for the user if no workspace_id)."""
+    svc = AIService(db)
+    return await svc.list_jobs(workspace_id, user.id, limit=limit)
+
 
 @router.get("/jobs/{job_id}", response_model=AIJobResponse)
 async def get_job(
@@ -230,18 +245,6 @@ async def get_job(
     """Get the status and result of an AI job."""
     svc = AIService(db)
     return await svc.get_job(job_id, user.id)
-
-
-@router.get("/jobs", response_model=list[AIJobResponse])
-async def list_jobs(
-    workspace_id: uuid.UUID = Query(...),
-    limit: int = Query(50, ge=1, le=200),
-    db: AsyncSession = Depends(get_db_session),
-    user: User = Depends(get_current_user),
-) -> list[AIJobResponse]:
-    """List recent AI jobs for a workspace."""
-    svc = AIService(db)
-    return await svc.list_jobs(workspace_id, user.id, limit=limit)
 
 
 # ── Usage Statistics ──────────────────────────────────────────────────────────

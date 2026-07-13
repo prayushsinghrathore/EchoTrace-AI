@@ -30,6 +30,29 @@ router = APIRouter(tags=["health"])
 # Application start time for uptime tracking
 _start_time: float = time.time()
 
+# Liveness router mounted at API root level so it's at /api/v1/live
+live_router = APIRouter(tags=["liveness"])
+
+
+@live_router.get(
+    "/live",
+    summary="Lightweight Liveness Probe",
+    description="Minimal liveness check that does not require database connectivity. Returns 200 if the application process is running.",
+)
+async def liveness_probe() -> dict:
+    """Lightweight liveness probe for container orchestrators.
+
+    Unlike the full health check, this does NOT query the database,
+    so it will return 200 even during brief database interruptions.
+    """
+    uptime = time.time() - _start_time
+    return {
+        "status": "alive",
+        "version": settings.VERSION,
+        "environment": settings.ENVIRONMENT,
+        "uptime_seconds": round(uptime, 2),
+    }
+
 
 @router.get(
     "",

@@ -71,6 +71,10 @@ class AIService:
         provider_name = settings.AI_PROVIDER.lower()
 
         if provider_name == "openai":
+            if not settings.OPENAI_API_KEY:
+                # Return a dummy provider — the calling method will check the key
+                # and return a failed job before making API calls
+                pass
             self._provider = OpenAIProvider()
         elif provider_name == "openrouter":
             self._provider = OpenRouterProvider()
@@ -346,6 +350,20 @@ class AIService:
         provider = self._get_provider()
         prompt = await self._load_prompt("summarize")
 
+        # Check provider availability
+        if not settings.OPENAI_API_KEY and settings.AI_PROVIDER.lower() == "openai":
+            # Return a failed job immediately instead of 500
+            job = await self._create_job(
+                user_id=user_id,
+                workspace_id=evidence.workspace_id,
+                job_type=AIJobType.SUMMARIZE,
+                evidence_ids=[str(evidence_id)],
+            )
+            job.mark_failed("AI provider not configured — no API key set")
+            await self.db.commit()
+            await self.db.refresh(job)
+            return AIJobResponse.model_validate(job)
+
         # Validate input
         validate_input(text, max_length=settings.AI_SUMMARIZE_MAX_CHARS)
 
@@ -416,6 +434,20 @@ class AIService:
         evidence, text = await self._load_evidence_text(evidence_id, user_id)
         provider = self._get_provider()
         prompt = await self._load_prompt("entities")
+
+        # Check provider availability
+        if not settings.OPENAI_API_KEY and settings.AI_PROVIDER.lower() == "openai":
+            job = await self._create_job(
+                user_id=user_id,
+                workspace_id=evidence.workspace_id,
+                investigation_id=investigation_id,
+                job_type=AIJobType.EXTRACT_ENTITIES,
+                evidence_ids=[str(evidence_id)],
+            )
+            job.mark_failed("AI provider not configured — no API key set")
+            await self.db.commit()
+            await self.db.refresh(job)
+            return AIJobResponse.model_validate(job)
 
         validate_input(text, max_length=settings.AI_SUMMARIZE_MAX_CHARS)
 
@@ -719,14 +751,27 @@ class AIService:
         return AIJobResponse.model_validate(job)
 
     async def list_jobs(
-        self, workspace_id: uuid.UUID, user_id: uuid.UUID, limit: int = 50
+        self, workspace_id: uuid.UUID | None, user_id: uuid.UUID, limit: int = 50
     ) -> list[AIJobResponse]:
-        """List recent AI jobs for a workspace."""
-        await self._check_workspace_access(workspace_id, user_id)
+        """List recent AI jobs for a workspace (or all accessible workspaces)."""
         repo = BaseRepository(self.db, AIJob)
-        jobs = await repo.find_many(
-            workspace_id=workspace_id, order_by="created_at", descending=True, limit=limit
-        )
+        if workspace_id:
+            await self._check_workspace_access(workspace_id, user_id)
+            jobs = await repo.find_many(
+                workspace_id=workspace_id, order_by="created_at", descending=True, limit=limit
+            )
+        else:
+            # Get all workspaces the user belongs to
+            from app.models.workspace_member import WorkspaceMember
+            ws_repo = BaseRepository(self.db, WorkspaceMember)
+            memberships = await ws_repo.find_many(user_id=user_id)
+            ws_ids = [m.workspace_id for m in memberships]
+            if not ws_ids:
+                return []
+            from sqlalchemy import select as sa_select
+            stmt = sa_select(AIJob).where(AIJob.workspace_id.in_(ws_ids)).order_by(AIJob.created_at.desc()).limit(limit)
+            result = await self.db.execute(stmt)
+            jobs = list(result.scalars().all())
         return [AIJobResponse.model_validate(j) for j in jobs]
 
     async def get_usage_stats(
