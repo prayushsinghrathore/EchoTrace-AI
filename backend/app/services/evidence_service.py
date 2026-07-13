@@ -20,11 +20,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.core.security import sanitize_filename
+from app.models.activity_event import ActivityEvent, ActivityEventType
 from app.models.evidence import Evidence, EvidenceStatus
 from app.models.evidence_comment import EvidenceComment
+from app.models.evidence_link import EvidenceLink
 from app.models.evidence_tag import EvidenceTag
 from app.models.evidence_version import EvidenceVersion
 from app.models.project import Project
+from app.models.timeline_event import TimelineEvent
 from app.models.workspace_member import WorkspaceMember, WorkspaceRole
 from app.repositories.base import BaseRepository
 from app.services.custody_service import CustodyService
@@ -232,6 +235,7 @@ class EvidenceService:
     # ── File Upload ─────────────────────────────────────────────────────
 
     async def upload_file(self, evidence_id: uuid.UUID, file: UploadFile, user_id: uuid.UUID,
+                          investigation_id: uuid.UUID | None = None,
                           change_notes: str | None = None) -> Evidence:
         ev = await self.get(evidence_id, user_id)
 
@@ -328,15 +332,53 @@ class EvidenceService:
             self.db.add(version)
             await self.db.flush()
 
-            # Auto-transition from DRAFT to PENDING_REVIEW after upload
-            if ev.status == EvidenceStatus.DRAFT:
-                ev.status = EvidenceStatus.PENDING_REVIEW
-                await self.custody.record(ev.id, user_id, "status_change",
-                                          notes="Status changed from draft to pending_review (file uploaded)")
+            # ── Auto-Verify Pipeline ──────────────────────────────────────────
+            # Step 1: Set status to VERIFIED
+            previous_status = ev.status.value if hasattr(ev.status, 'value') else ev.status
+            ev.status = EvidenceStatus.VERIFIED
+            ev.verification_timestamp = datetime.now(UTC)
 
+            await self.custody.record(ev.id, user_id, "status_change",
+                                      notes=f"Status changed from {previous_status} to verified (file uploaded & hashed)")
             await self.custody.record(ev.id, user_id, "upload",
                                       notes=f"File uploaded: {safe_filename} ({size} bytes)",
                                       details=f"sha256={sha256}")
+            await self.custody.record(ev.id, user_id, "verify",
+                                      notes="Auto-verification passed — all hashes computed and stored",
+                                      details=f"sha256={sha256} sha1={sha1} md5={md5}")
+
+            # Step 2: Link to investigation if provided
+            if investigation_id:
+                link = EvidenceLink(
+                    investigation_id=investigation_id,
+                    evidence_id=ev.id,
+                    rel_desc="uploaded_evidence",
+                    notes=f"Evidence '{ev.title}' linked automatically on upload",
+                )
+                self.db.add(link)
+
+                # Step 3: Create timeline event on investigation
+                tl_event = TimelineEvent(
+                    investigation_id=investigation_id,
+                    event_timestamp=datetime.now(UTC),
+                    title=f"Evidence uploaded: {ev.title}",
+                    description=f"File '{safe_filename}' ({size} bytes, {resolved_mime}) uploaded and verified. SHA256: {sha256[:16]}...",
+                    evidence_id=ev.id,
+                    created_by=user_id,
+                )
+                self.db.add(tl_event)
+
+                # Step 4: Record activity event
+                activity = ActivityEvent(
+                    workspace_id=ev.workspace_id,
+                    actor_id=user_id,
+                    investigation_id=investigation_id,
+                    event_type=ActivityEventType.EVIDENCE_UPLOADED,
+                    title=f"Evidence uploaded and verified: {ev.title}",
+                    description=f"SHA256: {sha256[:16]}... | Size: {size} bytes | Type: {resolved_mime}",
+                )
+                self.db.add(activity)
+
             await self.db.commit()
             await self.db.refresh(ev)
             return ev

@@ -165,6 +165,9 @@ export default function EvidenceDetailPage() {
           <Button variant="outline" size="sm" onClick={() => router.push(`/evidence/upload?evidence_id=${ev.id}`)}>
             Upload File
           </Button>
+          <Button variant="outline" size="sm" onClick={() => router.push(`/ai/results/${ev.id}`)}>
+            🧠 Analysis
+          </Button>
           {ev.is_deleted ? (
             <Button size="sm" onClick={() => restoreMut.mutate()}>Restore</Button>
           ) : (

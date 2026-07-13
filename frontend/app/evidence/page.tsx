@@ -186,10 +186,17 @@ export default function EvidencePage() {
                     </div>
                   )}
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"
-                  onClick={(e) => { e.stopPropagation(); if (confirm("Delete evidence?")) deleteMut.mutate(ev.id); }}>
-                  ✕
-                </Button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button variant="ghost" size="icon" className="h-8 w-8"
+                    onClick={(e) => { e.stopPropagation(); router.push(`/ai/results/${ev.id}`); }}
+                    title="View AI analysis">
+                    🧠
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"
+                    onClick={(e) => { e.stopPropagation(); if (confirm("Delete evidence?")) deleteMut.mutate(ev.id); }}>
+                    ✕
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}

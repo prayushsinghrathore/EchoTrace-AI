@@ -157,6 +157,17 @@ export function generateReport(investigationId: string): Promise<AIJob> {
   });
 }
 
+export function runAIPipeline(evidenceId: string, investigationId?: string): Promise<{
+  pipeline: string;
+  jobs: Array<{ job_type: string; job_id: string; status: string }>;
+  evidence_id: string;
+  investigation_id: string | null;
+}> {
+  let qs = `evidence_id=${evidenceId}`;
+  if (investigationId) qs += `&investigation_id=${investigationId}`;
+  return request(`${API}/ai/pipeline?${qs}`, { method: "POST" });
+}
+
 /* ── Jobs ───────────────────────────────────────────────────────────────── */
 
 export function getJob(jobId: string): Promise<AIJob> {

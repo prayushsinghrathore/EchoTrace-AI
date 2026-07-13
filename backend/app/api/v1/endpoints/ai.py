@@ -176,6 +176,48 @@ async def generate_report(
     )
 
 
+# ── Pipeline ──────────────────────────────────────────────────────────────────
+
+
+@router.post("/pipeline", status_code=status.HTTP_202_ACCEPTED)
+async def run_ai_pipeline(
+    evidence_id: uuid.UUID = Query(...),
+    investigation_id: uuid.UUID | None = Query(None),
+    db: AsyncSession = Depends(get_db_session),
+    user: User = Depends(get_current_user),
+) -> dict:
+    """
+    Run the full AI analysis pipeline on an evidence item.
+
+    Queues summarize + extract_entities as background jobs.
+    Returns the job IDs so the frontend can poll for completion.
+    """
+    svc = AIService(db)
+
+    # Queue summarize job
+    summarize_job = await svc.summarize(
+        evidence_id=evidence_id,
+        user_id=user.id,
+    )
+
+    # Queue entity extraction (creates pending suggestions if investigation_id)
+    entities_job = await svc.extract_entities(
+        evidence_id=evidence_id,
+        user_id=user.id,
+        investigation_id=investigation_id,
+    )
+
+    return {
+        "pipeline": "started",
+        "jobs": [
+            {"job_type": "summarize", "job_id": str(summarize_job.id), "status": summarize_job.status},
+            {"job_type": "extract_entities", "job_id": str(entities_job.id), "status": entities_job.status},
+        ],
+        "evidence_id": str(evidence_id),
+        "investigation_id": str(investigation_id) if investigation_id else None,
+    }
+
+
 # ── Job Management ────────────────────────────────────────────────────────────
 
 

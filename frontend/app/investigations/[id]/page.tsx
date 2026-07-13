@@ -161,6 +161,9 @@ export default function InvestigationDetailPage() {
         </div>
         <div className="flex gap-2 ml-4">
           {!editing && <Button variant="outline" size="sm" onClick={startEdit}>Edit</Button>}
+          <Button variant="outline" size="sm" onClick={() => router.push(`/evidence/upload?investigation_id=${inv.id}&workspace_id=${inv.workspace_id}`)}>
+            ⬆️ Upload
+          </Button>
           <Button variant="outline" size="sm" onClick={() => router.push(`/graph/${inv.id}`)}>View Graph</Button>
           <Button variant="outline" size="sm" onClick={() => router.push(`/timeline/${inv.id}`)}>Timeline</Button>
           <Button variant="outline" size="sm" onClick={handleGenerateReport} disabled={generatingReport}>
