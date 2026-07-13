@@ -126,6 +126,40 @@ export function listMembers(wsId: string): Promise<Member[]> {
   return request(`${API}/workspaces/${wsId}/members`);
 }
 
+export function removeMember(wsId: string, memberId: string): Promise<void> {
+  return request(`${API}/workspaces/${wsId}/members/${memberId}`, { method: "DELETE" });
+}
+
+export function updateMemberRole(wsId: string, memberId: string, role: string): Promise<Member> {
+  return request(`${API}/workspaces/${wsId}/members/${memberId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ role }),
+  });
+}
+
+/* Invitations */
+export interface Invitation {
+  id: string;
+  workspace_id: string;
+  email: string;
+  role: string;
+  token: string;
+  status: string;
+  expires_at: string;
+  created_at: string;
+}
+
+export function inviteUser(wsId: string, email: string, role = "member"): Promise<Invitation> {
+  return request(`${API}/workspaces/${wsId}/invite`, {
+    method: "POST",
+    body: JSON.stringify({ email, role }),
+  });
+}
+
+export function listInvitations(wsId: string): Promise<Invitation[]> {
+  return request(`${API}/workspaces/${wsId}/invitations`);
+}
+
 /* Projects */
 export function createProject(data: ProjectCreate): Promise<Project> {
   return request(`${API}/projects`, { method: "POST", body: JSON.stringify(data) });

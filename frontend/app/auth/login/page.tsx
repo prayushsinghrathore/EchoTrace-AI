@@ -91,6 +91,12 @@ export default function LoginPage() {
               >
                 Password
               </label>
+              <Link
+                href="/auth/forgot-password"
+                className="text-xs text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
+              >
+                Forgot password?
+              </Link>
             </div>
             <input
               id="password"

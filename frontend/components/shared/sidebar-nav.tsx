@@ -8,14 +8,16 @@ import { useAuth } from "@/contexts/auth-context";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: "📊" },
+  { label: "Search", href: "/search", icon: "🔍" },
   { label: "Organizations", href: "/organizations", icon: "🏢" },
   { label: "Workspaces", href: "/workspaces", icon: "📁" },
   { label: "Projects", href: "/projects", icon: "📋" },
   { label: "Evidence", href: "/evidence", icon: "📎" },
   { label: "Upload", href: "/evidence/upload", icon: "⬆️" },
-  { label: "Investigations", href: "/investigations", icon: "🔍" },
+  { label: "Investigations", href: "/investigations", icon: "🔎" },
   { label: "AI Engine", href: "/ai", icon: "🤖" },
   { label: "Notifications", href: "/notifications", icon: "🔔" },
+  { label: "Profile", href: "/profile", icon: "👤" },
 ];
 
 export function SidebarNav() {

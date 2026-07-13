@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getWorkspace, listMembers, listProjects, createProject, deleteProject } from "@/lib/workspace-client";
+import { getWorkspace, listMembers, listProjects, createProject, deleteProject, inviteUser, removeMember } from "@/lib/workspace-client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 const FUTURE_MODULES = [
   { name: "Evidence", icon: "📎", stage: "Live" },
@@ -57,6 +58,33 @@ export default function WorkspaceDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["projects", wsId] });
       queryClient.invalidateQueries({ queryKey: ["workspace", wsId] });
+    },
+  });
+
+  // Member management
+  const [showInviteForm, setShowInviteForm] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("member");
+
+  const inviteMut = useMutation({
+    mutationFn: () => inviteUser(wsId, inviteEmail.trim(), inviteRole),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["members", wsId] });
+      setShowInviteForm(false);
+      setInviteEmail("");
+      toast.success("Invitation sent");
+    },
+    onError: (err) => {
+      toast.error(err instanceof Error ? err.message : "Failed to invite");
+    },
+  });
+
+  const removeMemberMut = useMutation({
+    mutationFn: (memberId: string) => removeMember(wsId, memberId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["members", wsId] });
+      queryClient.invalidateQueries({ queryKey: ["workspace", wsId] });
+      toast.success("Member removed");
     },
   });
 
@@ -146,22 +174,51 @@ export default function WorkspaceDetailPage() {
         <div className="space-y-6">
           {/* Members */}
           <Card>
-            <CardHeader><CardTitle className="text-lg">Members</CardTitle></CardHeader>
-            <CardContent>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Members</CardTitle>
+              <Button variant="outline" size="sm" onClick={() => setShowInviteForm(!showInviteForm)}>
+                {showInviteForm ? "Cancel" : "Invite"}
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {showInviteForm && (
+                <div className="space-y-2 pb-3 border-b">
+                  <input value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder="Email address" type="email"
+                    className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+                  <div className="flex gap-2">
+                    <select value={inviteRole} onChange={(e) => setInviteRole(e.target.value)}
+                      className="h-9 rounded-md border border-input bg-background px-2 text-sm">
+                      <option value="member">Member</option>
+                      <option value="admin">Admin</option>
+                      <option value="viewer">Viewer</option>
+                    </select>
+                    <Button size="sm" onClick={() => inviteMut.mutate()} disabled={!inviteEmail.trim() || inviteMut.isPending}>
+                      {inviteMut.isPending ? "..." : "Send"}
+                    </Button>
+                  </div>
+                </div>
+              )}
               {members && members.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {members.map((m) => (
                     <div key={m.id} className="flex items-center justify-between">
-                      <div>
-                        <div className="text-sm font-medium">{m.display_name || m.email}</div>
-                        <div className="text-xs text-muted-foreground">{m.email}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium truncate">{m.display_name || m.email}</div>
+                        <div className="text-xs text-muted-foreground truncate">{m.email}</div>
                       </div>
-                      <Badge variant="outline" className="text-[10px]">{m.role}</Badge>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Badge variant="outline" className="text-[10px]">{m.role}</Badge>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive"
+                          onClick={() => { if (confirm(`Remove ${m.display_name || m.email}?`)) removeMemberMut.mutate(m.id); }}>
+                          ✕
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Loading members...</p>
+                <p className="text-sm text-muted-foreground text-center py-2">Loading members...</p>
               )}
             </CardContent>
           </Card>

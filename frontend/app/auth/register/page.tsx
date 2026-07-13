@@ -134,6 +134,9 @@ export default function RegisterPage() {
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               autoComplete="new-password"
             />
+            {password && (
+              <PasswordStrength password={password} />
+            )}
             {validationErrors.password && (
               <p className="text-xs text-destructive">{validationErrors.password}</p>
             )}
@@ -178,5 +181,37 @@ export default function RegisterPage() {
         </p>
       </CardContent>
     </Card>
+  );
+}
+
+function PasswordStrength({ password }: { password: string }) {
+  const checks = [
+    { label: "8+ characters", pass: password.length >= 8 },
+    { label: "Uppercase", pass: /[A-Z]/.test(password) },
+    { label: "Lowercase", pass: /[a-z]/.test(password) },
+    { label: "Digit", pass: /\d/.test(password) },
+    { label: "Special char", pass: /[!@#$%^&*(),.?":{}|<>_\-]/.test(password) },
+  ];
+
+  const passed = checks.filter((c) => c.pass).length;
+  const width = (passed / checks.length) * 100;
+
+  let color = "bg-red-500";
+  if (passed >= 4) color = "bg-yellow-500";
+  if (passed >= 5) color = "bg-green-500";
+
+  return (
+    <div className="mt-1 space-y-1">
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${width}%` }} />
+      </div>
+      <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+        {checks.map((c) => (
+          <span key={c.label} className={`text-[10px] ${c.pass ? "text-green-600" : "text-muted-foreground"}`}>
+            {c.pass ? "✓" : "○"} {c.label}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }

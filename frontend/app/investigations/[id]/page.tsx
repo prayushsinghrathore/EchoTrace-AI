@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getInvestigation, listEntities, createEntity, deleteEntity, listRelationships, createRelationship, deleteRelationship, listTimelineEvents, createTimelineEvent, deleteTimelineEvent } from "@/lib/workspace-client";
+import { getInvestigation, updateInvestigation, listEntities, createEntity, deleteEntity, listRelationships, createRelationship, deleteRelationship, listTimelineEvents, createTimelineEvent, deleteTimelineEvent } from "@/lib/workspace-client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { generateReport } from "@/lib/reports-client";
 
 const STATUS_COLORS: Record<string, "default" | "secondary" | "destructive" | "outline" | "success" | "warning"> = {
   open: "success", in_progress: "warning", pending_review: "secondary", closed: "default", archived: "outline",
@@ -20,6 +22,13 @@ export default function InvestigationDetailPage() {
   const queryClient = useQueryClient();
 
   const [tab, setTab] = useState<"entities" | "relationships" | "timeline">("entities");
+
+  // Investigation edit state
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDesc, setEditDesc] = useState("");
+  const [editStatus, setEditStatus] = useState("open");
+  const [editPriority, setEditPriority] = useState("medium");
 
   // Entity form
   const [entityType, setEntityType] = useState("person");
@@ -57,6 +66,47 @@ export default function InvestigationDetailPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["timeline"] }),
   });
 
+  const updateMut = useMutation({
+    mutationFn: (data: Record<string, unknown>) => updateInvestigation(invId, data),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["investigation"] }); setEditing(false); },
+  });
+
+  const [reportContent, setReportContent] = useState<string | null>(null);
+  const [generatingReport, setGeneratingReport] = useState(false);
+
+  const handleGenerateReport = async () => {
+    setGeneratingReport(true);
+    try {
+      const result = await generateReport(invId, "markdown", true);
+      setReportContent(result.content);
+      toast.success("Report generated");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Report generation failed");
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
+
+  const startEdit = () => {
+    if (!inv) return;
+    setEditTitle(inv.title);
+    setEditDesc(inv.description || "");
+    setEditStatus(inv.status);
+    setEditPriority(inv.priority);
+    setEditing(true);
+  };
+
+  const saveEdit = () => {
+    if (!inv) return;
+    const data: Record<string, unknown> = {};
+    if (editTitle !== inv.title) data.title = editTitle;
+    if (editDesc !== (inv.description || "")) data.description = editDesc || null;
+    if (editStatus !== inv.status) data.status = editStatus;
+    if (editPriority !== inv.priority) data.priority = editPriority;
+    if (Object.keys(data).length > 0) updateMut.mutate(data);
+    else setEditing(false);
+  };
+
   if (isLoading) return <div className="space-y-4"><Skeleton className="h-8 w-64" /><Skeleton className="h-40 w-full" /></div>;
   if (!inv) return <p>Investigation not found</p>;
 
@@ -68,17 +118,54 @@ export default function InvestigationDetailPage() {
       </div>
 
       <div className="flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight">{inv.title}</h1>
-            <Badge variant={STATUS_COLORS[inv.status] || "outline"}>{inv.status.replace("_", " ")}</Badge>
-            <Badge variant="outline">{inv.priority}</Badge>
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground">{inv.description || "No description"}</p>
+        <div className="flex-1">
+          {editing ? (
+            <div className="space-y-2 max-w-xl">
+              <input value={editTitle} onChange={(e) => setEditTitle(e.target.value)}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-lg font-bold" />
+              <div className="flex gap-2">
+                <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)}
+                  className="h-8 rounded-md border border-input bg-background px-2 text-sm">
+                  <option value="open">Open</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="pending_review">Pending Review</option>
+                  <option value="closed">Closed</option>
+                  <option value="archived">Archived</option>
+                </select>
+                <select value={editPriority} onChange={(e) => setEditPriority(e.target.value)}
+                  className="h-8 rounded-md border border-input bg-background px-2 text-sm">
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="critical">Critical</option>
+                </select>
+              </div>
+              <textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)}
+                className="w-full h-20 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                placeholder="Description" />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={saveEdit} disabled={updateMut.isPending}>Save</Button>
+                <Button size="sm" variant="outline" onClick={() => setEditing(false)}>Cancel</Button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-bold tracking-tight">{inv.title}</h1>
+                <Badge variant={STATUS_COLORS[inv.status] || "outline"}>{inv.status.replace("_", " ")}</Badge>
+                <Badge variant="outline">{inv.priority}</Badge>
+              </div>
+              <p className="mt-1 text-sm text-muted-foreground">{inv.description || "No description"}</p>
+            </>
+          )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 ml-4">
+          {!editing && <Button variant="outline" size="sm" onClick={startEdit}>Edit</Button>}
           <Button variant="outline" size="sm" onClick={() => router.push(`/graph/${inv.id}`)}>View Graph</Button>
           <Button variant="outline" size="sm" onClick={() => router.push(`/timeline/${inv.id}`)}>Timeline</Button>
+          <Button variant="outline" size="sm" onClick={handleGenerateReport} disabled={generatingReport}>
+            {generatingReport ? "Generating..." : "📄 Report"}
+          </Button>
         </div>
       </div>
 
@@ -96,6 +183,25 @@ export default function InvestigationDetailPage() {
             </button>
           </CardContent></Card>
       </div>
+
+      {/* Report */}
+      {reportContent && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg">Investigation Report</CardTitle>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => {
+                navigator.clipboard.writeText(reportContent);
+                toast.success("Copied to clipboard");
+              }}>Copy</Button>
+              <Button variant="outline" size="sm" onClick={() => setReportContent(null)}>Close</Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <pre className="max-h-96 overflow-y-auto whitespace-pre-wrap text-sm font-mono bg-muted/30 rounded-md p-4">{reportContent}</pre>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-2 border-b">

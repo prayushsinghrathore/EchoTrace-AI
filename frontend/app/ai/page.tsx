@@ -10,7 +10,7 @@ import {
   extractEntities,
   AIJob,
 } from "@/lib/ai-client";
-import { listWorkspaces } from "@/lib/workspace-client";
+import { listWorkspaces, listProjects, listEvidence } from "@/lib/workspace-client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,12 +28,23 @@ const JOB_STATUS_COLORS: Record<string, "default" | "secondary" | "destructive" 
 export default function AIPage() {
   const queryClient = useQueryClient();
   const [selectedWs, setSelectedWs] = useState("");
+  const [selectedProj, setSelectedProj] = useState("");
   const [selectedEv, setSelectedEv] = useState("");
   const [evResult, setEvResult] = useState<AIJob | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
 
   const { data: providers } = useQuery({ queryKey: ["ai-providers"], queryFn: getAIProviders });
   const { data: workspaces } = useQuery({ queryKey: ["workspaces"], queryFn: listWorkspaces });
+  const { data: projects } = useQuery({
+    queryKey: ["projs", selectedWs],
+    queryFn: () => listProjects(selectedWs),
+    enabled: !!selectedWs,
+  });
+  const { data: evidenceList } = useQuery({
+    queryKey: ["evidence", selectedProj],
+    queryFn: () => listEvidence(selectedProj),
+    enabled: !!selectedProj,
+  });
 
   const { data: jobs } = useQuery({
     queryKey: ["ai-jobs", selectedWs],
@@ -141,20 +152,48 @@ export default function AIPage() {
       <Card>
         <CardHeader>
           <CardTitle>Analyze Evidence</CardTitle>
-          <CardDescription>Select a workspace and evidence item to analyze with AI</CardDescription>
+          <CardDescription>Select a workspace, project, and evidence item to analyze with AI</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
             <div>
               <label className="text-sm font-medium">Workspace</label>
               <select
                 value={selectedWs}
-                onChange={(e) => { setSelectedWs(e.target.value); setSelectedEv(""); }}
+                onChange={(e) => { setSelectedWs(e.target.value); setSelectedProj(""); setSelectedEv(""); }}
                 className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="">Select workspace...</option>
                 {workspaces?.map((ws) => (
                   <option key={ws.id} value={ws.id}>{ws.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Project</label>
+              <select
+                value={selectedProj}
+                onChange={(e) => { setSelectedProj(e.target.value); setSelectedEv(""); }}
+                className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                disabled={!selectedWs}
+              >
+                <option value="">Select project...</option>
+                {projects?.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Evidence</label>
+              <select
+                value={selectedEv}
+                onChange={(e) => setSelectedEv(e.target.value)}
+                className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                disabled={!selectedProj}
+              >
+                <option value="">Select evidence...</option>
+                {evidenceList?.map((ev) => (
+                  <option key={ev.id} value={ev.id}>{ev.title}</option>
                 ))}
               </select>
             </div>

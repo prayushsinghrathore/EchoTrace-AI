@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useParams, useRouter } from "next/navigation";
+import { siteConfig } from "@/config/site";
 
 const STATUS_COLORS: Record<string, "default" | "secondary" | "destructive" | "outline" | "success" | "warning"> = {
   draft: "secondary", pending_review: "warning", verified: "success", rejected: "destructive", archived: "outline",
@@ -157,7 +158,7 @@ export default function EvidenceDetailPage() {
         <div className="flex gap-2 ml-4">
           {!editing && !ev.is_deleted && <Button variant="outline" size="sm" onClick={startEdit}>Edit</Button>}
           {ev.sha256_hash && !ev.is_deleted && (
-            <Button variant="outline" size="sm" onClick={() => window.open(`/api/v1/evidence/${evId}/download`, "_blank")}>
+            <Button variant="outline" size="sm" onClick={() => window.open(`${siteConfig.apiUrl}/evidence/${evId}/download`, "_blank")}>
               Download
             </Button>
           )}

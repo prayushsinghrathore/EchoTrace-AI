@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listEvidence, createEvidence, deleteEvidence, listWorkspaces, listProjects, getEvidenceStats } from "@/lib/workspace-client";
+import { listEvidence, createEvidence, deleteEvidence, listWorkspaces, listProjects, getEvidenceStats, searchEvidence } from "@/lib/workspace-client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,8 @@ export default function EvidencePage() {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("other");
   const [description, setDescription] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
 
   const { data: workspaces } = useQuery({ queryKey: ["workspaces"], queryFn: listWorkspaces });
   const { data: projects } = useQuery({
@@ -43,6 +45,14 @@ export default function EvidencePage() {
     queryFn: () => getEvidenceStats(selectedProj),
     enabled: !!selectedProj,
   });
+
+  const { data: searchResults } = useQuery({
+    queryKey: ["evidence-search", selectedProj, searchQuery, statusFilter],
+    queryFn: () => searchEvidence({ project_id: selectedProj, q: searchQuery, ...(statusFilter ? { status: statusFilter } : {}) }),
+    enabled: !!selectedProj && searchQuery.length > 0,
+  });
+
+  const displayedEvidence = searchQuery ? searchResults?.items : evList;
 
   const createMut = useMutation({
     mutationFn: () => createEvidence({ project_id: selectedProj, title, category, description: description || undefined }),
@@ -98,6 +108,28 @@ export default function EvidencePage() {
         </div>
       )}
 
+      {/* Search & Filter */}
+      {selectedProj && (
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">🔍</span>
+            <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search evidence by title, description, or filename..."
+              className="w-full h-10 rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm">
+            <option value="">All status</option>
+            <option value="draft">Draft</option>
+            <option value="pending_review">Pending Review</option>
+            <option value="verified">Verified</option>
+            <option value="rejected">Rejected</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+      )}
+
       {/* Create Form */}
       {showForm && selectedProj && (
         <Card>
@@ -129,9 +161,9 @@ export default function EvidencePage() {
       {/* Evidence List */}
       {isLoading ? (
         <div className="space-y-2"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>
-      ) : evList && evList.length > 0 ? (
+      ) : displayedEvidence && displayedEvidence.length > 0 ? (
         <div className="space-y-2">
-          {evList.map((ev) => (
+          {displayedEvidence.map((ev) => (
             <Card key={ev.id} className="hover-card cursor-pointer" onClick={() => router.push(`/evidence/${ev.id}`)}>
               <CardContent className="flex items-center justify-between p-4">
                 <div className="flex-1">
