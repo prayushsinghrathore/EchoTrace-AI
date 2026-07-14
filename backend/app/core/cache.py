@@ -22,7 +22,7 @@ _REDIS_AVAILABLE: bool = False
 _redis_client: Any = None
 
 try:
-    import redis.asyncio as aioredis  # type: ignore[import-untyped]
+    import redis.asyncio as aioredis
 
     _redis_client = aioredis.from_url(
         settings.REDIS_URL,

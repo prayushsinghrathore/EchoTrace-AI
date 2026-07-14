@@ -46,6 +46,7 @@ pytest-cov==6.0.0
 httpx==0.28.1
 ruff==0.8.4
 mypy==1.13.0
+types-redis==4.6.0.20241004
 pre-commit==4.0.1
 aiosqlite==0.22.1
 
