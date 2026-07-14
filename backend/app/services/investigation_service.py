@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
 from app.graph.graph_sync import ENTITY_COLORS, ENTITY_ICONS, GraphSyncService
+from app.models.activity_event import ActivityEvent, ActivityEventType
 from app.models.entity import Entity
 from app.models.investigation import Investigation, InvestigationStatus
 from app.models.relationship import Relationship
@@ -56,6 +57,19 @@ class InvestigationService:
             **kwargs,
         )
         self.db.add(inv)
+        await self.db.flush()
+
+        # Record activity event
+        activity = ActivityEvent(
+            workspace_id=workspace_id,
+            actor_id=user_id,
+            investigation_id=inv.id,
+            event_type=ActivityEventType.INVESTIGATION_CREATED,
+            title=f"Investigation created: {inv.title}",
+            description=inv.description,
+        )
+        self.db.add(activity)
+
         await self.db.commit()
         await self.db.refresh(inv)
         logger.info("Investigation created", inv_id=str(inv.id))
@@ -72,6 +86,9 @@ class InvestigationService:
         inv = await self.get(inv_id, user_id)
         await self._check_investigator(inv.workspace_id, user_id)
 
+        changed = []
+        was_closed = inv.status == InvestigationStatus.CLOSED
+
         if kwargs.get("status") == InvestigationStatus.CLOSED:
             kwargs["closed_at"] = datetime.now(UTC)
         elif kwargs.get("status") in (InvestigationStatus.OPEN, InvestigationStatus.IN_PROGRESS):
@@ -79,7 +96,31 @@ class InvestigationService:
 
         for key, val in kwargs.items():
             if val is not None and hasattr(inv, key):
-                setattr(inv, key, val)
+                old = getattr(inv, key)
+                if old != val:
+                    setattr(inv, key, val)
+                    changed.append(key)
+
+        # Record activity event
+        if changed:
+            new_status = kwargs.get("status")
+            if new_status == InvestigationStatus.CLOSED and not was_closed:
+                event_type = ActivityEventType.INVESTIGATION_CLOSED
+                title = f"Investigation closed: {inv.title}"
+            else:
+                event_type = ActivityEventType.INVESTIGATION_UPDATED
+                title = f"Investigation updated: {', '.join(changed)}"
+
+            activity = ActivityEvent(
+                workspace_id=inv.workspace_id,
+                actor_id=user_id,
+                investigation_id=inv.id,
+                event_type=event_type,
+                title=title,
+                description=f"Fields changed: {', '.join(changed)}" if changed else None,
+            )
+            self.db.add(activity)
+
         await self.db.commit()
         await self.db.refresh(inv)
         return inv
@@ -87,6 +128,17 @@ class InvestigationService:
     async def delete(self, inv_id: uuid.UUID, user_id: uuid.UUID) -> None:
         inv = await self.get(inv_id, user_id)
         await self._check_investigator(inv.workspace_id, user_id)
+
+        # Record activity event before deletion
+        activity = ActivityEvent(
+            workspace_id=inv.workspace_id,
+            actor_id=user_id,
+            investigation_id=inv.id,
+            event_type=ActivityEventType.INVESTIGATION_CLOSED,
+            title=f"Investigation deleted: {inv.title}",
+        )
+        self.db.add(activity)
+
         await self.db.execute(sa_delete(Investigation).where(Investigation.id == inv_id))
         await self.db.commit()
 
@@ -358,11 +410,26 @@ class InvestigationService:
         await self.timeline_repo.delete(event_id, hard=True)
         await self.db.commit()
 
-    async def list_timeline_events(self, inv_id: uuid.UUID, user_id: uuid.UUID) -> list[TimelineEvent]:
+    async def list_timeline_events(
+        self, inv_id: uuid.UUID, user_id: uuid.UUID,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        entity_id: uuid.UUID | None = None,
+        evidence_id: uuid.UUID | None = None,
+    ) -> list[TimelineEvent]:
         await self.get(inv_id, user_id)
-        return await self.timeline_repo.find_many(
-            investigation_id=inv_id, order_by="event_timestamp", descending=False
-        )
+        stmt = select(TimelineEvent).where(TimelineEvent.investigation_id == inv_id)
+        if date_from:
+            stmt = stmt.where(TimelineEvent.event_timestamp >= date_from)
+        if date_to:
+            stmt = stmt.where(TimelineEvent.event_timestamp <= date_to)
+        if entity_id:
+            stmt = stmt.where(TimelineEvent.entity_id == entity_id)
+        if evidence_id:
+            stmt = stmt.where(TimelineEvent.evidence_id == evidence_id)
+        stmt = stmt.order_by(TimelineEvent.event_timestamp.asc())
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
 
     # ── Graph ──────────────────────────────────────────────────────────
 
