@@ -251,3 +251,158 @@ class TestEvidenceStats:
         assert stats.status_code == 200
         assert stats.json()["total"] >= 2
         assert "by_status" in stats.json()
+
+@pytest.mark.asyncio
+class TestEvidenceUpload:
+    """Regression tests for evidence file upload."""
+
+    async def _create_evidence_and_token(self, client: AsyncClient) -> tuple[str, str, str, str]:
+        """Helper: register, login, create org/ws/project/evidence. Returns (token, ws_id, proj_id, ev_id)."""
+        await client.post("/api/v1/auth/register", json={
+            "email": "upload-test@test.com", "password": "SecureP@ss1", "display_name": "Upload Test",
+        })
+        login = await client.post("/api/v1/auth/login", json={
+            "email": "upload-test@test.com", "password": "SecureP@ss1",
+        })
+        token = login.json()["access_token"]
+
+        org = await client.post("/api/v1/organizations", json={"name": "Upload Org", "slug": "upload-org"},
+                                 headers={"Authorization": f"Bearer {token}"})
+        ws = await client.post("/api/v1/workspaces", json={"organization_id": org.json()["id"],
+                                                             "name": "Upload WS", "slug": "upload-ws"},
+                                headers={"Authorization": f"Bearer {token}"})
+        ws_id = ws.json()["id"]
+        proj = await client.post("/api/v1/projects", json={"workspace_id": ws_id,
+                                                             "name": "Upload Proj", "slug": "upload-proj"},
+                                  headers={"Authorization": f"Bearer {token}"})
+        proj_id = proj.json()["id"]
+        ev = await client.post("/api/v1/evidence", json={"project_id": proj_id, "title": "Upload Test Ev"},
+                                headers={"Authorization": f"Bearer {token}"})
+        return token, ws_id, proj_id, ev.json()["id"]
+
+    async def test_upload_valid_file_success(self, client: AsyncClient) -> None:
+        """Upload a valid text file — should return 200 with hashes and verification."""
+        token, ws_id, proj_id, ev_id = await self._create_evidence_and_token(client)
+        resp = await client.post(
+            f"/api/v1/evidence/{ev_id}/upload",
+            files={"file": ("test.txt", b"Hello EchoTrace AI", "text/plain")},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
+        data = resp.json()
+        assert data["sha256_hash"] is not None
+        assert data["sha1_hash"] is not None
+        assert data["md5_hash"] is not None
+        assert data["mime_type"] == "text/plain"
+        assert data["file_size"] == len(b"Hello EchoTrace AI")
+        assert data["status"] == "verified"
+        assert data["verification"]["verified"] is True
+        assert data["verification"]["sha256_hash"] == data["sha256_hash"]
+
+    async def test_upload_invalid_investigation_id_returns_422(self, client: AsyncClient) -> None:
+        """REGRESSION: Upload with invalid investigation_id UUID -> 422, not 500."""
+        token, ws_id, proj_id, ev_id = await self._create_evidence_and_token(client)
+        resp = await client.post(
+            f"/api/v1/evidence/{ev_id}/upload",
+            files={"file": ("test.txt", b"Regression test data", "text/plain")},
+            data={"investigation_id": "not-a-valid-uuid"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 422, f"Expected 422, got {resp.status_code}: {resp.text}"
+        assert "Invalid investigation_id format" in resp.text
+
+    async def test_upload_without_investigation_id_succeeds(self, client: AsyncClient) -> None:
+        """Upload without investigation_id should work normally."""
+        token, ws_id, proj_id, ev_id = await self._create_evidence_and_token(client)
+        resp = await client.post(
+            f"/api/v1/evidence/{ev_id}/upload",
+            files={"file": ("data.csv", b"col1,col2\n1,2\n3,4", "text/csv")},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
+        assert resp.json()["original_filename"] == "data.csv"
+
+    async def test_upload_duplicate_file_returns_409(self, client: AsyncClient) -> None:
+        """Upload identical content to different evidence items — second should return 409."""
+        token, ws_id, proj_id, ev_id = await self._create_evidence_and_token(client)
+        content = b"Unique file content for cross-evidence dedup test"
+
+        # First evidence: upload succeeds
+        resp1 = await client.post(
+            f"/api/v1/evidence/{ev_id}/upload",
+            files={"file": ("dedup.txt", content, "text/plain")},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp1.status_code == 200
+
+        # Second evidence: same file content should be detected as duplicate
+        ev2 = await client.post("/api/v1/evidence", json={
+            "project_id": proj_id, "title": "Second Evidence For Dedup",
+        }, headers={"Authorization": f"Bearer {token}"})
+        ev2_id = ev2.json()["id"]
+
+        resp2 = await client.post(
+            f"/api/v1/evidence/{ev2_id}/upload",
+            files={"file": ("dedup.txt", content, "text/plain")},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp2.status_code == 409, f"Expected 409, got {resp2.status_code}: {resp2.text}"
+        assert "duplicate" in resp2.text.lower()
+
+    async def test_upload_empty_file_returns_400(self, client: AsyncClient) -> None:
+        """Upload an empty file — should return 400."""
+        token, ws_id, proj_id, ev_id = await self._create_evidence_and_token(client)
+        resp = await client.post(
+            f"/api/v1/evidence/{ev_id}/upload",
+            files={"file": ("empty.txt", b"", "text/plain")},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 400, f"Expected 400, got {resp.status_code}: {resp.text}"
+        assert "empty" in resp.text.lower()
+
+    async def test_upload_unsupported_mime_returns_415(self, client: AsyncClient) -> None:
+        """Upload with unsupported MIME type — should return 415."""
+        token, ws_id, proj_id, ev_id = await self._create_evidence_and_token(client)
+        resp = await client.post(
+            f"/api/v1/evidence/{ev_id}/upload",
+            files={"file": ("malware.exe", b"MZ\x90\x00", "application/x-msdownload")},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 415, f"Expected 415, got {resp.status_code}: {resp.text}"
+        assert "not allowed" in resp.text.lower()
+
+    async def test_upload_without_auth_returns_401(self, client: AsyncClient) -> None:
+        """Upload without authentication — should return 401."""
+        token, ws_id, proj_id, ev_id = await self._create_evidence_and_token(client)
+        resp = await client.post(
+            f"/api/v1/evidence/{ev_id}/upload",
+            files={"file": ("test.txt", b"no auth", "text/plain")},
+        )
+        assert resp.status_code == 401, f"Expected 401, got {resp.status_code}: {resp.text}"
+
+    async def test_upload_with_valid_investigation_id_creates_timeline(self, client: AsyncClient) -> None:
+        """Upload with a valid investigation_id should create timeline events and custody records."""
+        token, ws_id, proj_id, ev_id = await self._create_evidence_and_token(client)
+        inv = await client.post("/api/v1/investigations", json={
+            "workspace_id": ws_id, "title": "Upload Linked Investigation",
+        }, headers={"Authorization": f"Bearer {token}"})
+        inv_id = inv.json()["id"]
+
+        resp = await client.post(
+            f"/api/v1/evidence/{ev_id}/upload",
+            files={"file": ("linked.txt", b"Linked evidence upload", "text/plain")},
+            data={"investigation_id": str(inv_id)},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
+        data = resp.json()
+        assert data["investigation_id"] == str(inv_id)
+        assert data["redirect_url"] == f"/investigations/{inv_id}"
+        tl = await client.get(f"/api/v1/investigations/{inv_id}/timeline",
+                               headers={"Authorization": f"Bearer {token}"})
+        assert len(tl.json()) >= 1, "No timeline events created after linked upload"
+        custody = await client.get(f"/api/v1/evidence/{ev_id}/custody",
+                                    headers={"Authorization": f"Bearer {token}"})
+        actions = [e["action"] for e in custody.json()]
+        for action in ("upload", "verify", "status_change"):
+            assert action in actions, f"Custody missing action: {action}"
