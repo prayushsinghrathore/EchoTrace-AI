@@ -235,3 +235,83 @@ class TestGraph:
         resp = await client.get(f"/api/v1/investigations/{inv_id}/graph", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 200
         assert resp.json()["nodes"] == []
+
+
+@pytest.mark.asyncio
+class TestInvestigationActivityEvents:
+    """Activity events are recorded on investigation CRUD operations."""
+
+    async def test_create_records_activity(self, client: AsyncClient) -> None:
+        """Create investigation -> ActivityEvent INVESTIGATION_CREATED recorded."""
+        token, ws_id, inv_id = await _setup(client)
+        resp = await client.get(f"/api/v1/reports/activity?workspace_id={ws_id}",
+                                 headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 200
+        data = resp.json()
+        items = data["items"]
+        created = [e for e in items if e["event_type"] == "investigation_created"]
+        assert len(created) >= 1, "No investigation_created activity event found"
+        assert "Test Investigation" in created[0]["title"]
+
+    async def test_update_records_activity(self, client: AsyncClient) -> None:
+        """Update investigation -> ActivityEvent INVESTIGATION_UPDATED recorded."""
+        token, ws_id, inv_id = await _setup(client)
+        await client.patch(f"/api/v1/investigations/{inv_id}", json={"title": "Updated Title"},
+                            headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(f"/api/v1/reports/activity/investigation/{inv_id}",
+                                 headers={"Authorization": f"Bearer {token}"})
+        data = resp.json()
+        items = data["items"]
+        updated = [e for e in items if e["event_type"] == "investigation_updated"]
+        assert len(updated) >= 1, "No investigation_updated activity event found"
+
+    async def test_close_records_closed_activity(self, client: AsyncClient) -> None:
+        """Close investigation -> ActivityEvent INVESTIGATION_CLOSED recorded."""
+        token, ws_id, inv_id = await _setup(client)
+        await client.patch(f"/api/v1/investigations/{inv_id}", json={"status": "closed"},
+                            headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(f"/api/v1/reports/activity/investigation/{inv_id}",
+                                 headers={"Authorization": f"Bearer {token}"})
+        data = resp.json()
+        items = data["items"]
+        closed = [e for e in items if e["event_type"] == "investigation_closed"]
+        assert len(closed) >= 1, "No investigation_closed activity event found"
+
+
+@pytest.mark.asyncio
+class TestTimelineFiltering:
+    """Timeline filtering by date range, entity, and evidence."""
+
+    async def test_timeline_date_filter(self, client: AsyncClient) -> None:
+        """Filter timeline events by date range."""
+        token, ws_id, inv_id = await _setup(client)
+        await client.post(f"/api/v1/investigations/{inv_id}/timeline", json={
+            "event_timestamp": "2026-01-01T00:00:00Z", "title": "Old event",
+        }, headers={"Authorization": f"Bearer {token}"})
+        await client.post(f"/api/v1/investigations/{inv_id}/timeline", json={
+            "event_timestamp": "2026-07-14T00:00:00Z", "title": "Recent event",
+        }, headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(
+            f"/api/v1/investigations/{inv_id}/timeline?date_from=2026-06-01T00:00:00Z",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert resp.status_code == 200
+        events = resp.json()
+        assert len(events) >= 1
+        titles = [e["title"] for e in events]
+        assert "Recent event" in titles
+        assert "Old event" not in titles
+
+    async def test_timeline_no_filter_returns_all(self, client: AsyncClient) -> None:
+        """Without filters, all timeline events are returned."""
+        token, ws_id, inv_id = await _setup(client)
+        await client.post(f"/api/v1/investigations/{inv_id}/timeline", json={
+            "event_timestamp": "2026-01-01T00:00:00Z", "title": "Event A",
+        }, headers={"Authorization": f"Bearer {token}"})
+        await client.post(f"/api/v1/investigations/{inv_id}/timeline", json={
+            "event_timestamp": "2026-07-14T00:00:00Z", "title": "Event B",
+        }, headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(f"/api/v1/investigations/{inv_id}/timeline",
+                                 headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 200
+        assert len(resp.json()) >= 2

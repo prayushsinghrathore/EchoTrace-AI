@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -214,11 +215,21 @@ async def create_timeline_event(
 @router.get("/{inv_id}/timeline", response_model=list[TimelineEventResponse])
 async def list_timeline_events(
     inv_id: uuid.UUID,
+    date_from: datetime | None = Query(None),
+    date_to: datetime | None = Query(None),
+    entity_id: uuid.UUID | None = Query(None),
+    evidence_id: uuid.UUID | None = Query(None),
     db: AsyncSession = Depends(get_db_session),
     user: User = Depends(get_current_user),
 ):
     svc = InvestigationService(db)
-    return await svc.list_timeline_events(inv_id, user.id)
+    return await svc.list_timeline_events(
+        inv_id, user.id,
+        date_from=date_from,
+        date_to=date_to,
+        entity_id=entity_id,
+        evidence_id=evidence_id,
+    )
 
 
 @router.patch("/timeline/{event_id}", response_model=TimelineEventResponse)
