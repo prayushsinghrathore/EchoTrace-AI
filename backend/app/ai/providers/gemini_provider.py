@@ -1,8 +1,8 @@
 """
-Azure OpenAI LLM provider.
+Google Gemini LLM provider.
 
-Connects to Azure OpenAI Service using the deployment-based endpoint pattern.
-Uses direct HTTP for structured output generation.
+Uses the Gemini API via HTTP for structured output generation.
+Supports configurable model and timeout.
 """
 
 from __future__ import annotations
@@ -27,58 +27,50 @@ from app.core.logging import get_logger
 logger = get_logger(__name__)
 
 MODEL_COST_MAP: dict[str, dict[str, float]] = {
-    "gpt-4o": {"input": 0.0025, "output": 0.01},
-    "gpt-4o-mini": {"input": 0.00015, "output": 0.0006},
-    "gpt-4-turbo": {"input": 0.01, "output": 0.03},
+    "gemini-2.0-flash": {"input": 0.0001, "output": 0.0004},
+    "gemini-2.0-flash-lite": {"input": 0.000075, "output": 0.0003},
+    "gemini-1.5-pro": {"input": 0.00125, "output": 0.005},
+    "gemini-1.5-flash": {"input": 0.000075, "output": 0.0003},
 }
 
 
-class AzureProvider(BaseProvider):
-    """LLM provider using Azure OpenAI Service."""
+class GeminiProvider(BaseProvider):
+    """LLM provider using the Google Gemini API."""
 
     def __init__(
         self,
         api_key: str | None = None,
-        endpoint: str | None = None,
-        deployment: str | None = None,
-        api_version: str | None = None,
+        model: str | None = None,
     ) -> None:
-        self._api_key = api_key or settings.AZURE_OPENAI_KEY
-        self._endpoint = (endpoint or settings.AZURE_OPENAI_ENDPOINT).rstrip("/")
-        self._deployment = deployment or settings.AZURE_OPENAI_DEPLOYMENT
-        self._api_version = api_version or settings.AZURE_OPENAI_API_VERSION
+        self._api_key = api_key or settings.GEMINI_API_KEY
+        self._model = model or settings.GEMINI_MODEL
         self._client: httpx.AsyncClient | None = None
         self._total_input_tokens = 0
         self._total_output_tokens = 0
 
     @property
     def name(self) -> str:
-        return "azure"
+        return "gemini"
 
     @property
     def model(self) -> str:
-        return self._deployment or "gpt-4o"
+        return self._model
 
     @property
     def supports_streaming(self) -> bool:
-        return False
+        return True
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None:
             self._client = httpx.AsyncClient(
-                base_url=self._endpoint,
                 timeout=settings.AI_TIMEOUT_SECONDS,
-                headers={
-                    "api-key": self._api_key,
-                    "Content-Type": "application/json",
-                },
             )
         return self._client
 
     def _build_url(self) -> str:
         return (
-            f"/openai/deployments/{self._deployment}/chat/completions"
-            f"?api-version={self._api_version}"
+            f"https://generativelanguage.googleapis.com/v1beta/models/"
+            f"{self._model}:generateContent?key={self._api_key}"
         )
 
     async def _call(
@@ -91,23 +83,17 @@ class AzureProvider(BaseProvider):
         client = await self._get_client()
         start = time.time()
 
-        schema = response_schema.model_json_schema()
-        schema_name = response_schema.__name__
-
         body: dict[str, Any] = {
-            "model": self._deployment,
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
+            "system_instruction": {
+                "parts": [{"text": system_prompt}],
+            },
+            "contents": [
+                {"parts": [{"text": user_prompt}]},
             ],
-            "max_tokens": max_tokens or settings.AI_MAX_TOKENS,
-            "response_format": {
-                "type": "json_schema",
-                "json_schema": {
-                    "name": schema_name,
-                    "schema": schema,
-                    "strict": True,
-                },
+            "generationConfig": {
+                "maxOutputTokens": max_tokens or settings.AI_MAX_TOKENS,
+                "temperature": 0.1,
+                "responseMimeType": "application/json",
             },
         }
 
@@ -116,26 +102,36 @@ class AzureProvider(BaseProvider):
             response.raise_for_status()
             data = response.json()
         except httpx.TimeoutException:
-            raise TimeoutError(f"Azure request timed out after {settings.AI_TIMEOUT_SECONDS}s") from None
+            raise TimeoutError(f"Gemini request timed out after {settings.AI_TIMEOUT_SECONDS}s") from None
         except httpx.HTTPStatusError as exc:
-            logger.error("Azure API error", status=exc.response.status_code, body=exc.response.text)
-            raise RuntimeError(f"Azure API error: {exc.response.status_code}") from exc
+            logger.error("Gemini API error", status=exc.response.status_code, body=exc.response.text)
+            raise RuntimeError(f"Gemini API error: {exc.response.status_code}") from exc
 
         elapsed = int((time.time() - start) * 1000)
 
-        usage = data.get("usage", {})
-        input_tokens = usage.get("prompt_tokens", 0)
-        output_tokens = usage.get("completion_tokens", 0)
+        # Extract usage
+        usage = data.get("usageMetadata", {})
+        input_tokens = usage.get("promptTokenCount", 0)
+        output_tokens = usage.get("candidatesTokenCount", 0)
         self._total_input_tokens += input_tokens
         self._total_output_tokens += output_tokens
 
-        content = data["choices"][0]["message"]["content"]
+        # Extract text from response
+        content = ""
+        candidates = data.get("candidates", [])
+        if candidates:
+            parts = candidates[0].get("content", {}).get("parts", [])
+            if parts:
+                content = parts[0].get("text", "")
 
+        # Parse JSON (Gemini supports responseMimeType: application/json)
         try:
             parsed = json.loads(content)
             result = response_schema.model_validate(parsed)
-        except (json.JSONDecodeError, ValueError) as exc:
-            raise ValueError(f"Azure LLM returned invalid JSON: {exc}") from exc
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Gemini returned invalid JSON: {content[:300]}") from exc
+        except ValueError as exc:
+            raise ValueError(f"LLM output failed schema validation: {exc}") from exc
 
         cost = self._estimate_cost(input_tokens, output_tokens)
 
@@ -149,11 +145,7 @@ class AzureProvider(BaseProvider):
         return result, usage_meta
 
     def _estimate_cost(self, input_tokens: int, output_tokens: int) -> float:
-        model_name = self._deployment or "gpt-4o"
-        costs = next(
-            (c for k, c in MODEL_COST_MAP.items() if k in model_name),
-            {"input": 0.0025, "output": 0.01},
-        )
+        costs = MODEL_COST_MAP.get(self._model, {"input": 0.0001, "output": 0.0004})
         return (input_tokens / 1000 * costs["input"]) + (output_tokens / 1000 * costs["output"])
 
     def get_usage_summary(self) -> dict[str, Any]:
@@ -183,7 +175,9 @@ class AzureProvider(BaseProvider):
     ) -> ExtractedEntitiesResult:
         system_prompt = prompt_template or (
             "You are a forensic entity extractor. Identify all relevant entities "
-            "from the provided evidence. Return a JSON object with an 'entities' array."
+            "from the provided evidence. Return a JSON object with an 'entities' "
+            "array containing objects with 'type', 'label', 'confidence', 'context', "
+            "and 'evidence_ref' fields."
         )
         result, meta = await self._call(system_prompt, evidence_text, ExtractedEntitiesResult)
         return result
@@ -194,10 +188,15 @@ class AzureProvider(BaseProvider):
         evidence_text: str,
         prompt_template: str | None = None,
     ) -> SuggestedRelationshipsResult:
-        user_prompt = f"Entities:\n{entities_context}\n\nEvidence:\n{evidence_text}"
+        user_prompt = (
+            f"Entities identified in this investigation:\n{entities_context}\n\n"
+            f"Evidence text:\n{evidence_text}\n\n"
+            "Based on the above, suggest relationships between entities."
+        )
         system_prompt = prompt_template or (
-            "You are a forensic relationship analyst. Return a JSON object with "
-            "a 'relationships' array."
+            "You are a forensic relationship analyst. Suggest relationships between "
+            "entities based on the provided evidence. Return a JSON object with a "
+            "'relationships' array."
         )
         result, meta = await self._call(system_prompt, user_prompt, SuggestedRelationshipsResult)
         return result
@@ -208,7 +207,8 @@ class AzureProvider(BaseProvider):
         prompt_template: str | None = None,
     ) -> GeneratedTimelineResult:
         system_prompt = prompt_template or (
-            "You are a forensic timeline analyst. Return a JSON object with an 'events' array."
+            "You are a forensic timeline analyst. Extract chronological events from "
+            "the provided evidence. Return a JSON object with an 'events' array."
         )
         result, meta = await self._call(system_prompt, evidence_text, GeneratedTimelineResult)
         return result
@@ -219,8 +219,10 @@ class AzureProvider(BaseProvider):
         prompt_template: str | None = None,
     ) -> ReportResult:
         system_prompt = prompt_template or (
-            "You are a forensic report writer. Return a JSON object with executive_summary, "
-            "evidence_summary, timeline, entities, relationships, findings, and recommendations."
+            "You are a forensic investigation report writer. Generate a comprehensive "
+            "investigation report from the provided context. Return a JSON object with "
+            "'executive_summary', 'evidence_summary', 'timeline', 'entities', "
+            "'relationships', 'findings', and 'recommendations' fields."
         )
         result, meta = await self._call(system_prompt, investigation_context, ReportResult, max_tokens=8192)
         return result
@@ -228,10 +230,11 @@ class AzureProvider(BaseProvider):
     async def health_check(self) -> bool:
         try:
             client = await self._get_client()
-            response = await client.get(f"/openai/models?api-version={self._api_version}")
+            url = f"https://generativelanguage.googleapis.com/v1beta/models?key={self._api_key}"
+            response = await client.get(url)
             return response.status_code == 200
         except Exception as exc:
-            logger.warning("Azure health check failed", error=str(exc))
+            logger.warning("Gemini health check failed", error=str(exc))
             return False
 
     async def close(self) -> None:
