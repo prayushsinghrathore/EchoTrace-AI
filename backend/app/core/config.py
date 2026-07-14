@@ -164,7 +164,7 @@ class Settings(BaseSettings):
     NEO4J_DATABASE: str = "neo4j"
 
     # ── AI / LLM Providers ──────────────────────────────────────────────
-    AI_PROVIDER: str = Field(default="openai", pattern="^(openai|openrouter|ollama|azure)$")
+    AI_PROVIDER: str = Field(default="openai", pattern="^(openai|openrouter|ollama|azure|anthropic|gemini)$")
     AI_PROMPT_VERSION: str = "1.0.0"
     AI_MAX_TOKENS: int = Field(default=4096, ge=128, le=32768)
     AI_MAX_INPUT_TOKENS: int = Field(default=32000, ge=1024, le=128000)
@@ -195,6 +195,14 @@ class Settings(BaseSettings):
     AZURE_OPENAI_KEY: str = ""
     AZURE_OPENAI_DEPLOYMENT: str = ""
     AZURE_OPENAI_API_VERSION: str = "2024-02-15-preview"
+
+    # Anthropic
+    ANTHROPIC_API_KEY: str = ""
+    ANTHROPIC_MODEL: str = "claude-sonnet-4-20250514"
+
+    # Gemini
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-2.0-flash"
 
     # ── Database Pool ──────────────────────────────────────────────────
     DB_POOL_SIZE: int = Field(default=10, ge=1, le=100)

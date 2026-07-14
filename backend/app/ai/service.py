@@ -20,7 +20,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai.cache import ai_cache
 from app.ai.injection_guard import validate_input
-from app.ai.providers import AzureProvider, OllamaProvider, OpenAIProvider, OpenRouterProvider
+from app.ai.providers import (
+    AnthropicProvider,
+    AzureProvider,
+    GeminiProvider,
+    OllamaProvider,
+    OpenAIProvider,
+    OpenRouterProvider,
+)
 from app.ai.providers.base import BaseProvider
 from app.ai.schemas import (
     AIJobResponse,
@@ -72,8 +79,6 @@ class AIService:
 
         if provider_name == "openai":
             if not settings.OPENAI_API_KEY:
-                # Return a dummy provider — the calling method will check the key
-                # and return a failed job before making API calls
                 pass
             self._provider = OpenAIProvider()
         elif provider_name == "openrouter":
@@ -82,6 +87,10 @@ class AIService:
             self._provider = OllamaProvider()
         elif provider_name == "azure":
             self._provider = AzureProvider()
+        elif provider_name == "anthropic":
+            self._provider = AnthropicProvider()
+        elif provider_name == "gemini":
+            self._provider = GeminiProvider()
         else:
             raise ValueError(f"Unknown AI provider: {provider_name}")
 
@@ -120,6 +129,20 @@ class AIService:
                 "available": bool(s.AZURE_OPENAI_KEY),
                 "model": s.AZURE_OPENAI_DEPLOYMENT or "gpt-4o",
                 "supports_streaming": False,
+            },
+            {
+                "name": "anthropic",
+                "display_name": "Anthropic Claude",
+                "available": bool(s.ANTHROPIC_API_KEY),
+                "model": s.ANTHROPIC_MODEL,
+                "supports_streaming": True,
+            },
+            {
+                "name": "gemini",
+                "display_name": "Google Gemini",
+                "available": bool(s.GEMINI_API_KEY),
+                "model": s.GEMINI_MODEL,
+                "supports_streaming": True,
             },
         ]
         return {"active": s.AI_PROVIDER, "providers": providers}
