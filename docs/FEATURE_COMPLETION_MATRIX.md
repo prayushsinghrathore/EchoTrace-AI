@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-14  
 **Author:** Principal Software Engineer  
-**Status:** Phase 0 Complete  
+**Status:** Phase 3 Complete  
 
 ---
 
@@ -112,10 +112,12 @@
 
 | Feature | Status | Frontend | Backend | Service | DB | Evidence | Missing Work | Tests | Target Phase |
 |---------|--------|----------|---------|---------|----|----------|-------------|-------|-------------|
-| OpenAPI Provider | ✅ Working | `ai` | — | `OpenAIProvider` | — | GPT-4o with configurable base URL | Requires API key | `test_ai.py` | Phase 3 |
-| Azure Provider | ✅ Working | — | — | `AzureProvider` | — | Azure OpenAI | Requires API key | `test_ai.py` | Phase 3 |
-| Ollama Provider | ✅ Working | — | — | `OllamaProvider` | — | Local llama3 | Requires running Ollama | `test_ai.py` | Phase 3 |
-| OpenRouter Provider | ✅ Working | — | — | `OpenRouterProvider` | — | Multi-model gateway | Requires API key | `test_ai.py` | Phase 3 |
+| OpenAPI Provider | ✅ Working | `ai` | — | `OpenAIProvider` | — | GPT-4o with configurable base URL | Requires API key | `test_ai.py`, `test_ai_integration.py` | Phase 3 |
+| Anthropic Provider | ✅ Working | — | — | `AnthropicProvider` | — | Claude Messages API, JSON structured output | Requires API key | `test_ai.py`, `test_ai_integration.py` | Phase 3 |
+| Gemini Provider | ✅ Working | — | — | `GeminiProvider` | — | Gemini generateContent API, application/json MIME | Requires API key | `test_ai.py`, `test_ai_integration.py` | Phase 3 |
+| Azure Provider | ✅ Working | — | — | `AzureProvider` | — | Azure OpenAI deployment-based, json_schema | Requires API key | `test_ai.py`, `test_ai_integration.py` | Phase 3 |
+| Ollama Provider | ✅ Working | — | — | `OllamaProvider` | — | Local llama3 | Requires running Ollama | `test_ai.py`, `test_ai_integration.py` | Phase 3 |
+| OpenRouter Provider | ✅ Working | — | — | `OpenRouterProvider` | — | Multi-model gateway | Requires API key | `test_ai.py`, `test_ai_integration.py` | Phase 3 |
 | Summarize Evidence | ✅ Working | `ai` | `POST /api/v1/ai/summarize` | `AIService` | `AIJob` | Graceful no-key handling | Requires API key for real AI | `test_ai.py` | Phase 3 |
 | Extract Entities | ✅ Working | `ai` | `POST /api/v1/ai/entities` | `AIService` | `AIJob, AISuggestion` | Creates pending suggestions | Requires API key | `test_ai.py` | Phase 3 |
 | Suggest Relationships | ✅ Working | — | `POST /api/v1/ai/relationships` | `AIService` | `AIJob, AISuggestion` | Context from entities | Requires API key | `test_ai.py` | Phase 3 |
@@ -134,6 +136,11 @@
 | AI Health | ✅ Working | — | `GET /api/v1/ai/health` | `AIService` | — | Provider connectivity + cache | None | — | Phase 3 |
 | Caching | ✅ Working | — | — | `ai/cache.py` | — | SHA256-keyed with TTL | None | `test_ai.py` | Phase 3 |
 | Injection Guard | ✅ Working | — | — | `ai/injection_guard.py` | — | Input validation | None | — | Phase 3 |
+| Retry Policy | ✅ Working | — | — | `ai/retry.py` | — | Exponential backoff, jitter, 3 retries, 4xx/429 handling | None | `test_ai_integration.py` | Phase 3 |
+| Embedding Generation | ✅ Working | — | — | `ai/embeddings.py` | — | OpenAI text-embedding-3-small, single + batch | Requires API key + pgvector | `test_ai_integration.py` | Phase 3 |
+| pgvector Store | ✅ Working | — | — | `ai/embeddings.py` | `vector_embeddings` | IVFFlat index, cosine similarity, top-k search | Requires pgvector extension | `test_ai_integration.py` | Phase 3 |
+| Evidence Grounding | ✅ Working | — | — | `ai/schemas.py` | — | evidence_ref, confidence, reasoning on all outputs | None | `test_ai_integration.py` | Phase 3 |
+| Provider Governance | ✅ Working | — | — | All providers | — | Token usage, cost, latency, model tracked per job | None | `test_ai_integration.py` | Phase 3 |
 
 ---
 
@@ -232,7 +239,7 @@
 |-------|-------|-------------------|
 | **Phase 1** | Core Stability | 🔴 Fix HTTPException bug in evidence.py, fix Ruff + MyPy issues, verify auth flow, verify upload workflow |
 | **Phase 2** | Evidence & Investigation | Fix evidence upload, verify evidence workflow end-to-end, ensure all status transitions work |
-| **Phase 3** | AI | Ensure AI providers work, add prompt files if missing, verify graceful degradation |
+| **Phase 3** | AI | ✅ Complete — 6 providers, retry, embeddings, pgvector, all verified |
 | **Phase 4** | Knowledge Graph | Enable Neo4j by default, verify graph sync, enhance React Flow integration |
 | **Phase 5** | Reports & Realtime | **Create reports frontend page**, verify export download flow, add WebSocket channels |
 | **Phase 6** | Security & Observability | Uncomment OpenTelemetry deps, add MFA support, verify all security middleware |
