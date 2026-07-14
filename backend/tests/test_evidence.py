@@ -406,3 +406,261 @@ class TestEvidenceUpload:
         actions = [e["action"] for e in custody.json()]
         for action in ("upload", "verify", "status_change"):
             assert action in actions, f"Custody missing action: {action}"
+
+
+@pytest.mark.asyncio
+class TestEvidenceClassification:
+    """Evidence classification enums and metadata — end-to-end."""
+
+    async def test_create_with_various_statuses(self, client: AsyncClient) -> None:
+        """Create evidence with each status enum value."""
+        token, ws_id, proj_id = await _setup_env(client)
+        from app.models.evidence import EvidenceStatus
+
+        # Create evidence then update through each status
+        resp = await client.post("/api/v1/evidence", json={
+            "project_id": proj_id, "title": "Status Test", "category": "document", "priority": "high",
+        }, headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 201
+        ev_id = resp.json()["id"]
+        assert resp.json()["status"] == "draft"
+        assert resp.json()["priority"] == "high"
+        assert resp.json()["category"] == "document"
+
+        # Update to each status via PATCH
+        for status in EvidenceStatus:
+            upd = await client.patch(f"/api/v1/evidence/{ev_id}", json={"status": status.value},
+                                      headers={"Authorization": f"Bearer {token}"})
+            assert upd.status_code == 200, f"Failed to update to status {status.value}: {upd.text}"
+            assert upd.json()["status"] == status.value, f"Status not updated to {status.value}"
+
+    async def test_create_with_various_priorities(self, client: AsyncClient) -> None:
+        """Create evidence with each priority enum value."""
+        token, ws_id, proj_id = await _setup_env(client)
+        from app.models.evidence import EvidencePriority
+        for priority in EvidencePriority:
+            resp = await client.post("/api/v1/evidence", json={
+                "project_id": proj_id, "title": f"Priority {priority.value}", "priority": priority.value,
+            }, headers={"Authorization": f"Bearer {token}"})
+            assert resp.status_code == 201, f"Failed to create with priority {priority.value}: {resp.text}"
+            assert resp.json()["priority"] == priority.value
+
+    async def test_metadata_persistence(self, client: AsyncClient) -> None:
+        """All metadata fields persist correctly through create → get."""
+        import uuid
+        token, ws_id, proj_id = await _setup_env(client)
+        collector_id = uuid.uuid4()
+
+        resp = await client.post("/api/v1/evidence", json={
+            "project_id": proj_id,
+            "title": "Full Metadata Item",
+            "description": "A detailed evidence item",
+            "category": "image",
+            "priority": "critical",
+            "source": "network_logs",
+            "collector_id": str(collector_id),
+            "tags": ["critical", "network"],
+        }, headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 201
+        data = resp.json()
+        ev_id = data["id"]
+
+        # Verify all fields
+        assert data["title"] == "Full Metadata Item"
+        assert data["description"] == "A detailed evidence item"
+        assert data["category"] == "image"
+        assert data["priority"] == "critical"
+        assert data["source"] == "network_logs"
+        assert data["collector_id"] == str(collector_id)
+        assert data["evidence_number"].startswith("ET-")
+        assert set(data["tags"]) == {"critical", "network"}
+
+        # Re-fetch and verify
+        get = await client.get(f"/api/v1/evidence/{ev_id}",
+                                headers={"Authorization": f"Bearer {token}"})
+        assert get.status_code == 200
+        assert get.json()["category"] == "image"
+
+    async def test_search_by_classification(self, client: AsyncClient) -> None:
+        """Search/filter evidence by status, priority, and category."""
+        token, ws_id, proj_id = await _setup_env(client)
+        # Create evidence with different classifications
+        await client.post("/api/v1/evidence", json={
+            "project_id": proj_id, "title": "Doc A", "category": "document", "priority": "high",
+        }, headers={"Authorization": f"Bearer {token}"})
+        await client.post("/api/v1/evidence", json={
+            "project_id": proj_id, "title": "Img B", "category": "image", "priority": "medium",
+        }, headers={"Authorization": f"Bearer {token}"})
+
+        # Search by category
+        resp = await client.get(f"/api/v1/evidence/search?project_id={proj_id}&category=document",
+                                 headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total"] >= 1
+        for item in data["items"]:
+            assert item["category"] == "document"
+
+        # Search by priority
+        resp = await client.get(f"/api/v1/evidence/search?project_id={proj_id}&priority=high",
+                                 headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total"] >= 1
+        for item in data["items"]:
+            assert item["priority"] == "high"
+
+    async def test_stats_by_classification(self, client: AsyncClient) -> None:
+        """Evidence stats contains by_status, by_category, by_priority."""
+        token, ws_id, proj_id = await _setup_env(client)
+        await client.post("/api/v1/evidence", json={
+            "project_id": proj_id, "title": "Stats Item 1", "category": "document",
+        }, headers={"Authorization": f"Bearer {token}"})
+
+        stats = await client.get(f"/api/v1/evidence/stats/project/{proj_id}",
+                                  headers={"Authorization": f"Bearer {token}"})
+        assert stats.status_code == 200
+        data = stats.json()
+        assert "by_status" in data
+        assert "by_category" in data
+        assert "by_priority" in data
+        assert data["total"] >= 1
+
+
+@pytest.mark.asyncio
+class TestEvidenceVersions:
+    """Evidence version history tests."""
+
+    async def test_versions_created_on_upload(self, client: AsyncClient) -> None:
+        """Upload creates a version record."""
+        token, ws_id, proj_id, ev_id = await TestEvidenceUpload()._create_evidence_and_token(client)
+        await client.post(
+            f"/api/v1/evidence/{ev_id}/upload",
+            files={"file": ("v1.txt", b"Version 1 content", "text/plain")},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        resp = await client.get(f"/api/v1/evidence/{ev_id}/versions",
+                                 headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 200
+        versions = resp.json()
+        assert len(versions) >= 1
+        v = versions[0]
+        assert v["version_number"] >= 1
+        assert v["original_filename"] is not None
+        assert v["sha256_hash"] is not None
+
+    async def test_version_retrieval_by_id(self, client: AsyncClient) -> None:
+        """Get a specific version by its ID."""
+        token, ws_id, proj_id, ev_id = await TestEvidenceUpload()._create_evidence_and_token(client)
+        await client.post(
+            f"/api/v1/evidence/{ev_id}/upload",
+            files={"file": ("get_ver.txt", b"Version for retrieval", "text/plain")},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        versions = await client.get(f"/api/v1/evidence/{ev_id}/versions",
+                                     headers={"Authorization": f"Bearer {token}"})
+        versions = versions.json()
+        assert len(versions) >= 1
+        v_id = versions[0]["id"]
+        resp = await client.get(f"/api/v1/evidence/versions/{v_id}",
+                                 headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["id"] == v_id
+        assert data["version_number"] >= 1
+
+    async def test_version_number_increments(self, client: AsyncClient) -> None:
+        """Each upload increments the version number."""
+        token, ws_id, proj_id, ev_id = await TestEvidenceUpload()._create_evidence_and_token(client)
+        await client.post(
+            f"/api/v1/evidence/{ev_id}/upload",
+            files={"file": ("v1.txt", b"First version", "text/plain")},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        await client.post(
+            f"/api/v1/evidence/{ev_id}/upload",
+            files={"file": ("v2.txt", b"Second version content", "text/plain")},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        resp = await client.get(f"/api/v1/evidence/{ev_id}/versions",
+                                 headers={"Authorization": f"Bearer {token}"})
+        versions = resp.json()
+        assert len(versions) >= 2
+        assert versions[0]["version_number"] >= 2
+
+
+@pytest.mark.asyncio
+class TestEvidenceLifecycle:
+    """Evidence lifecycle end-to-end: create, upload, verify, update, delete, restore."""
+
+    async def test_complete_lifecycle(self, client: AsyncClient) -> None:
+        """Full evidence lifecycle end-to-end."""
+        token, ws_id, proj_id = await _setup_env(client)
+
+        # 1. Create (DRAFT)
+        create = await client.post("/api/v1/evidence", json={
+            "project_id": proj_id, "title": "Lifecycle Item", "category": "document",
+        }, headers={"Authorization": f"Bearer {token}"})
+        assert create.status_code == 201
+        assert create.json()["status"] == "draft"
+        assert create.json()["current_version_number"] == 1
+        ev_id = create.json()["id"]
+
+        # 2. Upload (transitions to VERIFIED)
+        upload = await client.post(
+            f"/api/v1/evidence/{ev_id}/upload",
+            files={"file": ("lifecycle.txt", b"Lifecycle test content", "text/plain")},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert upload.status_code == 200
+        assert upload.json()["status"] == "verified"
+        assert upload.json()["sha256_hash"] is not None
+        assert upload.json()["current_version_number"] >= 2
+
+        # 3. Verify hashes
+        data = upload.json()
+        verify = await client.post(f"/api/v1/evidence/{ev_id}/verify", json={
+            "sha256_hash": data["sha256_hash"],
+            "sha1_hash": data["sha1_hash"],
+            "md5_hash": data["md5_hash"],
+        }, headers={"Authorization": f"Bearer {token}"})
+        assert verify.status_code == 200
+        assert verify.json()["verified"] is True
+
+        # 4. Update metadata
+        update = await client.patch(f"/api/v1/evidence/{ev_id}", json={
+            "title": "Updated Lifecycle", "priority": "critical",
+        }, headers={"Authorization": f"Bearer {token}"})
+        assert update.status_code == 200
+        assert update.json()["title"] == "Updated Lifecycle"
+        assert update.json()["priority"] == "critical"
+
+        # 5. Check custody records
+        custody = await client.get(f"/api/v1/evidence/{ev_id}/custody",
+                                    headers={"Authorization": f"Bearer {token}"})
+        actions = [e["action"] for e in custody.json()]
+        for action in ("create", "upload", "verify", "update", "status_change"):
+            assert action in actions, f"Custody missing: {action}"
+
+        # 6. Soft delete
+        dl = await client.delete(f"/api/v1/evidence/{ev_id}",
+                                  headers={"Authorization": f"Bearer {token}"})
+        assert dl.status_code == 204
+
+        # 7. Verify deleted evidence not in normal list
+        ev_list = await client.get(f"/api/v1/evidence?project_id={proj_id}",
+                                    headers={"Authorization": f"Bearer {token}"})
+        ev_ids = [e["id"] for e in ev_list.json()]
+        assert ev_id not in ev_ids, "Deleted evidence should not appear in list"
+
+        # 8. Restore
+        restore = await client.post(f"/api/v1/evidence/{ev_id}/restore",
+                                     headers={"Authorization": f"Bearer {token}"})
+        assert restore.status_code == 200
+        assert restore.json()["is_deleted"] is False
+
+        # 9. Verify restored evidence is accessible
+        get = await client.get(f"/api/v1/evidence/{ev_id}",
+                                headers={"Authorization": f"Bearer {token}"})
+        assert get.status_code == 200
+        assert get.json()["title"] == "Updated Lifecycle"
