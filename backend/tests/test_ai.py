@@ -331,7 +331,7 @@ class TestAIService:
         info = AIService.get_provider_info()
         assert "active" in info
         assert "providers" in info
-        assert len(info["providers"]) == 4
+        assert len(info["providers"]) == 6
 
 
 # ── API / Approval Workflow Tests ────────────────────────────────────────────
@@ -448,3 +448,53 @@ class TestTimeoutHandling:
         time.sleep(1.1)
         hit, _ = cache.get("text", "prompt", "model", "1.0")
         assert not hit
+
+
+@pytest.mark.asyncio
+class TestAnthropicProvider:
+    """Anthropic provider unit tests."""
+
+    async def test_provider_properties(self) -> None:
+        from unittest.mock import patch
+
+        from app.ai.providers.anthropic_provider import AnthropicProvider
+        with patch.object(AnthropicProvider, "health_check", return_value=True):
+            provider = AnthropicProvider(api_key="test-key", model="claude-sonnet-4-20250514")
+            assert provider.name == "anthropic"
+            assert provider.model == "claude-sonnet-4-20250514"
+            assert provider.supports_streaming
+
+    async def test_health_check_returns_bool(self) -> None:
+        from app.ai.providers.anthropic_provider import AnthropicProvider
+        provider = AnthropicProvider(api_key="test-key", model="claude-sonnet-4-20250514")
+        result = await provider.health_check()
+        assert isinstance(result, bool)
+
+
+@pytest.mark.asyncio
+class TestGeminiProvider:
+    """Gemini provider unit tests."""
+
+    async def test_provider_properties(self) -> None:
+        from unittest.mock import patch
+
+        from app.ai.providers.gemini_provider import GeminiProvider
+        with patch.object(GeminiProvider, "health_check", return_value=True):
+            provider = GeminiProvider(api_key="test-key", model="gemini-2.0-flash")
+            assert provider.name == "gemini"
+            assert provider.model == "gemini-2.0-flash"
+            assert provider.supports_streaming
+
+    async def test_health_check_returns_bool(self) -> None:
+        from app.ai.providers.gemini_provider import GeminiProvider
+        provider = GeminiProvider(api_key="test-key", model="gemini-2.0-flash")
+        result = await provider.health_check()
+        assert isinstance(result, bool)
+
+
+class TestRetryUtility:
+    """Retry with exponential backoff tests."""
+
+    def test_retry_module_imports(self) -> None:
+        from app.ai.retry import call_with_retry
+        assert callable(call_with_retry)
