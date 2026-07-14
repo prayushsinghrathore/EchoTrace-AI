@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listWorkspaces, listInvestigations, createInvestigation, deleteInvestigation, getInvestigationDashboard } from "@/lib/workspace-client";
+import { listWorkspaces, listInvestigations, createInvestigation, deleteInvestigation, getInvestigationDashboard, searchInvestigations } from "@/lib/workspace-client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,9 @@ export default function InvestigationsPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("medium");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState("");
 
   const { data: workspaces } = useQuery({ queryKey: ["workspaces"], queryFn: listWorkspaces });
   const { data: invs, isLoading } = useQuery({
@@ -33,6 +36,19 @@ export default function InvestigationsPage() {
     queryFn: () => getInvestigationDashboard(selectedWs),
     enabled: !!selectedWs,
   });
+
+  const { data: searchResults } = useQuery({
+    queryKey: ["inv-search", selectedWs, searchQuery, statusFilter, priorityFilter],
+    queryFn: () => searchInvestigations({
+      workspace_id: selectedWs,
+      ...(searchQuery ? { q: searchQuery } : {}),
+      ...(statusFilter ? { status: statusFilter } : {}),
+      ...(priorityFilter ? { priority: priorityFilter } : {}),
+    }),
+    enabled: !!selectedWs && (searchQuery.length > 0 || !!statusFilter || !!priorityFilter),
+  });
+
+  const displayedInvestigations = (searchQuery || statusFilter || priorityFilter) ? searchResults?.items : invs;
 
   const createMut = useMutation({
     mutationFn: () => createInvestigation({ workspace_id: selectedWs, title, description: description || undefined, priority }),
@@ -85,6 +101,35 @@ export default function InvestigationsPage() {
         </div>
       )}
 
+      {selectedWs && (
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">🔍</span>
+            <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search investigations by title or description..."
+              className="w-full h-10 rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm">
+            <option value="">All status</option>
+            <option value="open">Open</option>
+            <option value="in_progress">In Progress</option>
+            <option value="pending_review">Pending Review</option>
+            <option value="closed">Closed</option>
+            <option value="archived">Archived</option>
+          </select>
+          <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)}
+            className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm">
+            <option value="">All priority</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+      )}
+
       {showForm && selectedWs && (
         <Card>
           <CardContent className="pt-4">
@@ -112,9 +157,9 @@ export default function InvestigationsPage() {
 
       {isLoading ? (
         <div className="space-y-2"><Skeleton className="h-16 w-full" /><Skeleton className="h-16 w-full" /></div>
-      ) : invs && invs.length > 0 ? (
+      ) : displayedInvestigations && displayedInvestigations.length > 0 ? (
         <div className="space-y-2">
-          {invs.map((inv) => (
+          {displayedInvestigations.map((inv) => (
             <Card key={inv.id} className="hover-card cursor-pointer" onClick={() => router.push(`/investigations/${inv.id}`)}>
               <CardContent className="flex items-center justify-between p-4">
                 <div className="flex-1">

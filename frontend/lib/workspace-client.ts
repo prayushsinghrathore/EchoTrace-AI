@@ -447,6 +447,11 @@ export function deleteInvestigation(id: string): Promise<void> {
   return request(`${API}/investigations/${id}`, { method: "DELETE" });
 }
 
+export function searchInvestigations(params: Record<string, string>): Promise<{ items: Investigation[]; total: number }> {
+  const qs = new URLSearchParams(params).toString();
+  return request(`${API}/investigations/search?${qs}`);
+}
+
 export function getInvestigationDashboard(wsId: string): Promise<InvestigationDashboard> {
   return request(`${API}/investigations/dashboard/${wsId}`);
 }
