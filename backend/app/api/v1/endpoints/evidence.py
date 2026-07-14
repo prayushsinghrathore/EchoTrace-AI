@@ -189,7 +189,7 @@ async def upload_file(
             parsed_inv_id = uuid.UUID(investigation_id.strip())
         except ValueError:
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                                detail="Invalid investigation_id format")
+                                detail="Invalid investigation_id format") from None
 
     ev = await svc.upload_file(evidence_id, file, user.id,
                                 investigation_id=parsed_inv_id,
