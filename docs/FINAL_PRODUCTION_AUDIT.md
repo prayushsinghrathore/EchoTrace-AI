@@ -2,8 +2,8 @@
 
 **Date:** 2026-07-15  
 **Repository:** EchoTrace AI  
-**Commit:** `9a1294d` (latest)  
-**Total commits:** 89  
+**Commit:** `current` (final cleanup)  
+**Total commits:** 90+  
 **Backend tests:** 247 passing  
 **Frontend routes:** 28 (32 page+layout files)
 
@@ -42,10 +42,23 @@
 | # | Item | Severity | Blocked By | Resolution |
 |---|------|----------|------------|------------|
 | 1 | NEO4J_ENABLED defaults to False | 🟡 Medium | Environment (Neo4j instance) | Set `NEO4J_ENABLED=True` + start Neo4j container |
-| 2 | No PDF generation library | 🟡 Medium | New dependency | Add `weasyprint` or `reportlab` when PDF is required |
-| 3 | Notifications page minimal UX | 🟢 Low | — | Enhancement, not blocking |
-| 4 | Default dev credentials in docker-compose | 🟢 Low | — | Documented as dev-only; override for production |
-| 5 | AI API keys required for provider execution | 🔵 Env | External API keys | Set env vars in production |
+| 2 | Default dev credentials in docker-compose | 🟢 Low | — | Documented as dev-only; override for production |
+| 3 | AI API keys required for provider execution | 🔵 Env | External API keys | Set env vars in production |
+
+### Resolved During Final Cleanup
+
+| Item | Resolution |
+|------|------------|
+| Dead event bus code (`events.py`) | Removed — unwired infrastructure with zero consumers |
+| Empty frontend directories | Removed (`components/ai/`, `components/features/`) |
+| PDF export frontend option | Disabled — backend lacks PDF rendering library |
+| Unused `siteConfig.nav` in config | Removed — sidebar uses inline array |
+| Unused LangChain dependencies (6 packages) | Removed — zero imports in source code |
+| Stale README metrics | Updated: Python 132→106, TS 67→53, Workflows 3→4 |
+| Placeholder GitHub URL in site config | Updated to actual repository |
+| Neo4j Enterprise license auto-accept | Changed default to `no` |
+| Missing frontend `.env.example` | Created |
+| Uncommented `pass` statements | Added explanation comments |
 
 ---
 
@@ -62,19 +75,17 @@ All high-priority issues resolved in Phase 6:
 - ✅ Unused frontend dependencies removed (@xyflow/react, three.js, @react-three/*, framer-motion)
 - ✅ README claims reconciled with actual implementation
 
-### 🟡 Medium (2 items)
+### 🟡 Medium (1 item)
 
 | # | Item | Location | Reason | Impact | Effort | Required Before Production |
 |---|------|----------|--------|--------|--------|---------------------------|
 | M1 | **NEO4J_ENABLED defaults to False** | `backend/app/core/config.py:163` | Graph sync writes to Neo4j silently if enabled, but is off by default. Neo4j read path added in Phase 4 but untested with real Neo4j. | Neo4j integration is code-complete but untested end-to-end. | Medium — Docker Compose + integration test | Depends on deployment requirements |
-| M2 | **No dedicated PDF generation** | `backend/app/reports/` | Current export system creates CSV/JSON. PDF format is accepted by the export API but no PDF rendering library is installed. | PDF export returns empty/no file. | Medium — add weasyprint or reportlab | Yes, if PDF is required |
 
-### 🟢 Low (2 items)
+### 🟢 Low (1 item)
 
 | # | Item | Location | Reason | Impact | Effort | Required Before Production |
 |---|------|----------|--------|--------|--------|---------------------------|
-| L1 | **Frontend `/notifications` page placeholder** | `frontend/app/notifications/page.tsx` | Notifications page exists but content rendering could be enhanced. | Minor UX gap. | Small | No |
-| L2 | **Default dev credentials in docker-compose.yml** | `docker-compose.yml` | `POSTGRES_PASSWORD: echotrace_secret`, `NEO4J_USER: neo4j` with fixed password. Documented as dev-only. | Security risk if deployed without override. | Small — add warning banner | Yes, must override in production |
+| L1 | **Default dev credentials in docker-compose.yml** | `docker-compose.yml` | `POSTGRES_PASSWORD: echotrace_secret`, `NEO4J_USER: neo4j` with fixed password. Documented as dev-only. | Security risk if deployed without override. | Small — add warning banner | Yes, must override in production |
 
 ---
 

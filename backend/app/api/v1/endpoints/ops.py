@@ -121,7 +121,7 @@ async def websocket_endpoint(websocket):
             if data == "ping":
                 await websocket.send_text('{"type":"pong"}')
     except Exception:
-        pass
+        pass  # WebSocket disconnected — cleanup runs in finally
     finally:
         ws_manager.disconnect(websocket, workspace_id)
 

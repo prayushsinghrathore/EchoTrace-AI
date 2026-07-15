@@ -63,7 +63,7 @@ def _try_bind_trace_context() -> None:
                     span_id=hex(span_context.span_id),
                 )
     except ImportError:
-        pass
+        pass  # OpenTelemetry not installed — trace context binding skipped
 
 
 def add_security_headers_middleware(app: FastAPI) -> None:

@@ -362,13 +362,13 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 | REST API Endpoints | 111+ |
 | WebSocket Channels | 1 |
 | Backend Tests | 247 |
-| Python Files | 132 |
-| TypeScript Files | 67 |
+| Python Files | 106 |
+| TypeScript Files | 53 |
 | Kubernetes Manifests | 14 |
-| CI/CD Workflows | 3 |
+| CI/CD Workflows | 4 |
 | Docker Stages | Multi-stage (deps, dev, builder, production) |
 | Code Coverage | Comprehensive (pytest with coverage) |
-| Security Scanning | Trivy, Bandit, GitHub Advanced Security |
+| Security Scanning | Trivy, Bandit, GitHub Advanced Security, CodeQL |
 
 ---
 

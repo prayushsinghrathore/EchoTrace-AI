@@ -25,28 +25,8 @@ export const siteConfig = {
   environment: process.env.NEXT_PUBLIC_ENVIRONMENT?.trim() || "development",
 
   links: {
-    github: "https://github.com/echotrace-ai/echotrace",
+    github: "https://github.com/pratyushsinghrathore/echotrace-ai",
     docs: "https://docs.echotrace.ai",
-  },
-
-  nav: {
-    main: [
-      {
-        label: "Dashboard",
-        href: "/dashboard",
-        icon: "LayoutDashboard",
-      },
-      {
-        label: "Graph",
-        href: "/graph",
-        icon: "GitBranch",
-      },
-      {
-        label: "Traces",
-        href: "/traces",
-        icon: "Search",
-      },
-    ],
   },
 
   seo: {

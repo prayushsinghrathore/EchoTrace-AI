@@ -4,14 +4,11 @@ Stage 8 tests — WebSocket, events, audit, health, metrics, rate limits, securi
 
 from __future__ import annotations
 
-import uuid
-
 import pytest
 from httpx import AsyncClient
 
 from app.core.metrics import MetricsCollector, metrics
 from app.models.audit_log import AuditAction
-from app.services.events import AppEvent, EventBus, event_bus
 
 
 async def _setup_env(client: AsyncClient) -> tuple[str, str]:
@@ -113,41 +110,7 @@ class TestMetrics:
 # ── Event Bus Tests ──────────────────────────────────────────────────────────
 
 
-class TestEventBus:
-    """Event bus publish/subscribe tests."""
-
-    def setup_method(self) -> None:
-        self.bus = EventBus()
-
-    async def _dummy_handler(self, event: AppEvent) -> None:
-        pass
-
-    def test_subscribe(self) -> None:
-        self.bus.subscribe("test.event", self._dummy_handler)
-        assert self.bus.subscriber_count >= 1
-
-    def test_wildcard_subscriber(self) -> None:
-        self.bus.subscribe_all(self._dummy_handler)
-        assert self.bus.subscriber_count == 1
-
-    def test_event_creation(self) -> None:
-        event = AppEvent(
-            event_type="test.event",
-            actor_id=uuid.uuid4(),
-            workspace_id=uuid.uuid4(),
-            resource_id="123",
-            data={"key": "value"},
-        )
-        assert event.event_type == "test.event"
-        assert event.actor_id is not None
-        assert event.to_dict()["resource_id"] == "123"
-        assert "timestamp" in event.to_dict()
-
-    def test_event_publish_from_service(self) -> None:
-        """Verify the global event_bus works."""
-        assert event_bus is not None
-        assert hasattr(event_bus, "publish")
-        assert hasattr(event_bus, "subscribe")
+# Event bus tests removed (event_bus was dead code, removed in final cleanup)
 
 
 # ── Health/Metrics API Tests ─────────────────────────────────────────────────

@@ -19,7 +19,6 @@ const FORMAT_OPTIONS = [
 ];
 
 const EXPORT_FORMATS = [
-  { value: "pdf", label: "PDF", icon: "📄" },
   { value: "csv", label: "CSV", icon: "📋" },
   { value: "json", label: "JSON", icon: "📊" },
 ];
@@ -37,7 +36,7 @@ export default function ReportsPage() {
   const [selectedWs, setSelectedWs] = useState("");
   const [selectedInv, setSelectedInv] = useState("");
   const [format, setFormat] = useState("markdown");
-  const [exportFormat, setExportFormat] = useState("pdf");
+  const [exportFormat, setExportFormat] = useState("csv");
   const [reportContent, setReportContent] = useState<ReportGenerateResponse | null>(null);
   const [generating, setGenerating] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -220,7 +219,7 @@ export default function ReportsPage() {
               {exports.map((job) => (
                 <div key={job.id} className="flex items-center justify-between rounded-md border p-3 text-sm">
                   <div className="flex items-center gap-3">
-                    <span className="text-lg">{job.format === "pdf" ? "📄" : job.format === "csv" ? "📋" : "📊"}</span>
+                    <span className="text-lg">{job.format === "csv" ? "📋" : "📊"}</span>
                     <div>
                       <span className="font-medium uppercase">{job.format}</span>
                       <span className="ml-2 text-xs text-muted-foreground">

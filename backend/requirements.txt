@@ -18,13 +18,6 @@ psycopg2-binary==2.9.10
 # ── Graph Database (Neo4j) ──────────────────────────────────────────────────
 neo4j==5.27.0
 
-# ── AI / LangChain (prepared for later stages) ──────────────────────────────
-langchain==0.3.14
-langchain-core==0.3.30
-langgraph==0.2.60
-langchain-openai==0.2.14
-langchain-google-genai==2.0.7
-
 # ── Utilities ───────────────────────────────────────────────────────────────
 python-dotenv==1.0.1
 httpx==0.28.1
