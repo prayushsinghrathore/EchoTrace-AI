@@ -75,6 +75,7 @@ _login_limiter: TokenBucket | None = None
 _register_limiter: TokenBucket | None = None
 _refresh_limiter: TokenBucket | None = None
 _reset_limiter: TokenBucket | None = None
+_ai_limiter: TokenBucket | None = None
 
 # Last cleanup timestamp
 _last_cleanup: float = 0.0
@@ -82,7 +83,7 @@ _last_cleanup: float = 0.0
 
 def initialize_limiters() -> None:
     """Initialize rate limiters from current settings."""
-    global _login_limiter, _register_limiter, _refresh_limiter, _reset_limiter
+    global _login_limiter, _register_limiter, _refresh_limiter, _reset_limiter, _ai_limiter
 
     _login_limiter = TokenBucket(
         max_requests=settings.RATE_LIMIT_LOGIN_MAX,
@@ -99,6 +100,10 @@ def initialize_limiters() -> None:
     _reset_limiter = TokenBucket(
         max_requests=settings.RATE_LIMIT_RESET_MAX,
         window_seconds=settings.RATE_LIMIT_RESET_WINDOW,
+    )
+    _ai_limiter = TokenBucket(
+        max_requests=settings.RATE_LIMIT_AI_MAX,
+        window_seconds=settings.RATE_LIMIT_AI_WINDOW,
     )
     logger.info("Rate limiters initialized")
 
@@ -137,6 +142,7 @@ def rate_limit(endpoint: str) -> Callable:
         "register": _register_limiter,
         "refresh": _refresh_limiter,
         "reset": _reset_limiter,
+        "ai": _ai_limiter,
     }
 
     limiter = limiters.get(endpoint)
@@ -163,7 +169,7 @@ def rate_limit(endpoint: str) -> Callable:
 
 def _ensure_limiters() -> None:
     """Lazily initialize limiters if not already done."""
-    global _login_limiter, _register_limiter, _refresh_limiter, _reset_limiter
+    global _login_limiter, _register_limiter, _refresh_limiter, _reset_limiter, _ai_limiter
 
     if _login_limiter is None:
         initialize_limiters()

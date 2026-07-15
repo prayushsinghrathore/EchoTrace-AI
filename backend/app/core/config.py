@@ -132,6 +132,10 @@ class Settings(BaseSettings):
     RATE_LIMIT_RESET_MAX: int = Field(default=3, ge=1)
     RATE_LIMIT_RESET_WINDOW: int = Field(default=3600, ge=1)
 
+    # ── AI Endpoint Rate Limiting ────────────────────────────────────────
+    RATE_LIMIT_AI_MAX: int = Field(default=30, ge=1)
+    RATE_LIMIT_AI_WINDOW: int = Field(default=60, ge=10)  # 30 req/min per IP
+
     # ── Storage ─────────────────────────────────────────────────────────
     STORAGE_PROVIDER: str = "local"
     STORAGE_LOCAL_PATH: str = "./storage"

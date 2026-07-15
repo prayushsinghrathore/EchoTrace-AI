@@ -30,6 +30,7 @@ from app.ai.service import AIService
 from app.api.deps import get_db_session
 from app.core.auth import get_current_user
 from app.core.logging import get_logger
+from app.core.rate_limiter import rate_limit
 from app.models.ai_suggestion import SuggestionStatus
 from app.models.user import User
 
@@ -83,6 +84,7 @@ async def get_prompt_content(
 @router.post("/summarize", response_model=AIJobResponse, status_code=status.HTTP_202_ACCEPTED)
 async def summarize_evidence(
     body: AISummarizeRequest,
+    _rate_limit: None = Depends(rate_limit("ai")),
     db: AsyncSession = Depends(get_db_session),
     user: User = Depends(get_current_user),
 ) -> AIJobResponse:
@@ -103,6 +105,7 @@ async def summarize_evidence(
 @router.post("/entities", response_model=AIJobResponse, status_code=status.HTTP_202_ACCEPTED)
 async def extract_entities(
     body: AIExtractEntitiesRequest,
+    _rate_limit: None = Depends(rate_limit("ai")),
     db: AsyncSession = Depends(get_db_session),
     user: User = Depends(get_current_user),
 ) -> AIJobResponse:
@@ -123,6 +126,7 @@ async def extract_entities(
 @router.post("/relationships", response_model=AIJobResponse, status_code=status.HTTP_202_ACCEPTED)
 async def suggest_relationships(
     body: AIRelationshipsRequest,
+    _rate_limit: None = Depends(rate_limit("ai")),
     db: AsyncSession = Depends(get_db_session),
     user: User = Depends(get_current_user),
 ) -> AIJobResponse:
@@ -142,6 +146,7 @@ async def suggest_relationships(
 @router.post("/timeline", response_model=AIJobResponse, status_code=status.HTTP_202_ACCEPTED)
 async def generate_timeline(
     body: AITimelineRequest,
+    _rate_limit: None = Depends(rate_limit("ai")),
     db: AsyncSession = Depends(get_db_session),
     user: User = Depends(get_current_user),
 ) -> AIJobResponse:
@@ -161,6 +166,7 @@ async def generate_timeline(
 @router.post("/report", response_model=AIJobResponse, status_code=status.HTTP_202_ACCEPTED)
 async def generate_report(
     body: AIReportRequest,
+    _rate_limit: None = Depends(rate_limit("ai")),
     db: AsyncSession = Depends(get_db_session),
     user: User = Depends(get_current_user),
 ) -> AIJobResponse:
@@ -183,6 +189,7 @@ async def generate_report(
 async def run_ai_pipeline(
     evidence_id: uuid.UUID = Query(...),
     investigation_id: uuid.UUID | None = Query(None),
+    _rate_limit: None = Depends(rate_limit("ai")),
     db: AsyncSession = Depends(get_db_session),
     user: User = Depends(get_current_user),
 ) -> dict:
@@ -302,6 +309,7 @@ async def list_suggestions(
 async def approve_suggestion(
     suggestion_id: uuid.UUID,
     body: AIReviewAction = AIReviewAction(notes=None),
+    _rate_limit: None = Depends(rate_limit("ai")),
     db: AsyncSession = Depends(get_db_session),
     user: User = Depends(get_current_user),
 ) -> AISuggestionResponse:
@@ -318,6 +326,7 @@ async def approve_suggestion(
 async def reject_suggestion(
     suggestion_id: uuid.UUID,
     body: AIReviewAction = AIReviewAction(notes=None),
+    _rate_limit: None = Depends(rate_limit("ai")),
     db: AsyncSession = Depends(get_db_session),
     user: User = Depends(get_current_user),
 ) -> AISuggestionResponse:
@@ -332,6 +341,7 @@ async def reject_suggestion(
 @router.post("/review/bulk")
 async def bulk_review(
     body: AIBulkReviewRequest,
+    _rate_limit: None = Depends(rate_limit("ai")),
     db: AsyncSession = Depends(get_db_session),
     user: User = Depends(get_current_user),
 ) -> dict:
