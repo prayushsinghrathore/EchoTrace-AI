@@ -135,8 +135,8 @@ Visit **http://localhost:3000** for the frontend and **http://localhost:8000/doc
 | **Frontend** | Next.js 15, TypeScript, TailwindCSS | SSR React application |
 | **UI** | shadcn/ui, Radix UI, Lucide Icons | Accessible component library |
 | **State** | React Context, React Query | Client state & server cache |
-| **Animation** | Framer Motion | UI transitions & micro-interactions |
-| **Visualization** | Custom Graph, Three.js | Graph & 3D visualization |
+| **Animation** | CSS Transitions | UI transitions & micro-interactions |
+| **Visualization** | Custom Graph | Graph visualization |
 | **Backend** | FastAPI, Python 3.12 | High-performance REST API |
 | **ORM** | SQLAlchemy 2.0 (async) | Database access layer |
 | **Migrations** | Alembic | Schema versioning |
