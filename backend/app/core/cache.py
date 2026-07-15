@@ -21,32 +21,44 @@ from app.core.config import settings
 _REDIS_AVAILABLE: bool = False
 _redis_client: Any = None
 
+# Lightweight check — only validates the redis package is installed.
+# The actual client and connection are created lazily in _get_client().
 try:
-    import redis.asyncio as aioredis
+    import redis  # noqa: F401
 
-    _redis_client = aioredis.from_url(
-        settings.REDIS_URL,
-        encoding="utf-8",
-        decode_responses=True,
-        socket_connect_timeout=2,
-        socket_timeout=2,
-        retry_on_timeout=False,
-        health_check_interval=30,
-    )
     _REDIS_AVAILABLE = True
 except ImportError:
     pass
-except Exception:
-    # Redis server may not be running — degrade gracefully
-    pass
+
+
+async def _get_client() -> Any:
+    """Create the Redis client on first use. Returns None if unavailable."""
+    global _redis_client
+    if not settings.REDIS_ENABLED or not _REDIS_AVAILABLE:
+        return None
+    if _redis_client is None:
+        import redis.asyncio as aioredis
+
+        with suppress(Exception):
+            _redis_client = aioredis.from_url(
+                settings.REDIS_URL,
+                encoding="utf-8",
+                decode_responses=True,
+                socket_connect_timeout=2,
+                socket_timeout=2,
+                retry_on_timeout=False,
+                health_check_interval=30,
+            )
+    return _redis_client
 
 
 async def get(key: str) -> Any | None:
     """Get a value from cache. Returns None on miss or error."""
-    if not _REDIS_AVAILABLE or _redis_client is None:
+    client = await _get_client()
+    if client is None:
         return None
     with suppress(Exception):
-        value = await _redis_client.get(key)
+        value = await client.get(key)
         if value is not None:
             return json.loads(value)
     return None
@@ -54,32 +66,35 @@ async def get(key: str) -> Any | None:
 
 async def set(key: str, value: Any, ttl_seconds: int | None = None) -> None:
     """Set a cached value with optional TTL. Silently ignores errors."""
-    if not _REDIS_AVAILABLE or _redis_client is None:
+    client = await _get_client()
+    if client is None:
         return
     with suppress(Exception):
         serialized = json.dumps(value, default=str)
         if ttl_seconds is not None:
-            await _redis_client.setex(key, ttl_seconds, serialized)
+            await client.setex(key, ttl_seconds, serialized)
         else:
-            await _redis_client.set(key, serialized)
+            await client.set(key, serialized)
 
 
 async def delete(key: str) -> None:
     """Delete a cached key. Silently ignores errors."""
-    if not _REDIS_AVAILABLE or _redis_client is None:
+    client = await _get_client()
+    if client is None:
         return
     with suppress(Exception):
-        await _redis_client.delete(key)
+        await client.delete(key)
 
 
 async def clear_pattern(pattern: str) -> None:
     """Delete all keys matching a glob pattern (e.g. ``evidence:*``)."""
-    if not _REDIS_AVAILABLE or _redis_client is None:
+    client = await _get_client()
+    if client is None:
         return
     with suppress(Exception):
-        cursor, keys = await _redis_client.scan(cursor=0, match=pattern, count=100)
+        cursor, keys = await client.scan(cursor=0, match=pattern, count=100)
         if keys:
-            await _redis_client.delete(*keys)
+            await client.delete(*keys)
 
 
 async def close() -> None:

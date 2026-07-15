@@ -21,24 +21,14 @@ _OTEL_AVAILABLE: bool = False
 _tracer_provider: Any = None
 _meter_provider: Any = None
 
+# Lightweight check — only tests whether the base package is reachable.
+# The actual SDK and exporter imports are deferred to setup_opentelemetry().
 try:
-    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-    from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-    from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
-    from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
-    from opentelemetry.sdk.resources import Resource
-    from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import BatchSpanProcessor
+    import opentelemetry  # noqa: F401
 
     _OTEL_AVAILABLE = True
 except ImportError:
-    logger.info(
-        "OpenTelemetry packages not installed — tracing disabled. "
-        "Install opentelemetry-distro, opentelemetry-exporter-otlp, "
-        "opentelemetry-instrumentation-fastapi, "
-        "opentelemetry-instrumentation-httpx, and "
-        "opentelemetry-instrumentation-sqlalchemy to enable."
-    )
+    pass
 
 
 def setup_opentelemetry(app: Any = None) -> None:
@@ -52,8 +42,16 @@ def setup_opentelemetry(app: Any = None) -> None:
         logger.info("OpenTelemetry instrumentation skipped (disabled or unavailable).")
         return
 
+    # Deferred imports — these are heavy (~50 MB) and pulled in only when
+    # deliberately enabled via OTEL_ENABLED=true.
     from opentelemetry import trace
-
+    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+    from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+    from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+    from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
+    from opentelemetry.sdk.resources import Resource
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor
     resource = Resource.create(
         attributes={
             "service.name": "echotrace-backend",

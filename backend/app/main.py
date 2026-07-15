@@ -61,9 +61,10 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     await neo4j_manager.close()
 
     # Dispose database connections
-    from app.db.session import async_engine, sync_engine
+    from app.db.session import _sync_engine_instance, async_engine
     await async_engine.dispose()
-    sync_engine.dispose()
+    if _sync_engine_instance is not None:
+        _sync_engine_instance.dispose()
 
     await close_cache()
     shutdown_opentelemetry()

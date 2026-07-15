@@ -8,6 +8,7 @@ and proper lifecycle management.
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator, Generator
+from typing import Any
 
 from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -112,26 +113,45 @@ async def check_database_connection() -> bool:
 
 
 # ── Sync Engine & Session (for Alembic and scripts) ─────────────────────────
+# Created lazily — the sync engine is only needed during Alembic migrations
+# (which run as a separate process). At application runtime it saves ~10 MB.
 
-_sync_connect_args: dict[str, str] = {}
-if settings.DB_SSL_MODE == "require":
-    _sync_connect_args["sslmode"] = "require"
+_sync_engine_instance: Any = None
+_sync_session_local: Any = None
 
-sync_engine = create_engine(
-    str(settings.SYNC_DATABASE_URI),
-    connect_args=_sync_connect_args,
-    pool_size=settings.DB_POOL_SIZE,
-    max_overflow=settings.DB_MAX_OVERFLOW,
-    echo=settings.DB_ECHO,
-    pool_pre_ping=True,
-)
 
-SyncSessionLocal = sessionmaker(
-    bind=sync_engine,
-    class_=Session,
-    expire_on_commit=False,
-    autoflush=False,
-)
+def _ensure_sync_engine():
+    """Lazily create the sync engine when first requested."""
+    global _sync_engine_instance, _sync_session_local
+    if _sync_engine_instance is not None:
+        return _sync_engine_instance, _sync_session_local
+
+    _sync_connect_args: dict[str, str] = {}
+    if settings.DB_SSL_MODE == "require":
+        _sync_connect_args["sslmode"] = "require"
+
+    _sync_engine_instance = create_engine(
+        str(settings.SYNC_DATABASE_URI),
+        connect_args=_sync_connect_args,
+        pool_size=settings.DB_POOL_SIZE,
+        max_overflow=settings.DB_MAX_OVERFLOW,
+        echo=settings.DB_ECHO,
+        pool_pre_ping=True,
+    )
+
+    _sync_session_local = sessionmaker(
+        bind=_sync_engine_instance,
+        class_=Session,
+        expire_on_commit=False,
+        autoflush=False,
+    )
+    return _sync_engine_instance, _sync_session_local
+
+
+def sync_engine():
+    """Get the sync engine, creating it lazily."""
+    engine, _ = _ensure_sync_engine()
+    return engine
 
 
 def get_sync_session() -> Generator[Session, None, None]:
@@ -141,7 +161,8 @@ def get_sync_session() -> Generator[Session, None, None]:
     Yields:
         A sync SQLAlchemy session.
     """
-    session = SyncSessionLocal()
+    _, local = _ensure_sync_engine()
+    session = local()
     try:
         yield session
     finally:
