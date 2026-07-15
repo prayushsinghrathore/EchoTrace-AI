@@ -25,6 +25,20 @@
   </p>
 </div>
 
+<h1 align="center">EchoTrace AI</h1>
+
+<p align="center">
+AI-Powered Software Intelligence Platform
+</p>
+
+<p align="center">
+<a href="https://echo-trace-ai.vercel.app"><strong>🌐 Live Demo</strong></a>
+•
+<a href="https://echotrace-ai-kkta.onrender.com/docs"><strong>📖 API Docs</strong></a>
+•
+<a href="https://echotrace-ai-kkta.onrender.com/redoc"><strong>📚 ReDoc</strong></a>
+</p>
+
 ---
 
 ## 📋 Overview
