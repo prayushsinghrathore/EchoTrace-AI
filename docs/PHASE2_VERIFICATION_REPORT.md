@@ -318,7 +318,7 @@
 | Neo4j requires NEO4J_ENABLED=True + instance | 🔵 Environment | Code verified — graceful skip on disabled |
 | OpenTelemetry deps commented out in requirements.txt | 🟢 Low | Non-functional, planned for Phase 6 |
 | No dedicated /reports frontend page | 🟡 Medium | Reports accessible in investigation detail page inline. Planned for Phase 5 |
-| Celery referenced in README architecture diagram but not implemented | 🟡 Documentation | App uses asyncio background tasks instead |
+| Celery referenced in README — fixed | 🟡 Documentation | Now correctly says Asyncio |
 
 ---
 

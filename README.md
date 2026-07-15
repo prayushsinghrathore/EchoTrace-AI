@@ -28,12 +28,12 @@ Built with a modern stack — Next.js 15, FastAPI, PostgreSQL, and Neo4j — it 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │                     Frontend (Next.js 15)                          │
-│    shadcn/ui  ·  Framer Motion  ·  React Flow  ·  Three.js        │
+│    shadcn/ui  ·  Framer Motion  ·  Custom Graph  ·  Three.js        │
 └────────────────────┬──────────────────────┬───────────────────────┘
                      │ HTTP/REST            │ WebSocket
 ┌────────────────────▼──────────────────────▼───────────────────────┐
 │                       Backend (FastAPI)                             │
-│          Services  ·  Repositories  ·  LangChain  ·  Celery        │
+│          Services  ·  Repositories  ·  LangChain  ·  Asyncio       │
 └───────┬────────────────────────────┬───────────────────────────────┘
         │                            │
 ┌───────▼────────┐          ┌───────▼────────┐
@@ -48,13 +48,13 @@ Built with a modern stack — Next.js 15, FastAPI, PostgreSQL, and Neo4j — it 
 
 | Category | Features |
 |----------|----------|
-| **🔐 Authentication** | JWT with refresh tokens, OAuth2, password reset, MFA-ready, rate limiting |
+| **🔐 Authentication** | JWT with refresh tokens, OAuth2, password reset, rate limiting |
 | **🏢 Organizations** | Multi-tenant workspaces, role-based access (RBAC), member management |
 | **🔍 Investigations** | Create, track, and manage traceability investigations with full CRUD |
 | **📊 Dashboard** | Real-time metrics, activity feeds, workspace statistics |
 | **🤖 AI Engine** | LangGraph-powered agents, vector similarity search, auto-tagging, anomaly detection |
 | **🧠 Knowledge Graph** | Neo4j-backed graph visualization, relationship mapping, entity resolution |
-| **📈 Reporting** | Custom reports, exports (PDF/CSV/JSON), scheduled generation, templates |
+| **📈 Reporting** | Custom reports, exports (CSV/JSON), templates |
 | **🔗 Evidence** | Attach and manage evidence items, file uploads, classification |
 | **💬 Realtime** | WebSocket-based collaboration, live updates, notifications |
 | **📡 Observability** | OpenTelemetry, Prometheus metrics, structured logging, health checks |
@@ -136,7 +136,7 @@ Visit **http://localhost:3000** for the frontend and **http://localhost:8000/doc
 | **UI** | shadcn/ui, Radix UI, Lucide Icons | Accessible component library |
 | **State** | React Context, React Query | Client state & server cache |
 | **Animation** | Framer Motion | UI transitions & micro-interactions |
-| **Visualization** | React Flow, Three.js | Graph & 3D visualization |
+| **Visualization** | Custom Graph, Three.js | Graph & 3D visualization |
 | **Backend** | FastAPI, Python 3.12 | High-performance REST API |
 | **ORM** | SQLAlchemy 2.0 (async) | Database access layer |
 | **Migrations** | Alembic | Schema versioning |
@@ -186,7 +186,7 @@ echotrace-ai/
 │   │   ├── repositories/            # Data access layer
 │   │   └── graph/                   # Neo4j integration
 │   ├── alembic/                     # Database migrations
-│   ├── tests/                       # Test suite (165+ tests)
+│   ├── tests/                       # Test suite (247 tests)
 │   └── Dockerfile                   # Multi-stage build
 │
 ├── k8s/                             # Kubernetes manifests
@@ -360,8 +360,8 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 | Metric | Value |
 |--------|-------|
 | REST API Endpoints | 111+ |
-| WebSocket Channels | 8 |
-| Backend Tests | 165+ |
+| WebSocket Channels | 1 |
+| Backend Tests | 247 |
 | Python Files | 132 |
 | TypeScript Files | 67 |
 | Kubernetes Manifests | 14 |

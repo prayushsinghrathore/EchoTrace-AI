@@ -9,7 +9,7 @@
 
 | Check | Result |
 |-------|--------|
-| Backend tests | **239 passed** (was 188 at Phase 2) |
+| Backend tests | **247 passed** (was 239 at Phase 3) |
 | Ruff lint | ✅ Clean |
 | MyPy type check | ✅ Clean (120 source files) |
 | Frontend ESLint | ✅ 0 errors |
@@ -211,7 +211,7 @@ python -m pytest tests/test_auth.py tests/test_workspaces.py \
 | Blocker | Phase | Notes |
 |---------|-------|-------|
 | No dedicated `/reports` frontend page | Phase 5 | Reports accessible inline in investigation detail |
-| Celery in README but not implemented | Documentation | App uses asyncio background tasks instead |
+| Celery in README — fixed | Documentation | Now correctly says Asyncio |
 
 ### Environment Blockers
 | Blocker | Affects | Notes |
@@ -224,7 +224,7 @@ python -m pytest tests/test_auth.py tests/test_workspaces.py \
 ### Documentation Blockers
 | Blocker | Notes |
 |---------|-------|
-| Celery vs asyncio discrepancy in README | Architecture diagram references Celery, app uses asyncio |
+| Celery vs asyncio discrepancy — fixed | Architecture diagram now correctly says Asyncio |
 
 ---
 

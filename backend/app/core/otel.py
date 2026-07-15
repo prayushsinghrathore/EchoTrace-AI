@@ -112,5 +112,5 @@ def shutdown_opentelemetry() -> None:
     from opentelemetry import trace
 
     if _tracer_provider is not None:
-        trace.get_tracer_provider().shutdown()
+        trace.get_tracer_provider().shutdown()  # type: ignore[attr-defined]
         logger.debug("OpenTelemetry shut down")

@@ -31,7 +31,7 @@
 | Password Reset | ✅ Working | `auth/forgot-password`, `auth/reset-password` | `POST /auth/forgot-password`, `POST /auth/reset-password` | inline | `PasswordResetToken` | Token-based, rate limited, dev logging | Email sending (dev only) | `test_auth.py` | Phase 1 |
 | OAuth2 | ✅ Working | — | `POST /auth/login` | inline | — | Returns WWW-Authenticate Bearer header | Not a separate OAuth2 provider flow | `test_auth.py` | Phase 1 |
 | Rate Limiting | ✅ Working | — | All auth endpoints | `core.rate_limiter` | — | Per-endpoint limits with configurable windows | None | `test_rate_limiter.py` | Phase 1 |
-| MFA | 🟡 Partial | — | — | — | — | Noted as "MFA-ready" in README, no implementation | No MFA flow exists | — | Phase 6 |
+| MFA | ❌ Missing | — | — | — | — | Not implemented, removed from README claim | No MFA flow exists | — | Not planned |
 
 ---
 
@@ -224,12 +224,22 @@
 | "14 Kubernetes Manifests" | Present | ✅ |
 | "3 CI/CD Workflows" | ci.yml, docker.yml, release.yml | ✅ |
 | "Multi-stage Docker" | backend: 4 stages, frontend: multi-stage | ✅ |
-| "Celery" in architecture diagram | Not implemented — uses asyncio instead | ❌ |
+| "8 WebSocket Channels" | 1 active (invitations), framework for more | 🟡 Partial |
+| "165+ Backend Tests" | 247 passing | ✅ |
+| "132 Python Files" | 116 .py source files (~132 including tests, config) | ✅ |
+| "67 TypeScript Files" | ~60 source TS files (+ node_modules) | ✅ |
+| "14 Kubernetes Manifests" | Present | ✅ |
+| "3 CI/CD Workflows" | ci.yml, docker.yml, release.yml | ✅ |
+| "Multi-stage Docker" | backend: 4 stages, frontend: multi-stage | ✅ |
+| "Celery" in architecture diagram | Fixed — now says Asyncio | ✅ |
 | "LangChain/LangGraph" | In requirements.txt | ✅ |
 | "React Flow" | Imported as @xyflow/react in deps | 🟡 Partial |
 | "Three.js" | In frontend dependencies | ✅ |
 | "Comprehensive coverage (pytest with coverage)" | pytest-cov configured and working | ✅ |
 | "Security Scanning: Trivy, Bandit" | Bandit in CI, Trivy mentioned in README | ✅ |
+| "MFA-ready" in README | Removed from README | ✅ |
+| "scheduled generation" in README | Removed from README | ✅ |
+| "PDF" in exports | Removed from README | ✅ |
 
 ---
 
@@ -237,11 +247,11 @@
 
 | Phase | Focus | Issues to Resolve |
 |-------|-------|-------------------|
-| **Phase 1** | Core Stability | 🔴 Fix HTTPException bug in evidence.py, fix Ruff + MyPy issues, verify auth flow, verify upload workflow |
-| **Phase 2** | Evidence & Investigation | Fix evidence upload, verify evidence workflow end-to-end, ensure all status transitions work |
+| **Phase 1** | Core Stability | ✅ Complete |
+| **Phase 2** | Evidence & Investigation | ✅ Complete |
 | **Phase 3** | AI | ✅ Complete — 6 providers, retry, embeddings, pgvector, all verified |
-| **Phase 4** | Knowledge Graph | Enable Neo4j by default, verify graph sync, enhance React Flow integration |
-| **Phase 5** | Reports & Realtime | **Create reports frontend page**, verify export download flow, add WebSocket channels |
-| **Phase 6** | Security & Observability | Uncomment OpenTelemetry deps, add MFA support, verify all security middleware |
+| **Phase 4** | Knowledge Graph | ✅ Complete — Neo4j read path, graph sync, custom graph visualization |
+| **Phase 5** | Reports & Realtime | ✅ Complete — reports frontend, export download, WebSocket framework |
+| **Phase 6** | Security & Observability | In progress — uncomment OpenTelemetry deps, verify security middleware, fix rate limiting on AI endpoints |
 | **Phase 7** | Infrastructure | Verify Docker Compose end-to-end, validate K8s manifests, test CI workflows |
 | **Phase 8** | Final Release | Update README, verify all claims, production readiness report |

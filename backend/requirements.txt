@@ -51,8 +51,8 @@ pre-commit==4.0.1
 aiosqlite==0.22.1
 
 # ── OpenTelemetry (optional — tracing degrades gracefully if absent) ────────
-# opentelemetry-distro==0.50b0
-# opentelemetry-exporter-otlp==1.29.0
-# opentelemetry-instrumentation-fastapi==0.50b0
-# opentelemetry-instrumentation-httpx==0.50b0
-# opentelemetry-instrumentation-sqlalchemy==0.50b0
+opentelemetry-distro==0.64b0
+opentelemetry-exporter-otlp==1.43.0
+opentelemetry-instrumentation-fastapi==0.64b0
+opentelemetry-instrumentation-httpx==0.64b0
+opentelemetry-instrumentation-sqlalchemy==0.64b0
