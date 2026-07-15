@@ -14,13 +14,13 @@ from app.core.logging import get_logger
 logger = get_logger(__name__)
 
 # Attempt to load tiktoken for accurate tokenization
+tiktoken: Any = None
 try:
     import tiktoken
 
     TIKTOKEN_AVAILABLE = True
 except ImportError:
     TIKTOKEN_AVAILABLE = False
-    tiktoken = None  # type: ignore[assignment]
 
 
 # Character-based fallback ratios (measured empirically)
