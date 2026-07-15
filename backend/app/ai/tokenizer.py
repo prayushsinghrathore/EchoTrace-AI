@@ -15,12 +15,14 @@ logger = get_logger(__name__)
 
 # Attempt to load tiktoken for accurate tokenization
 tiktoken: Any = None
+TIKTOKEN_AVAILABLE = False
 try:
-    import tiktoken
+    import tiktoken as _tiktoken_module
 
+    tiktoken = _tiktoken_module
     TIKTOKEN_AVAILABLE = True
 except ImportError:
-    TIKTOKEN_AVAILABLE = False
+    pass
 
 
 # Character-based fallback ratios (measured empirically)
