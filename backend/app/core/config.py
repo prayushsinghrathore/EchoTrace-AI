@@ -168,7 +168,7 @@ class Settings(BaseSettings):
     NEO4J_DATABASE: str = "neo4j"
 
     # ── AI / LLM Providers ──────────────────────────────────────────────
-    AI_PROVIDER: str = Field(default="openai", pattern="^(openai|openrouter|ollama|azure|anthropic|gemini)$")
+    AI_PROVIDER: str = Field(default="openai", pattern="^(openai|ollama|azure|anthropic|gemini)$")
     AI_PROMPT_VERSION: str = "1.0.0"
     AI_MAX_TOKENS: int = Field(default=4096, ge=128, le=32768)
     AI_MAX_INPUT_TOKENS: int = Field(default=32000, ge=1024, le=128000)
@@ -184,11 +184,6 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o"
     OPENAI_BASE_URL: str = "https://api.openai.com/v1"
-
-    # OpenRouter
-    OPENROUTER_API_KEY: str = ""
-    OPENROUTER_MODEL: str = "openai/gpt-4o"
-    OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
 
     # Ollama
     OLLAMA_BASE_URL: str = "http://localhost:11434"

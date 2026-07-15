@@ -117,7 +117,7 @@
 | Gemini Provider | ✅ Working | — | — | `GeminiProvider` | — | Gemini generateContent API, application/json MIME | Requires API key | `test_ai.py`, `test_ai_integration.py` | Phase 3 |
 | Azure Provider | ✅ Working | — | — | `AzureProvider` | — | Azure OpenAI deployment-based, json_schema | Requires API key | `test_ai.py`, `test_ai_integration.py` | Phase 3 |
 | Ollama Provider | ✅ Working | — | — | `OllamaProvider` | — | Local llama3 | Requires running Ollama | `test_ai.py`, `test_ai_integration.py` | Phase 3 |
-| OpenRouter Provider | ✅ Working | — | — | `OpenRouterProvider` | — | Multi-model gateway | Requires API key | `test_ai.py`, `test_ai_integration.py` | Phase 3 |
+| OpenRouter Provider | ❌ Removed | — | — | — | — | Replaced by official OpenAI SDK | None | — | Phase 3 |
 | Summarize Evidence | ✅ Working | `ai` | `POST /api/v1/ai/summarize` | `AIService` | `AIJob` | Graceful no-key handling | Requires API key for real AI | `test_ai.py` | Phase 3 |
 | Extract Entities | ✅ Working | `ai` | `POST /api/v1/ai/entities` | `AIService` | `AIJob, AISuggestion` | Creates pending suggestions | Requires API key | `test_ai.py` | Phase 3 |
 | Suggest Relationships | ✅ Working | — | `POST /api/v1/ai/relationships` | `AIService` | `AIJob, AISuggestion` | Context from entities | Requires API key | `test_ai.py` | Phase 3 |
@@ -249,7 +249,7 @@
 |-------|-------|-------------------|
 | **Phase 1** | Core Stability | ✅ Complete |
 | **Phase 2** | Evidence & Investigation | ✅ Complete |
-| **Phase 3** | AI | ✅ Complete — 6 providers, retry, embeddings, pgvector, all verified |
+| **Phase 3** | AI | ✅ Complete — 5 providers, retry, embeddings, pgvector, all verified |
 | **Phase 4** | Knowledge Graph | ✅ Complete — Neo4j read path, graph sync, custom graph visualization |
 | **Phase 5** | Reports & Realtime | ✅ Complete — reports frontend, export download, WebSocket framework |
 | **Phase 6** | Security & Observability | In progress — uncomment OpenTelemetry deps, verify security middleware, fix rate limiting on AI endpoints |

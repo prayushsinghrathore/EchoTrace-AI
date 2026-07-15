@@ -331,7 +331,7 @@ class TestAIService:
         info = AIService.get_provider_info()
         assert "active" in info
         assert "providers" in info
-        assert len(info["providers"]) == 6
+        assert len(info["providers"]) == 5
 
 
 # ── API / Approval Workflow Tests ────────────────────────────────────────────

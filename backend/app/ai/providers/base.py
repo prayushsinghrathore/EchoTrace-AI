@@ -1,7 +1,7 @@
 """
 Abstract LLM provider interface.
 
-All AI providers (OpenAI, OpenRouter, Ollama, Azure) implement this
+All providers (OpenAI, Anthropic, Gemini, Azure, Ollama) implement this
 interface. The AIService selects the appropriate provider based on
 configuration and delegates all LLM calls through this abstraction.
 """
@@ -84,7 +84,7 @@ class BaseProvider(abc.ABC):
     @property
     @abc.abstractmethod
     def name(self) -> str:
-        """Provider identifier (e.g. 'openai', 'openrouter')."""
+        """Provider identifier (e.g. 'openai', 'anthropic')."""
         ...
 
     @property

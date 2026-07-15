@@ -25,7 +25,6 @@ from app.ai.providers.azure_provider import AzureProvider
 from app.ai.providers.gemini_provider import GeminiProvider
 from app.ai.providers.ollama_provider import OllamaProvider
 from app.ai.providers.openai_provider import OpenAIProvider
-from app.ai.providers.openrouter_provider import OpenRouterProvider
 from app.ai.retry import call_with_retry
 from app.ai.schemas import (
     ExtractedEntitiesResult,
@@ -89,7 +88,6 @@ ANTHROPIC_BASE = "https://api.anthropic.com/v1"
 GEMINI_BASE = "https://generativelanguage.googleapis.com"
 OLLAMA_BASE = "http://test.ollama:11434"
 AZURE_BASE = "http://test.azure.openai"
-OPENROUTER_BASE = "http://test.openrouter"
 
 
 def _make_openai_chunk(content: str) -> dict:
@@ -513,35 +511,6 @@ class TestOllamaProviderIntegration:
         body = json.loads(captured[0].content)
         assert body.get("format") == "json"
         assert not body.get("stream", True)
-
-
-# ── OpenRouter Provider Integration Tests ──────────────────────────────────────
-
-
-class TestOpenRouterProviderIntegration:
-    """Verify OpenRouter provider executes correctly."""
-
-    @pytest.mark.asyncio
-    async def test_summarize_executes(self) -> None:
-        provider = OpenRouterProvider(api_key="test-key", model="openai/gpt-4o", base_url=OPENROUTER_BASE)
-        provider._client = httpx.AsyncClient(base_url=OPENROUTER_BASE, transport=make_transport(_make_openai_chunk(VALID_SUMMARY_RESPONSE)))
-
-        result = await provider.summarize(SAMPLE_EVIDENCE_TEXT)
-        assert isinstance(result, SummaryResult)
-
-    @pytest.mark.asyncio
-    async def test_referer_header_set(self) -> None:
-        captured = []
-        provider = OpenRouterProvider(api_key="test-key", model="openai/gpt-4o", base_url=OPENROUTER_BASE)
-        provider._client = httpx.AsyncClient(
-            base_url=OPENROUTER_BASE,
-            headers={"Authorization": "Bearer test-key", "Content-Type": "application/json", "HTTP-Referer": "http://localhost:3000"},
-            transport=make_capturing_transport(captured, lambda _: httpx.Response(200, json=_make_openai_chunk(VALID_SUMMARY_RESPONSE))),
-        )
-
-        await provider.summarize(SAMPLE_EVIDENCE_TEXT)
-        assert len(captured) >= 1
-        assert "HTTP-Referer" in captured[0].headers
 
 
 # ── Retry Integration Tests ────────────────────────────────────────────────────

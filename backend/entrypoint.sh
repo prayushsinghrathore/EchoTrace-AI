@@ -38,7 +38,7 @@ if [ $# -eq 0 ]; then
     exec uvicorn app.main:app \
         --host 0.0.0.0 \
         --port "${PORT:-8000}" \
-        --workers "${UVICORN_WORKERS:-4}" \
+        --workers "${UVICORN_WORKERS:-1}" \
         --limit-max-requests "${UVICORN_LIMIT_MAX:-10000}" \
         --timeout-keep-alive 30
 fi

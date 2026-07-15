@@ -26,7 +26,6 @@ from app.ai.providers import (
     GeminiProvider,
     OllamaProvider,
     OpenAIProvider,
-    OpenRouterProvider,
 )
 from app.ai.providers.base import BaseProvider
 from app.ai.schemas import (
@@ -81,8 +80,6 @@ class AIService:
             if not settings.OPENAI_API_KEY:
                 pass
             self._provider = OpenAIProvider()
-        elif provider_name == "openrouter":
-            self._provider = OpenRouterProvider()
         elif provider_name == "ollama":
             self._provider = OllamaProvider()
         elif provider_name == "azure":
@@ -107,13 +104,6 @@ class AIService:
                 "display_name": "OpenAI",
                 "available": bool(s.OPENAI_API_KEY),
                 "model": s.OPENAI_MODEL,
-                "supports_streaming": True,
-            },
-            {
-                "name": "openrouter",
-                "display_name": "OpenRouter",
-                "available": bool(s.OPENROUTER_API_KEY),
-                "model": s.OPENROUTER_MODEL,
                 "supports_streaming": True,
             },
             {

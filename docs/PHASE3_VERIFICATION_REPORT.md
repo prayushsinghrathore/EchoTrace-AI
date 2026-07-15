@@ -67,12 +67,13 @@
 - **Config:** `OLLAMA_BASE_URL`, `OLLAMA_MODEL`
 - **Tests:** 6 integration tests
 
-### OpenRouter (OpenRouterProvider)
+### OpenRouter (OpenRouterProvider) — Removed (replaced by official OpenAI API)
 - **Status:** ✅ Working and Verified
 - **Execution verified:** `summarize`, `health_check`
 - **Auth:** `Authorization: Bearer` + `HTTP-Referer` header
-- **Config:** `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `OPENROUTER_BASE_URL`
-- **Tests:** 2 integration tests
+- **Config:** ~~OPENROUTER_API_KEY, OPENROUTER_MODEL, OPENROUTER_BASE_URL~~ Removed
+- **Tests:** ~~2 integration tests~~ Removed
+- **Note:** Replaced by official OpenAI SDK. OpenRouter no longer supported.
 
 ---
 

@@ -77,7 +77,7 @@ class AIJob(Base, TimestampMixin):
     )
 
     provider: Mapped[str] = mapped_column(
-        String(50), nullable=False, comment="LLM provider used (openai, openrouter, ollama, azure)"
+        String(50), nullable=False, comment="LLM provider used (openai, anthropic, gemini, azure, ollama)"
     )
 
     model: Mapped[str] = mapped_column(

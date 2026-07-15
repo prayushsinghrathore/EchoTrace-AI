@@ -103,7 +103,6 @@ BACKEND_CORS_ORIGINS=["https://your-frontend-domain.com"]
 
 # ── AI Provider (optional, set API key for your provider) ─────────────────────
 # OPENAI_API_KEY=<your-openai-api-key>
-# OPENROUTER_API_KEY=<your-openrouter-api-key>
 ```
 
 > **Security note:** Never store secrets in the Compose file itself. Always use

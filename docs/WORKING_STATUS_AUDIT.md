@@ -117,13 +117,12 @@ Success: 120 files passed
 - `MemberService`, `InvestigationService`
 
 #### AI Providers
-6 LLM providers implemented:
+5 LLM providers implemented:
 - `OpenAIProvider` — GPT-4o with configurable base URL
 - `AnthropicProvider` — Claude Messages API
 - `GeminiProvider` — Google Gemini
 - `AzureProvider` — Azure OpenAI
 - `OllamaProvider` — Local Ollama
-- `OpenRouterProvider` — OpenRouter
 
 #### Storage
 - `LocalStorageProvider` — File system storage (default)
