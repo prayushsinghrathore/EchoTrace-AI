@@ -6,6 +6,8 @@ Tests CRUD, entities, relationships, timeline, graph, search, dashboard, permiss
 
 from __future__ import annotations
 
+import uuid
+
 import pytest
 from httpx import AsyncClient
 
@@ -315,3 +317,97 @@ class TestTimelineFiltering:
                                  headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 200
         assert len(resp.json()) >= 2
+
+
+@pytest.mark.asyncio
+class TestNeo4jGraphRead:
+    """Tests for the Neo4j-backed graph read path with PostgreSQL fallback."""
+
+    async def test_graph_via_postgresql_fallback(self, client: AsyncClient) -> None:
+        """With NEO4J_ENABLED=False, graph data comes from PostgreSQL."""
+        token, ws_id, inv_id = await _setup(client)
+        e1 = await client.post(f"/api/v1/investigations/{inv_id}/entities", json={"type": "person", "label": "Alice"},
+                                headers={"Authorization": f"Bearer {token}"})
+        e2 = await client.post(f"/api/v1/investigations/{inv_id}/entities", json={"type": "device", "label": "Phone"},
+                                headers={"Authorization": f"Bearer {token}"})
+        await client.post(f"/api/v1/investigations/{inv_id}/relationships", json={
+            "source_entity_id": e1.json()["id"], "target_entity_id": e2.json()["id"], "relationship_type": "owns",
+        }, headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(f"/api/v1/investigations/{inv_id}/graph",
+                                 headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data["nodes"]) >= 2
+        assert len(data["edges"]) >= 1
+
+    async def test_graph_node_format(self, client: AsyncClient) -> None:
+        """Every node has id, label, type, color, icon."""
+        token, ws_id, inv_id = await _setup(client)
+        await client.post(f"/api/v1/investigations/{inv_id}/entities", json={"type": "ip", "label": "10.0.0.1"},
+                           headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(f"/api/v1/investigations/{inv_id}/graph",
+                                 headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 200
+        for node in resp.json()["nodes"]:
+            assert "id" in node
+            assert "label" in node
+            assert "type" in node
+            assert "color" in node
+            assert "icon" in node
+
+    async def test_graph_no_duplicate_nodes(self, client: AsyncClient) -> None:
+        """Graph should not contain duplicate node IDs."""
+        token, ws_id, inv_id = await _setup(client)
+        await client.post(f"/api/v1/investigations/{inv_id}/entities", json={"type": "person", "label": "Bob"},
+                           headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(f"/api/v1/investigations/{inv_id}/graph",
+                                 headers={"Authorization": f"Bearer {token}"})
+        node_ids = [n["id"] for n in resp.json()["nodes"]]
+        assert len(node_ids) == len(set(node_ids)), "Duplicate nodes found"
+
+    async def test_graph_empty_returns_empty_lists(self, client: AsyncClient) -> None:
+        """Investigation with no entities returns empty nodes/edges."""
+        token, ws_id, inv_id = await _setup(client)
+        resp = await client.get(f"/api/v1/investigations/{inv_id}/graph",
+                                 headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 200
+        assert resp.json()["nodes"] == []
+        assert resp.json()["edges"] == []
+
+    async def test_graph_unauthorized_returns_401(self, client: AsyncClient) -> None:
+        """Graph endpoint without auth returns 401."""
+        resp = await client.get(f"/api/v1/investigations/{uuid.uuid4()}/graph")
+        assert resp.status_code == 401
+
+    async def test_graph_invalid_investigation_returns_404(self, client: AsyncClient) -> None:
+        """Graph endpoint for non-existent investigation returns 404."""
+        token, ws_id, inv_id = await _setup(client)
+        fake_id = uuid.uuid4()
+        resp = await client.get(f"/api/v1/investigations/{fake_id}/graph",
+                                 headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 404
+
+    async def test_graph_workspace_isolation(self, client: AsyncClient) -> None:
+        """User from another workspace cannot view this investigation's graph."""
+        token, ws_id, inv_id = await _setup(client)
+        await client.post("/api/v1/auth/register", json={
+            "email": "other_graph@test.com", "password": "SecureP@ss1", "display_name": "Other",
+        })
+        other_login = await client.post("/api/v1/auth/login", json={
+            "email": "other_graph@test.com", "password": "SecureP@ss1",
+        })
+        other_token = other_login.json()["access_token"]
+        resp = await client.get(f"/api/v1/investigations/{inv_id}/graph",
+                                 headers={"Authorization": f"Bearer {other_token}"})
+        assert resp.status_code == 403
+
+    async def test_graph_after_sync_persists(self, client: AsyncClient) -> None:
+        """Graph data persists correctly through entity creation."""
+        token, ws_id, inv_id = await _setup(client)
+        await client.post(f"/api/v1/investigations/{inv_id}/entities", json={"type": "person", "label": "Charlie"},
+                           headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(f"/api/v1/investigations/{inv_id}/graph",
+                                 headers={"Authorization": f"Bearer {token}"})
+        assert resp.status_code == 200
+        labels = [n["label"] for n in resp.json()["nodes"]]
+        assert "Charlie" in labels

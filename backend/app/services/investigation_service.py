@@ -11,8 +11,10 @@ from sqlalchemy import func as sa_func
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.logging import get_logger
 from app.graph.graph_sync import ENTITY_COLORS, ENTITY_ICONS, GraphSyncService
+from app.graph.neo4j import check_neo4j_connection, neo4j_manager
 from app.models.activity_event import ActivityEvent, ActivityEventType
 from app.models.entity import Entity
 from app.models.investigation import Investigation, InvestigationStatus
@@ -434,7 +436,22 @@ class InvestigationService:
     # ── Graph ──────────────────────────────────────────────────────────
 
     async def get_graph(self, inv_id: uuid.UUID, user_id: uuid.UUID) -> dict:
+        """Get graph data — tries Neo4j first, falls back to PostgreSQL."""
         await self.get(inv_id, user_id)
+
+        # Try Neo4j when enabled and healthy
+        if settings.NEO4J_ENABLED:
+            try:
+                healthy = await check_neo4j_connection()
+                if healthy:
+                    return await self._get_graph_from_neo4j(inv_id)
+            except Exception as exc:
+                logger.warning("Neo4j graph read failed, falling back to PostgreSQL", error=str(exc))
+
+        return await self._get_graph_from_pg(inv_id)
+
+    async def _get_graph_from_pg(self, inv_id: uuid.UUID) -> dict:
+        """Build graph from PostgreSQL Entity and Relationship tables."""
         entities = await self.entity_repo.find_many(investigation_id=inv_id)
         rels = await self.rel_repo.find_many(investigation_id=inv_id)
 
@@ -462,6 +479,57 @@ class InvestigationService:
                 "target": str(r.target_entity_id),
                 "type": rtype,
                 "confidence": r.confidence,
+            })
+
+        return {"nodes": nodes, "edges": edges}
+
+    async def _get_graph_from_neo4j(self, inv_id: uuid.UUID) -> dict:
+        """Query Neo4j for graph data — returns same format as PostgreSQL path."""
+        inv_id_str = str(inv_id)
+
+        # Fetch entity nodes
+        node_rows = await neo4j_manager.execute_read(
+            """MATCH (e:EntityNode {investigation_id: $inv_id})
+               RETURN e.entity_id AS id, e.label AS label,
+                      e.type AS type, e.color AS color, e.icon AS icon""",
+            {"inv_id": inv_id_str},
+        )
+
+        nodes = []
+        seen = set()
+        for row in node_rows:
+            nid = row.get("id", "")
+            if nid not in seen:
+                seen.add(nid)
+                nodes.append({
+                    "id": nid,
+                    "label": row.get("label", "Unknown"),
+                    "type": row.get("type", "custom"),
+                    "color": row.get("color", "#6b7280"),
+                    "icon": row.get("icon", "📌"),
+                })
+
+        # Fetch relationship edges via Cypher pattern matching
+        edge_rows = await neo4j_manager.execute_read(
+            """MATCH (src:EntityNode {investigation_id: $inv_id})
+                    -[r:RELATIONSHIP]->(tgt:EntityNode)
+               WHERE r.investigation_id = $inv_id
+               RETURN r.relationship_id AS id,
+                      src.entity_id AS source,
+                      tgt.entity_id AS target,
+                      r.type AS type,
+                      r.confidence AS confidence""",
+            {"inv_id": inv_id_str},
+        )
+
+        edges = []
+        for row in edge_rows:
+            edges.append({
+                "id": row.get("id", ""),
+                "source": row.get("source", ""),
+                "target": row.get("target", ""),
+                "type": row.get("type", "connected_to"),
+                "confidence": row.get("confidence"),
             })
 
         return {"nodes": nodes, "edges": edges}
