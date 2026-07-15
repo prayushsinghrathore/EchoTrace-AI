@@ -1,4 +1,24 @@
-<div align="center">
+<!-- Capsule Render Banner -->
+
+<p align="center">
+<img src="YOUR_BANNER_URL" width="100%">
+</p>
+<p align="center">
+
+<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=30&pause=1000&color=00E5FF&center=true&vCenter=true&width=900&lines=AI-Powered+Software+Intelligence;Knowledge+Graph+Visualization;Semantic+Repository+Analysis;Production-Ready+FastAPI+Platform;Built+with+OpenAI+%2B+Neo4j"/>
+
+</p>
+Stars
+
+Forks
+
+Issues
+
+PRs
+
+License
+
+div align="center">
   <h1>🔍 EchoTrace AI</h1>
   <p><strong>Production-Grade Traceability & Knowledge Graph Platform</strong></p>
   <p>
@@ -43,6 +63,7 @@ Built with a modern stack — Next.js 15, FastAPI, PostgreSQL, and Neo4j — it 
 ```
 
 ---
+
 
 ## ✨ Features
 
@@ -156,6 +177,19 @@ Visit **http://localhost:3000** for the frontend and **http://localhost:8000/doc
 | **Security** | Trivy, Bandit, Helmet | Vulnerability scanning & hardening |
 
 ---
+
+## 📑 Table of Contents
+
+- Features
+- Architecture
+- Screenshots
+- Installation
+- API
+- Deployment
+- Roadmap
+- Contributing
+
+---  
 
 ## 🏗️ Project Structure
 
@@ -378,6 +412,3 @@ Built with modern open-source tools and frameworks. Special thanks to the FastAP
 
 ---
 
-<p align="center">
-  <sub>Built with ❤️ by <a href="https://github.com/prayushsinghrathore">Pratyush Singh Rathore</a></sub>
-</p>
