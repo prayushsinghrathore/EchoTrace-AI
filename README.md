@@ -8,7 +8,7 @@
 <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=700&size=30&pause=1000&color=00E5FF&center=true&vCenter=true&width=900&lines=AI-Powered+Software+Intelligence;Knowledge+Graph+Visualization;Semantic+Repository+Analysis;Production-Ready+FastAPI+Platform;Built+with+OpenAI+%2B+Neo4j"/>
 
 </p>
-div align="center">
+
   <h1>🔍 EchoTrace AI</h1>
   <p><strong>Production-Grade Traceability & Knowledge Graph Platform</strong></p>
   <p>
