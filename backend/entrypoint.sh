@@ -32,8 +32,14 @@ echo "Migrations complete."
 
 # ── Application Server ─────────────────────────────────────────────────────
 # Use exec to replace shell with uvicorn so signals are forwarded correctly.
-exec uvicorn app.main:app \
-    --host 0.0.0.0 \
-    --port "${PORT}" \
-    --workers 1 \
-    --timeout-keep-alive 30
+# Falls back to the Dockerfile CMD if no arguments are provided, enabling
+# multi-worker configuration via CMD without hardcoding --workers 1 here.
+if [ $# -eq 0 ]; then
+    exec uvicorn app.main:app \
+        --host 0.0.0.0 \
+        --port "${PORT:-8000}" \
+        --workers "${UVICORN_WORKERS:-4}" \
+        --limit-max-requests "${UVICORN_LIMIT_MAX:-10000}" \
+        --timeout-keep-alive 30
+fi
+exec "$@"

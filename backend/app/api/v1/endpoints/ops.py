@@ -24,17 +24,10 @@ logger = get_logger(__name__)
 
 router = APIRouter(tags=["operations"])
 
-_start_time: float = time.time()
-
 
 # ── Health ────────────────────────────────────────────────────────────────────
-# Note: /health is served by health.py (dedicated endpoint)
-
-
-@router.get("/live")
-async def liveness() -> dict:
-    """Kubernetes liveness probe — always returns 200."""
-    return {"status": "alive", "timestamp": time.time()}
+# Note: /live is served by health.py (has version/env/uptime detail).
+#       /health is served by health.py (comprehensive system health).
 
 
 @router.get("/ready")

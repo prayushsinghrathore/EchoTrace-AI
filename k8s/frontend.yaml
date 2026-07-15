@@ -38,7 +38,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: frontend
-          image: ghcr.io/prayushsinghrathore/echotrace-frontend:latest
+          image: ghcr.io/prayushsinghrathore/echotrace-ai/echotrace-frontend:latest
           imagePullPolicy: Always
           ports:
             - name: http

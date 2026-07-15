@@ -80,15 +80,11 @@ ARG NODE_VERSION
 # OCI image annotations
 LABEL org.opencontainers.image.title="EchoTrace AI Frontend" \
       org.opencontainers.image.description="EchoTrace AI frontend web application" \
-      org.opencontainers.image.url="https://echotrace-ai.example.com" \
       org.opencontainers.image.source="https://github.com/pratyushsinghrathore/echotrace-ai" \
       org.opencontainers.image.version="0.1.0" \
       org.opencontainers.image.vendor="EchoTrace AI" \
       org.opencontainers.image.licenses="MIT" \
-      org.opencontainers.image.ref.name="echotrace-frontend" \
-      org.opencontainers.image.base.digest="" \
-      org.opencontainers.image.created="" \
-      org.opencontainers.image.authors="EchoTrace AI Team"
+      org.opencontainers.image.ref.name="echotrace-frontend"
 
 WORKDIR /app
 

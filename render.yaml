@@ -33,3 +33,24 @@ services:
         sync: false
       - key: OPENAI_API_KEY
         sync: false
+
+  - type: web
+    name: echotrace-frontend
+    env: docker
+    dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
+    branch: main
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        value: https://echotrace-backend.onrender.com/api/v1
+      - key: NEXT_PUBLIC_APP_URL
+        value: https://echotrace-frontend.onrender.com
+      - key: NEXT_PUBLIC_ENVIRONMENT
+        value: production
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+      - key: PORT
+        value: "3000"

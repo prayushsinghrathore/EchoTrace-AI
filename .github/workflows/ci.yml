@@ -59,21 +59,6 @@ jobs:
       run:
         working-directory: backend
 
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: echotrace
-          POSTGRES_PASSWORD: echotrace_secret
-          POSTGRES_DB: echotrace
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
 
@@ -93,8 +78,6 @@ jobs:
         run: |
           pytest --cov=app --cov-report=xml --cov-report=term-missing -v
         env:
-          DATABASE_URL: postgresql+asyncpg://echotrace:echotrace_secret@localhost:5432/echotrace
-          DATABASE_SYNC_URL: postgresql://echotrace:echotrace_secret@localhost:5432/echotrace
           ENVIRONMENT: test
           SECRET_KEY: test-secret-key
 
