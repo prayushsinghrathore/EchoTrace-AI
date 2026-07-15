@@ -28,12 +28,12 @@ Built with a modern stack — Next.js 15, FastAPI, PostgreSQL, and Neo4j — it 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │                     Frontend (Next.js 15)                          │
-│    shadcn/ui  ·  Framer Motion  ·  Custom Graph  ·  Three.js        │
+│    shadcn/ui  ·  Custom Graph        │
 └────────────────────┬──────────────────────┬───────────────────────┘
                      │ HTTP/REST            │ WebSocket
 ┌────────────────────▼──────────────────────▼───────────────────────┐
 │                       Backend (FastAPI)                             │
-│          Services  ·  Repositories  ·  LangChain  ·  Asyncio       │
+│          Services  ·  Repositories  ·  AI Providers  ·  Asyncio       │
 └───────┬────────────────────────────┬───────────────────────────────┘
         │                            │
 ┌───────▼────────┐          ┌───────▼────────┐

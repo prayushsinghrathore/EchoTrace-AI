@@ -7,12 +7,10 @@ so tests run without requiring an external PostgreSQL instance.
 
 from __future__ import annotations
 
-import asyncio
 import os
 import tempfile
-from collections.abc import AsyncGenerator, Generator
+from collections.abc import AsyncGenerator
 
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import NullPool
@@ -29,14 +27,6 @@ from app.main import app as application
 
 # File-based SQLite to avoid connection isolation issues with :memory:
 TEST_DATABASE_URL = f"sqlite+aiosqlite:///{tempfile.mktemp(suffix='.db')}"
-
-
-@pytest.fixture(scope="session")
-def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
-    """Create a single event loop for the entire test session."""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest_asyncio.fixture
