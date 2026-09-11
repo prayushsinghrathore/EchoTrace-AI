@@ -1,6 +1,6 @@
 <!-- Capsule Render Banner -->
 
-<p align="center">
+<p align="center"> 
 <img src="YOUR_BANNER_URL" width="100%">
 </p>
 <p align="center">
