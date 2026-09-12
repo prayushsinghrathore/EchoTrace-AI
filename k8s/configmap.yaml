@@ -72,9 +72,10 @@ data:
   REDIS_ENABLED: "true"
 
   # ── Email ─────────────────────────────────────────────────────────────────
-  EMAIL_PROVIDER: "smtp"
+  EMAIL_PROVIDER: "resend"
   EMAIL_FROM: "noreply@echotrace.example.com"
   EMAIL_FROM_NAME: "EchoTrace AI"
+  RESEND_API_URL: "https://api.resend.com/emails"
   SMTP_HOST: "smtp.example.com"
   SMTP_PORT: "587"
   SMTP_USE_STARTTLS: "true"

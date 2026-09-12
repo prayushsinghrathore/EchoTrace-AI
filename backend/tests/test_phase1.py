@@ -43,6 +43,32 @@ async def test_console_email_provider_does_not_require_network() -> None:
         settings.EMAIL_PROVIDER = original
 
 
+@pytest.mark.asyncio
+async def test_resend_provider_uses_https_sender(monkeypatch: pytest.MonkeyPatch) -> None:
+    original_provider = settings.EMAIL_PROVIDER
+    original_key = settings.RESEND_API_KEY
+    calls: list[tuple[str, str, str, str | None]] = []
+
+    async def fake_send(to: str, subject: str, text: str, html: str | None) -> None:
+        calls.append((to, subject, text, html))
+
+    monkeypatch.setattr(email_service, "_send_resend", fake_send)
+    settings.EMAIL_PROVIDER = "resend"
+    settings.RESEND_API_KEY = "re_test_key"
+    try:
+        await email_service.send(
+            to="test@example.com",
+            subject="Reset",
+            text="Reset link",
+            html="<p>Reset link</p>",
+        )
+    finally:
+        settings.EMAIL_PROVIDER = original_provider
+        settings.RESEND_API_KEY = original_key
+
+    assert calls == [("test@example.com", "Reset", "Reset link", "<p>Reset link</p>")]
+
+
 def test_ai_job_retry_metadata_is_persistable() -> None:
     job = AIJob(
         user_id=None,  # type: ignore[arg-type]

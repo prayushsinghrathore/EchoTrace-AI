@@ -161,6 +161,8 @@ services:
       EMAIL_PROVIDER: ${EMAIL_PROVIDER:?EMAIL_PROVIDER is required}
       EMAIL_FROM: ${EMAIL_FROM:?EMAIL_FROM is required}
       EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-EchoTrace AI}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_API_URL: ${RESEND_API_URL:-https://api.resend.com/emails}
       SMTP_HOST: ${SMTP_HOST:?SMTP_HOST is required}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USERNAME: ${SMTP_USERNAME:?SMTP_USERNAME is required}
@@ -223,6 +225,8 @@ services:
       STORAGE_S3_PREFIX: ${STORAGE_S3_PREFIX:-evidence}
       EMAIL_FROM: ${EMAIL_FROM:?EMAIL_FROM is required}
       EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-EchoTrace AI}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_API_URL: ${RESEND_API_URL:-https://api.resend.com/emails}
       SMTP_HOST: ${SMTP_HOST:?SMTP_HOST is required}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USERNAME: ${SMTP_USERNAME:?SMTP_USERNAME is required}

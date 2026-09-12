@@ -226,9 +226,11 @@ class Settings(BaseSettings):
     REDIS_CACHE_PREFIX: str = "echotrace"
 
     # ── Email ───────────────────────────────────────────────────────────
-    EMAIL_PROVIDER: str = Field(default="console", pattern="^(console|smtp)$")
+    EMAIL_PROVIDER: str = Field(default="console", pattern="^(console|smtp|resend)$")
     EMAIL_FROM: str = "noreply@echotrace.local"
     EMAIL_FROM_NAME: str = "EchoTrace AI"
+    RESEND_API_KEY: str = ""
+    RESEND_API_URL: str = "https://api.resend.com/emails"
     SMTP_HOST: str = "localhost"
     SMTP_PORT: int = Field(default=1025, ge=1, le=65535)
     SMTP_USERNAME: str = ""
