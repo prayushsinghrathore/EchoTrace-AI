@@ -19,7 +19,7 @@ psycopg2-binary==2.9.10
 neo4j==5.27.0
 
 # ── Utilities ───────────────────────────────────────────────────────────────
-python-dotenv==1.0.1
+python-dotenv==1.2.2
 httpx==0.28.1
 tenacity==9.0.0
 
