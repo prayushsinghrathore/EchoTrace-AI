@@ -47,6 +47,7 @@ from app.schemas.password_reset import (
     ResetPasswordResponse,
 )
 from app.schemas.user import UserResponse
+from app.services.email_service import email_service
 
 logger = get_logger(__name__)
 
@@ -518,23 +519,17 @@ async def forgot_password(
     db.add(reset_record)
     await db.commit()
 
-    # In development, log the token instead of sending email
-    if settings.is_development:
-        logger.info(
-            "Password reset token (dev mode)",
-            user_id=str(user.id),
-            email=user.email,
-            reset_token=reset_token,
-            reset_link=f"{settings.PASSWORD_RESET_URL or 'http://localhost:3000'}"
-                       f"/auth/reset-password?token={reset_token}",
+    reset_link = f"{settings.PASSWORD_RESET_URL}/auth/reset-password?token={reset_token}"
+    try:
+        await email_service.send(
+            to=user.email,
+            subject="Reset your EchoTrace AI password",
+            text=f"Reset your password with this link (expires in {settings.PASSWORD_RESET_TOKEN_EXPIRE_HOURS} hours): {reset_link}",
+            html=f'<p>Reset your EchoTrace AI password:</p><p><a href="{reset_link}">Reset password</a></p>',
         )
-    else:
-        # In production, this would send an email
-        logger.info(
-            "Password reset initiated",
-            user_id=str(user.id),
-            email=user.email,
-        )
+    except Exception as exc:
+        logger.error("Password reset email delivery failed", user_id=str(user.id), error=str(exc))
+        # Do not reveal delivery details or user existence to the caller.
 
     return {
         "message": "If the email exists, a reset link has been sent.",

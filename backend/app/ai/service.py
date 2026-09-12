@@ -389,7 +389,7 @@ class AIService:
         )
 
         # Check cache
-        cached, cached_result = ai_cache.get(text, prompt, provider.model, settings.AI_PROMPT_VERSION)
+        cached, cached_result = await ai_cache.get_async(text, prompt, provider.model, settings.AI_PROMPT_VERSION)
         if cached and cached_result is not None:
             job.mark_completed(
                 result=cached_result,
@@ -420,7 +420,7 @@ class AIService:
 
         # Cache and persist
         result_dict = result.model_dump()
-        ai_cache.set(text, prompt, provider.model, settings.AI_PROMPT_VERSION, result_dict)
+        await ai_cache.set_async(text, prompt, provider.model, settings.AI_PROMPT_VERSION, result_dict)
 
         input_tok = count_tokens(text, provider.model)
         output_tok = count_tokens(str(result_dict), provider.model)
@@ -472,7 +472,7 @@ class AIService:
             evidence_ids=[str(evidence_id)],
         )
 
-        cached, cached_result = ai_cache.get(text, prompt, provider.model, settings.AI_PROMPT_VERSION)
+        cached, cached_result = await ai_cache.get_async(text, prompt, provider.model, settings.AI_PROMPT_VERSION)
         if cached and cached_result is not None:
             job.mark_completed(
                 result=cached_result,
@@ -501,7 +501,7 @@ class AIService:
             return AIJobResponse.model_validate(job)
 
         result_dict = result.model_dump()
-        ai_cache.set(text, prompt, provider.model, settings.AI_PROMPT_VERSION, result_dict)
+        await ai_cache.set_async(text, prompt, provider.model, settings.AI_PROMPT_VERSION, result_dict)
 
         input_tok = count_tokens(text, provider.model)
         output_tok = count_tokens(str(result_dict), provider.model)
@@ -563,7 +563,7 @@ class AIService:
 
         combined_text = f"Entities:\n{entities_context}\n\nEvidence:\n{evidence_text}"
 
-        cached, cached_result = ai_cache.get(
+        cached, cached_result = await ai_cache.get_async(
             combined_text, prompt, provider.model, settings.AI_PROMPT_VERSION
         )
         if cached and cached_result is not None:
@@ -588,7 +588,7 @@ class AIService:
             return AIJobResponse.model_validate(job)
 
         result_dict = result.model_dump()
-        ai_cache.set(combined_text, prompt, provider.model, settings.AI_PROMPT_VERSION, result_dict)
+        await ai_cache.set_async(combined_text, prompt, provider.model, settings.AI_PROMPT_VERSION, result_dict)
 
         input_tok = count_tokens(combined_text, provider.model)
         output_tok = count_tokens(str(result_dict), provider.model)
@@ -640,7 +640,7 @@ class AIService:
             job_type=AIJobType.GENERATE_TIMELINE,
         )
 
-        cached, cached_result = ai_cache.get(combined_text, prompt, provider.model, settings.AI_PROMPT_VERSION)
+        cached, cached_result = await ai_cache.get_async(combined_text, prompt, provider.model, settings.AI_PROMPT_VERSION)
         if cached and cached_result is not None:
             job.mark_completed(result=cached_result, input_tokens=0, output_tokens=0, cost=0.0, latency_ms=0, cached=True)
             await self.db.commit()
@@ -662,7 +662,7 @@ class AIService:
             return AIJobResponse.model_validate(job)
 
         result_dict = result.model_dump()
-        ai_cache.set(combined_text, prompt, provider.model, settings.AI_PROMPT_VERSION, result_dict)
+        await ai_cache.set_async(combined_text, prompt, provider.model, settings.AI_PROMPT_VERSION, result_dict)
 
         input_tok = count_tokens(combined_text, provider.model)
         output_tok = count_tokens(str(result_dict), provider.model)
@@ -699,7 +699,7 @@ class AIService:
             job_type=AIJobType.GENERATE_REPORT,
         )
 
-        cached, cached_result = ai_cache.get(context, prompt, provider.model, settings.AI_PROMPT_VERSION)
+        cached, cached_result = await ai_cache.get_async(context, prompt, provider.model, settings.AI_PROMPT_VERSION)
         if cached and cached_result is not None:
             job.mark_completed(result=cached_result, input_tokens=0, output_tokens=0, cost=0.0, latency_ms=0, cached=True)
             await self.db.commit()
@@ -717,7 +717,7 @@ class AIService:
             return AIJobResponse.model_validate(job)
 
         result_dict = result.model_dump()
-        ai_cache.set(context, prompt, provider.model, settings.AI_PROMPT_VERSION, result_dict)
+        await ai_cache.set_async(context, prompt, provider.model, settings.AI_PROMPT_VERSION, result_dict)
 
         input_tok = count_tokens(context, provider.model)
         output_tok = count_tokens(str(result_dict), provider.model)
@@ -753,6 +753,93 @@ class AIService:
         self.db.add(job)
         await self.db.flush()
         return job
+
+    async def _create_queued_job(
+        self,
+        *,
+        user_id: uuid.UUID,
+        workspace_id: uuid.UUID,
+        job_type: AIJobType,
+        investigation_id: uuid.UUID | None = None,
+        evidence_ids: list[str] | None = None,
+        options: dict[str, Any] | None = None,
+    ) -> AIJob:
+        """Persist work without executing it in the API process."""
+        provider = self._get_provider()
+        job = AIJob(
+            user_id=user_id,
+            workspace_id=workspace_id,
+            investigation_id=investigation_id,
+            job_type=job_type,
+            provider=provider.name,
+            model=provider.model,
+            evidence_ids=evidence_ids,
+            options=options,
+            available_at=datetime.now(UTC),
+        )
+        self.db.add(job)
+        await self.db.commit()
+        await self.db.refresh(job)
+        return job
+
+    async def enqueue_summarize(
+        self, evidence_id: uuid.UUID, user_id: uuid.UUID, max_length: int | None = None
+    ) -> AIJobResponse:
+        evidence, text = await self._load_evidence_text(evidence_id, user_id)
+        validate_input(text, max_length=settings.AI_SUMMARIZE_MAX_CHARS)
+        job = await self._create_queued_job(
+            user_id=user_id, workspace_id=evidence.workspace_id,
+            job_type=AIJobType.SUMMARIZE, evidence_ids=[str(evidence_id)],
+            options={"max_length": max_length} if max_length else None,
+        )
+        return AIJobResponse.model_validate(job)
+
+    async def enqueue_entities(
+        self, evidence_id: uuid.UUID, user_id: uuid.UUID, investigation_id: uuid.UUID | None = None
+    ) -> AIJobResponse:
+        evidence, text = await self._load_evidence_text(evidence_id, user_id)
+        validate_input(text, max_length=settings.AI_SUMMARIZE_MAX_CHARS)
+        if investigation_id:
+            await self._check_workspace_access(await self._get_investigation_workspace(investigation_id), user_id)
+        job = await self._create_queued_job(
+            user_id=user_id, workspace_id=evidence.workspace_id,
+            investigation_id=investigation_id, job_type=AIJobType.EXTRACT_ENTITIES,
+            evidence_ids=[str(evidence_id)],
+        )
+        return AIJobResponse.model_validate(job)
+
+    async def enqueue_relationships(
+        self, investigation_id: uuid.UUID, user_id: uuid.UUID, evidence_ids: list[uuid.UUID] | None = None
+    ) -> AIJobResponse:
+        workspace_id = await self._get_investigation_workspace(investigation_id)
+        await self._check_workspace_access(workspace_id, user_id)
+        job = await self._create_queued_job(
+            user_id=user_id, workspace_id=workspace_id, investigation_id=investigation_id,
+            job_type=AIJobType.SUGGEST_RELATIONSHIPS,
+            evidence_ids=[str(item) for item in evidence_ids] if evidence_ids else None,
+        )
+        return AIJobResponse.model_validate(job)
+
+    async def enqueue_timeline(
+        self, investigation_id: uuid.UUID, user_id: uuid.UUID, evidence_ids: list[uuid.UUID] | None = None
+    ) -> AIJobResponse:
+        workspace_id = await self._get_investigation_workspace(investigation_id)
+        await self._check_workspace_access(workspace_id, user_id)
+        job = await self._create_queued_job(
+            user_id=user_id, workspace_id=workspace_id, investigation_id=investigation_id,
+            job_type=AIJobType.GENERATE_TIMELINE,
+            evidence_ids=[str(item) for item in evidence_ids] if evidence_ids else None,
+        )
+        return AIJobResponse.model_validate(job)
+
+    async def enqueue_report(self, investigation_id: uuid.UUID, user_id: uuid.UUID) -> AIJobResponse:
+        workspace_id = await self._get_investigation_workspace(investigation_id)
+        await self._check_workspace_access(workspace_id, user_id)
+        job = await self._create_queued_job(
+            user_id=user_id, workspace_id=workspace_id, investigation_id=investigation_id,
+            job_type=AIJobType.GENERATE_REPORT,
+        )
+        return AIJobResponse.model_validate(job)
 
     async def get_job(self, job_id: uuid.UUID, user_id: uuid.UUID) -> AIJobResponse:
         """Get an AI job by ID with access check."""

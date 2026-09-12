@@ -144,6 +144,7 @@ class Settings(BaseSettings):
     STORAGE_S3_ACCESS_KEY: str = ""
     STORAGE_S3_SECRET_KEY: str = ""
     STORAGE_S3_ENDPOINT: str = ""
+    STORAGE_S3_PREFIX: str = "evidence"
     MAX_UPLOAD_SIZE_MB: int = Field(default=500, ge=1, le=10240)
     UPLOAD_CONCURRENCY_LIMIT: int = Field(default=5, ge=1, le=50,
                                           description="Max concurrent uploads (memory guard)")
@@ -222,6 +223,19 @@ class Settings(BaseSettings):
     # ── Redis / Caching ────────────────────────────────────────────────
     REDIS_URL: str = "redis://redis:6379/0"
     REDIS_ENABLED: bool = False
+    REDIS_CACHE_PREFIX: str = "echotrace"
+
+    # ── Email ───────────────────────────────────────────────────────────
+    EMAIL_PROVIDER: str = Field(default="console", pattern="^(console|smtp)$")
+    EMAIL_FROM: str = "noreply@echotrace.local"
+    EMAIL_FROM_NAME: str = "EchoTrace AI"
+    SMTP_HOST: str = "localhost"
+    SMTP_PORT: int = Field(default=1025, ge=1, le=65535)
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_USE_TLS: bool = False
+    SMTP_USE_STARTTLS: bool = False
+    EMAIL_TIMEOUT_SECONDS: int = Field(default=15, ge=1, le=120)
 
     # ── OpenTelemetry ───────────────────────────────────────────────────
     OTEL_ENABLED: bool = False

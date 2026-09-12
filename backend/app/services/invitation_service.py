@@ -12,11 +12,13 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.logging import get_logger
 from app.models.invitation import Invitation
 from app.models.user import User
 from app.models.workspace_member import WorkspaceMember, WorkspaceRole
 from app.repositories.base import BaseRepository
+from app.services.email_service import email_service
 
 logger = get_logger(__name__)
 
@@ -67,6 +69,17 @@ class InvitationService:
         self.db.add(invitation)
         await self.db.commit()
         await self.db.refresh(invitation)
+
+        invitation_link = f"{settings.PASSWORD_RESET_URL}/invitations/accept?token={token}"
+        try:
+            await email_service.send(
+                to=email,
+                subject="You have been invited to an EchoTrace AI workspace",
+                text=f"You have been invited to join a workspace in EchoTrace AI. Accept the invitation here: {invitation_link}",
+                html=f'<p>You have been invited to join an EchoTrace AI workspace.</p><p><a href="{invitation_link}">Accept invitation</a></p>',
+            )
+        except Exception as exc:
+            logger.error("Invitation email delivery failed", invitation_id=str(invitation.id), error=str(exc))
 
         logger.info("Invitation created", ws_id=str(workspace_id), email=email, role=role.value)
         return invitation

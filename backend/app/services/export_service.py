@@ -18,6 +18,7 @@ from app.models.workspace_member import WorkspaceMember
 from app.reports.generator import ReportGenerator
 from app.reports.renderer import ReportRenderer
 from app.repositories.base import BaseRepository
+from app.storage.factory import create_storage_provider
 
 logger = get_logger(__name__)
 
@@ -56,19 +57,18 @@ class ExportService:
         await self.db.commit()
         await self.db.refresh(job)
 
-        # Kick off export synchronously for now (future: background task)
-        try:
-            await self._process_export(job)
-        except Exception as exc:
-            logger.error("Export processing failed", job_id=str(job.id), error=str(exc))
-            job.status = ExportJobStatus.FAILED
-            job.error = str(exc)[:1000]
-            await self.db.commit()
+        return job
 
+    async def process_export(self, job_id: uuid.UUID) -> ExportJob:
+        """Execute a queued export; called by the durable worker."""
+        job = await self.repo.get(job_id)
+        if not job:
+            raise ValueError(f"Export job {job_id} not found")
+        await self._process_export(job)
+        await self.db.commit()
         return job
 
     async def _process_export(self, job: ExportJob) -> None:
-        import os
         from datetime import datetime
 
         job.status = ExportJobStatus.RUNNING
@@ -103,29 +103,27 @@ class ExportService:
         else:
             raise ValueError(f"Unsupported export entity type: {entity_type}")
 
-        # Ensure output directory exists
-        export_dir = os.path.join("exports", str(job.workspace_id))
-        os.makedirs(export_dir, exist_ok=True)
         filename = f"{entity_type}_{job.entity_id}_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S')}.{file_ext}"
-        filepath = os.path.join(export_dir, filename)
-
-        if isinstance(output, bytes):
-            with open(filepath, "wb") as f:
-                f.write(output)
-        else:
-            with open(filepath, "w", encoding="utf-8") as f:
-                f.write(output)
-
-        file_size = os.path.getsize(filepath)
+        payload = output if isinstance(output, bytes) else output.encode("utf-8")
+        mime = "application/octet-stream"
+        if file_ext == "json":
+            mime = "application/json"
+        elif file_ext in ("html", "md"):
+            mime = "text/html" if file_ext == "html" else "text/markdown"
+        stored = await create_storage_provider().store(
+            payload, filename, mime, path=f"exports/{job.workspace_id}"
+        )
         token = secrets.token_urlsafe(48)
         expires_at = datetime.now(UTC) + timedelta(hours=24)
 
-        job.file_path = filepath
-        job.file_size = file_size
+        job.file_path = stored.path
+        job.file_size = stored.size
         job.download_token = token
         job.expires_at = expires_at
         job.status = ExportJobStatus.COMPLETED
         job.completed_at = datetime.now(UTC)
+        job.locked_by = None
+        job.locked_at = None
         await self.db.flush()
 
     async def get_job(self, job_id: uuid.UUID, user_id: uuid.UUID) -> ExportJob:
@@ -143,7 +141,7 @@ class ExportService:
             workspace_id=workspace_id, order_by="created_at", descending=True, limit=limit
         )
 
-    async def download_with_token(self, token: str) -> tuple[str, str]:
+    async def download_with_token(self, token: str) -> tuple[bytes, str, str]:
         from datetime import UTC
         job = await self.repo.find_one(download_token=token)
         if not job:
@@ -154,7 +152,18 @@ class ExportService:
             raise HTTPException(status_code=status.HTTP_410_GONE, detail="Download link has expired")
         if not job.file_path:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No file available")
-        return job.file_path, f"export.{job.format.value if hasattr(job.format, 'value') else 'json'}"
+        data = await create_storage_provider().retrieve(job.file_path)
+        if data is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Export file not found")
+        extension = job.format.value if hasattr(job.format, "value") else "json"
+        mime = "application/octet-stream"
+        if extension == "json":
+            mime = "application/json"
+        elif extension == "html":
+            mime = "text/html"
+        elif extension in ("markdown", "md"):
+            mime = "text/markdown"
+        return data, f"export.{extension}", mime
 
     async def _check_workspace_access(self, workspace_id: uuid.UUID, user_id: uuid.UUID) -> None:
         member_repo = BaseRepository(self.db, WorkspaceMember)

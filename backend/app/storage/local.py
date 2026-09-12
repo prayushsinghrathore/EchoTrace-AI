@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import uuid
 from pathlib import Path
 from typing import BinaryIO
@@ -25,7 +26,7 @@ class LocalStorageProvider(StorageProvider):
         # Resolve and verify the path is within base_path (traversal protection)
         full = (self.base_path / path).resolve()
         base = self.base_path.resolve()
-        if not str(full).startswith(str(base)):
+        if os.path.commonpath((str(full), str(base))) != str(base):
             raise PermissionError(f"Path traversal detected: {path}")
         full.parent.mkdir(parents=True, exist_ok=True)
         return full

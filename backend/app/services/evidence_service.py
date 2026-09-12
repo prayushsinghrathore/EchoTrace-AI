@@ -32,7 +32,7 @@ from app.models.workspace_member import WorkspaceMember, WorkspaceRole
 from app.repositories.base import BaseRepository
 from app.services.custody_service import CustodyService
 from app.storage.base import StorageProvider
-from app.storage.local import LocalStorageProvider
+from app.storage.factory import create_storage_provider
 
 logger = get_logger(__name__)
 
@@ -87,7 +87,7 @@ class EvidenceService:
     @property
     def storage(self) -> StorageProvider:
         if self._storage is None:
-            self._storage = LocalStorageProvider()
+            self._storage = create_storage_provider()
         return self._storage
 
     async def _check_member(self, workspace_id: uuid.UUID, user_id: uuid.UUID) -> WorkspaceRole:

@@ -87,6 +87,7 @@ class AIJob(Base, TimestampMixin):
     evidence_ids: Mapped[list | None] = mapped_column(
         JSON, nullable=True, comment="UUIDs of evidence items processed"
     )
+    options: Mapped[dict | None] = mapped_column(JSON, nullable=True, comment="Operation-specific options")
 
     input_tokens: Mapped[int | None] = mapped_column(
         Integer, nullable=True, comment="Number of input/prompt tokens"
@@ -124,9 +125,19 @@ class AIJob(Base, TimestampMixin):
         DateTime(timezone=True), nullable=True, comment="When the job was cancelled"
     )
 
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    max_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=3, server_default="3")
+    available_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True,
+        comment="Earliest time the job may be claimed by a worker",
+    )
+    locked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    locked_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
+
     def mark_running(self) -> None:
         """Transition to running state."""
         self.status = AIJobStatus.RUNNING
+        self.attempts = (self.attempts or 0) + 1
 
     def mark_completed(self, result: dict, input_tokens: int,
                        output_tokens: int, cost: float,

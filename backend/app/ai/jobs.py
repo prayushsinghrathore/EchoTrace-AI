@@ -8,7 +8,6 @@ states: queued → running → completed | failed | cancelled.
 
 from __future__ import annotations
 
-import asyncio
 import uuid
 from typing import Any
 
@@ -24,29 +23,7 @@ from app.repositories.base import BaseRepository
 
 logger = get_logger(__name__)
 
-# In-memory task registry for tracking running jobs
-_running_jobs: dict[uuid.UUID, asyncio.Task[None]] = {}
-
-
-async def process_job(job_id: uuid.UUID) -> None:
-    """
-    Process an AI job asynchronously.
-
-    This function is designed to run as a background task. It updates
-    the job status through its lifecycle and handles errors gracefully.
-
-    Args:
-        job_id: The UUID of the AIJob to process.
-    """
-    task = asyncio.create_task(_execute_job(job_id))
-    _running_jobs[job_id] = task
-    try:
-        await task
-    finally:
-        _running_jobs.pop(job_id, None)
-
-
-async def _execute_job(job_id: uuid.UUID) -> None:
+async def _execute_job(job_id: uuid.UUID, worker_id: str | None = None) -> None:
     """Execute a single AI job with full lifecycle management."""
     async with AsyncSessionLocal() as db:
         try:
@@ -56,7 +33,7 @@ async def _execute_job(job_id: uuid.UUID) -> None:
                 logger.error("Job not found for processing", job_id=str(job_id))
                 return
 
-            if job.status != AIJobStatus.QUEUED:
+            if job.status not in (AIJobStatus.QUEUED, AIJobStatus.RUNNING):
                 logger.warning(
                     "Job not in queued state, skipping",
                     job_id=str(job_id),
@@ -64,7 +41,13 @@ async def _execute_job(job_id: uuid.UUID) -> None:
                 )
                 return
 
-            job.mark_running()
+            if worker_id and job.locked_by not in (None, worker_id):
+                logger.warning("Job is owned by another worker", job_id=str(job_id))
+                return
+            if job.status == AIJobStatus.QUEUED:
+                job.mark_running()
+            if worker_id:
+                job.locked_by = worker_id
             await db.flush()
 
             # Delegate to the appropriate handler
@@ -78,7 +61,7 @@ async def _execute_job(job_id: uuid.UUID) -> None:
 
             # Cache and finalize
             result_dict = result.model_dump() if hasattr(result, "model_dump") else result
-            ai_cache.set(
+            await ai_cache.set_async(
                 str(job.evidence_ids or ""),
                 prompt,
                 provider.model,
@@ -93,6 +76,8 @@ async def _execute_job(job_id: uuid.UUID) -> None:
                 cost=usage_meta.get("cost", 0.0),
                 latency_ms=usage_meta.get("latency_ms", 0),
             )
+            job.locked_by = None
+            job.locked_at = None
             await db.commit()
 
             logger.info(
@@ -107,7 +92,14 @@ async def _execute_job(job_id: uuid.UUID) -> None:
             try:
                 job = await repo.get(job_id)
                 if job:
-                    job.mark_failed(str(exc)[:1000])
+                    if job.attempts >= job.max_attempts:
+                        job.mark_failed(str(exc)[:1000])
+                    else:
+                        from datetime import UTC, datetime, timedelta
+                        job.status = AIJobStatus.QUEUED
+                        job.available_at = datetime.now(UTC) + timedelta(seconds=2 ** job.attempts)
+                    job.locked_by = None
+                    job.locked_at = None
                     await db.commit()
             except Exception:
                 logger.exception("Failed to update job error status", job_id=str(job_id))
@@ -128,7 +120,10 @@ async def _run_job_operation(
 
     if job.job_type == AIJobType.SUMMARIZE:
         evidence_text = await _load_evidence_batch(job.evidence_ids or [])
-        result = await provider.summarize(evidence_text, prompt_template=prompt)
+        result = await provider.summarize(
+            evidence_text, prompt_template=prompt,
+            max_length=(job.options or {}).get("max_length"),
+        )
         return result, {}
 
     elif job.job_type == AIJobType.EXTRACT_ENTITIES:
@@ -248,7 +243,7 @@ async def _load_entities_context(
         )
 
 
-def cancel_job(job_id: uuid.UUID) -> bool:
+async def cancel_job(job_id: uuid.UUID) -> bool:
     """
     Cancel a running background job.
 
@@ -258,8 +253,12 @@ def cancel_job(job_id: uuid.UUID) -> bool:
     Returns:
         True if the job was found and cancelled, False otherwise.
     """
-    task = _running_jobs.get(job_id)
-    if task and not task.done():
-        task.cancel()
+    async with AsyncSessionLocal() as db:
+        job = await db.get(AIJob, job_id)
+        if not job or job.status not in (AIJobStatus.QUEUED, AIJobStatus.RUNNING):
+            return False
+        job.mark_cancelled()
+        job.locked_by = None
+        job.locked_at = None
+        await db.commit()
         return True
-    return False

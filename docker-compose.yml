@@ -89,6 +89,24 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: echotrace-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - echotrace-network
+
   # ── Backend (FastAPI) ─────────────────────────────────────────────────────
   backend:
     build:
@@ -101,6 +119,8 @@ services:
       <<: *shared-environment
       <<: *postgres-environment
       <<: *neo4j-environment
+      REDIS_URL: redis://redis:6379/0
+      REDIS_ENABLED: "true"
       BACKEND_HOST: 0.0.0.0
       BACKEND_PORT: 8000
     ports:
@@ -109,6 +129,8 @@ services:
       postgres:
         condition: service_healthy
       neo4j:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
       - ./backend:/app
@@ -125,6 +147,31 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: echotrace-worker
+    restart: unless-stopped
+    environment:
+      <<: *shared-environment
+      <<: *postgres-environment
+      <<: *neo4j-environment
+      REDIS_URL: redis://redis:6379/0
+      REDIS_ENABLED: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__
+    command: python -m app.worker
+    networks:
+      - echotrace-network
 
   # ── Frontend (Next.js) ────────────────────────────────────────────────────
   frontend:
@@ -161,6 +208,8 @@ volumes:
   neo4j-data:
     driver: local
   neo4j-logs:
+    driver: local
+  redis-data:
     driver: local
 
 networks:

@@ -162,6 +162,7 @@ def rate_limit(endpoint: str) -> Callable:
                     "message": "Too many requests. Please try again later.",
                     "retry_after_seconds": limiter.window_seconds,
                 },
+                headers={"Retry-After": str(limiter.window_seconds)},
             )
 
     return _rate_limit_dependency

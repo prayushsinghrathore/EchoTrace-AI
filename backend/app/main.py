@@ -67,6 +67,8 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
         _sync_engine_instance.dispose()
 
     await close_cache()
+    from app.ai.cache import ai_cache
+    await ai_cache.close()
     shutdown_opentelemetry()
 
     logger.info("Shutdown complete")

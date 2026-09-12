@@ -73,6 +73,11 @@ class ExportJob(Base, TimestampMixin):
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    attempts: Mapped[int] = mapped_column(nullable=False, default=0, server_default="0")
+    max_attempts: Mapped[int] = mapped_column(nullable=False, default=3, server_default="3")
+    available_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    locked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    locked_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
 
     def __repr__(self) -> str:
         return f"<ExportJob id={self.id} type={self.entity_type.value} fmt={self.format.value} status={self.status.value}>"

@@ -7,7 +7,7 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from fastapi.responses import FileResponse
+from fastapi.responses import StreamingResponse
 from sqlalchemy import func as sa_func
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -143,11 +143,14 @@ async def get_export(
 async def download_export(
     token: str,
     db: AsyncSession = Depends(get_db_session),
-) -> FileResponse:
+) -> StreamingResponse:
     """Download an exported file using a signed token."""
     svc = ExportService(db)
-    filepath, filename = await svc.download_with_token(token)
-    return FileResponse(filepath, filename=filename, media_type="application/octet-stream")
+    data, filename, mime = await svc.download_with_token(token)
+    return StreamingResponse(
+        iter([data]), media_type=mime,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 # ── Notifications ─────────────────────────────────────────────────────────────

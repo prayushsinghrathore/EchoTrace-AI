@@ -107,8 +107,13 @@ async function request<T>(
     const body = await response.json().catch(() => ({
       detail: `HTTP ${response.status}`,
     }));
+    const detail = body.detail;
+    const message =
+      typeof detail === "object" && detail !== null
+        ? (detail.message as string | undefined) || "Request failed"
+        : String(detail || `HTTP ${response.status}`);
     throw new AuthClientError(
-      body.detail || "Request failed",
+      message,
       response.status,
       body.error_code,
     );

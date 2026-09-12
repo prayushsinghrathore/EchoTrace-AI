@@ -95,10 +95,8 @@ async def summarize_evidence(
     small evidence items; large items are chunked automatically.
     """
     svc = AIService(db)
-    return await svc.summarize(
-        evidence_id=body.evidence_id,
-        user_id=user.id,
-        max_length=body.max_length,
+    return await svc.enqueue_summarize(
+        evidence_id=body.evidence_id, user_id=user.id, max_length=body.max_length,
     )
 
 
@@ -116,10 +114,8 @@ async def extract_entities(
     as pending suggestions awaiting human review.
     """
     svc = AIService(db)
-    return await svc.extract_entities(
-        evidence_id=body.evidence_id,
-        user_id=user.id,
-        investigation_id=body.investigation_id,
+    return await svc.enqueue_entities(
+        evidence_id=body.evidence_id, user_id=user.id, investigation_id=body.investigation_id,
     )
 
 
@@ -136,10 +132,8 @@ async def suggest_relationships(
     Suggestions are stored as pending and require investigator approval.
     """
     svc = AIService(db)
-    return await svc.suggest_relationships(
-        investigation_id=body.investigation_id,
-        user_id=user.id,
-        evidence_ids=body.evidence_ids,
+    return await svc.enqueue_relationships(
+        investigation_id=body.investigation_id, user_id=user.id, evidence_ids=body.evidence_ids,
     )
 
 
@@ -156,10 +150,8 @@ async def generate_timeline(
     Timeline events are stored as pending suggestions awaiting review.
     """
     svc = AIService(db)
-    return await svc.generate_timeline(
-        investigation_id=body.investigation_id,
-        user_id=user.id,
-        evidence_ids=body.evidence_ids,
+    return await svc.enqueue_timeline(
+        investigation_id=body.investigation_id, user_id=user.id, evidence_ids=body.evidence_ids,
     )
 
 
@@ -176,10 +168,7 @@ async def generate_report(
     Returns the report as a structured JSON job result.
     """
     svc = AIService(db)
-    return await svc.generate_report(
-        investigation_id=body.investigation_id,
-        user_id=user.id,
-    )
+    return await svc.enqueue_report(investigation_id=body.investigation_id, user_id=user.id)
 
 
 # ── Pipeline ──────────────────────────────────────────────────────────────────
@@ -202,13 +191,13 @@ async def run_ai_pipeline(
     svc = AIService(db)
 
     # Queue summarize job
-    summarize_job = await svc.summarize(
+    summarize_job = await svc.enqueue_summarize(
         evidence_id=evidence_id,
         user_id=user.id,
     )
 
     # Queue entity extraction (creates pending suggestions if investigation_id)
-    entities_job = await svc.extract_entities(
+    entities_job = await svc.enqueue_entities(
         evidence_id=evidence_id,
         user_id=user.id,
         investigation_id=investigation_id,

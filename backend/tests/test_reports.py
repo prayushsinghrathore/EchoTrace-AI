@@ -150,7 +150,7 @@ class TestExportAPI:
         assert resp.status_code == 201
         data = resp.json()
         assert data["entity_type"] == "investigation"
-        assert data["status"] in ("completed", "running")
+        assert data["status"] == "queued"
 
     async def test_list_exports(self, client: AsyncClient) -> None:
         token, ws_id, inv_id, ev_id = await _setup_env(client)

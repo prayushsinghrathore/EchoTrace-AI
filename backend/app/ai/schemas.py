@@ -167,6 +167,7 @@ class AIJobResponse(BaseModel):
     provider: str
     model: str
     evidence_ids: list | None = None
+    options: dict | None = None
     input_tokens: int | None = None
     output_tokens: int | None = None
     cost: float | None = None
