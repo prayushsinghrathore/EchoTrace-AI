@@ -93,6 +93,12 @@ class Settings(BaseSettings):
                 f":{data.get('POSTGRES_PORT', 5432)}"
                 f"/{data.get('POSTGRES_DB', 'echotrace')}"
             )
+        reset_url = data.get("PASSWORD_RESET_URL", "")
+        if data.get("ENVIRONMENT") == "production" and (
+            not reset_url
+            or reset_url.startswith(("http://localhost", "http://127.0.0.1"))
+        ):
+            data["PASSWORD_RESET_URL"] = "https://echo-trace-ai.vercel.app"
         return data
 
     ASYNC_DATABASE_URI: PostgresDsn | str = ""
