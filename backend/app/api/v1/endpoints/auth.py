@@ -528,7 +528,12 @@ async def forgot_password(
             html=f'<p>Reset your EchoTrace AI password:</p><p><a href="{reset_link}">Reset password</a></p>',
         )
     except Exception as exc:
-        logger.error("Password reset email delivery failed", user_id=str(user.id), error=str(exc))
+        logger.exception(
+            "Password reset email delivery failed",
+            user_id=str(user.id),
+            error_type=type(exc).__name__,
+            error=repr(exc),
+        )
         # Do not reveal delivery details or user existence to the caller.
 
     return {

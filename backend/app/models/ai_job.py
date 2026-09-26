@@ -63,13 +63,14 @@ class AIJob(Base, TimestampMixin):
     )
 
     job_type: Mapped[AIJobType] = mapped_column(
-        Enum(AIJobType, name="ai_job_type", values_callable=lambda x: [e.value for e in x]),
+        # The initial migration stores Python enum names in PostgreSQL.
+        Enum(AIJobType, name="ai_job_type"),
         nullable=False,
         comment="Type of AI operation",
     )
 
     status: Mapped[AIJobStatus] = mapped_column(
-        Enum(AIJobStatus, name="ai_job_status", values_callable=lambda x: [e.value for e in x]),
+        Enum(AIJobStatus, name="ai_job_status"),
         default=AIJobStatus.QUEUED,
         nullable=False,
         index=True,

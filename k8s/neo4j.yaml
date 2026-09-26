@@ -31,7 +31,7 @@ spec:
         fsGroup: 7474
       containers:
         - name: neo4j
-          image: neo4j:5-enterprise
+          image: neo4j:5-community
           imagePullPolicy: IfNotPresent
           ports:
             - name: bolt
@@ -42,7 +42,10 @@ spec:
               protocol: TCP
           env:
             - name: NEO4J_AUTH
-              value: "$(NEO4J_USER)/$(NEO4J_PASSWORD)"
+              valueFrom:
+                secretKeyRef:
+                  name: echotrace-secrets
+                  key: NEO4J_AUTH
             - name: NEO4J_USER
               valueFrom:
                 configMapKeyRef:
@@ -54,10 +57,7 @@ spec:
                   name: echotrace-secrets
                   key: NEO4J_PASSWORD
             - name: NEO4J_ACCEPT_LICENSE_AGREEMENT
-              valueFrom:
-                configMapKeyRef:
-                  name: echotrace-config
-                  key: NEO4J_ACCEPT_LICENSE
+              value: ""
             - name: NEO4J_dbms_memory_pagecache_size
               value: "512M"
             - name: NEO4J_dbms_memory_heap_max__size
@@ -72,12 +72,9 @@ spec:
           livenessProbe:
             exec:
               command:
-                - cypher-shell
-                - -u
-                - neo4j
-                - -p
-                - "$(NEO4J_PASSWORD)"
-                - "RETURN 1"
+                - sh
+                - -c
+                - cypher-shell -u "$NEO4J_USER" -p "$NEO4J_PASSWORD" 'RETURN 1'
             initialDelaySeconds: 60
             periodSeconds: 30
             timeoutSeconds: 15
@@ -85,12 +82,9 @@ spec:
           readinessProbe:
             exec:
               command:
-                - cypher-shell
-                - -u
-                - neo4j
-                - -p
-                - "$(NEO4J_PASSWORD)"
-                - "RETURN 1"
+                - sh
+                - -c
+                - cypher-shell -u "$NEO4J_USER" -p "$NEO4J_PASSWORD" 'RETURN 1'
             initialDelaySeconds: 30
             periodSeconds: 15
             timeoutSeconds: 10

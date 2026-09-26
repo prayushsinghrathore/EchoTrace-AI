@@ -15,7 +15,7 @@ logger = get_logger(__name__)
 
 
 class EmailService:
-    """Send transactional email through SMTP or log it in console mode."""
+    """Send transactional email through the configured provider."""
 
     async def send(self, *, to: str, subject: str, text: str, html: str | None = None) -> None:
         if settings.EMAIL_PROVIDER == "console":
@@ -31,9 +31,10 @@ class EmailService:
                 )
         except Exception:
             logger.exception(
-                "SMTP email delivery failed",
+                "Email delivery failed",
                 to=to,
                 subject=subject,
+                email_provider=settings.EMAIL_PROVIDER,
                 smtp_host=settings.SMTP_HOST,
                 smtp_port=settings.SMTP_PORT,
             )
