@@ -29,7 +29,6 @@ data:
   NEO4J_ENABLED: "true"
   NEO4J_USER: "neo4j"
   NEO4J_DATABASE: "neo4j"
-  NEO4J_ACCEPT_LICENSE: "no"
 
   # ── AI / LLM ─────────────────────────────────────────────────────────────
   AI_PROVIDER: "openai"
@@ -73,12 +72,11 @@ data:
   REDIS_ENABLED: "true"
 
   # ── Email ─────────────────────────────────────────────────────────────────
-  EMAIL_PROVIDER: "resend"
-  EMAIL_FROM: "noreply@echotrace.example.com"
+  EMAIL_PROVIDER: "smtp"
   EMAIL_FROM_NAME: "EchoTrace AI"
-  RESEND_API_URL: "https://api.resend.com/emails"
-  SMTP_HOST: "smtp.example.com"
-  SMTP_PORT: "587"
+  SMTP_HOST: "smtp-relay.brevo.com"
+  SMTP_PORT: "2525"
+  SMTP_USE_TLS: "false"
   SMTP_USE_STARTTLS: "true"
 
   # ── Database Pool ────────────────────────────────────────────────────────
