@@ -60,6 +60,7 @@ data:
   ACCESS_TOKEN_EXPIRE_MINUTES: "30"
   REFRESH_TOKEN_EXPIRE_DAYS: "7"
   PASSWORD_RESET_TOKEN_EXPIRE_HOURS: "24"
+  PASSWORD_RESET_URL: "https://echo-trace-ai.vercel.app"
 
   # ── Storage ──────────────────────────────────────────────────────────────
   STORAGE_PROVIDER: "s3"

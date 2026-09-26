@@ -57,6 +57,8 @@ services:
         value: "true"
       - key: OPENAI_API_KEY
         sync: false
+      - key: PASSWORD_RESET_URL
+        value: https://echo-trace-ai.vercel.app
 
   - type: web
     name: echotrace-frontend
