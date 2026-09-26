@@ -54,7 +54,7 @@ class Settings(BaseSettings):
         return v
 
     # ── Backend ─────────────────────────────────────────────────────────
-    BACKEND_HOST: str = "0.0.0.0"
+    BACKEND_HOST: str = "127.0.0.1"
     BACKEND_PORT: int = Field(default=8000, ge=1024, le=65535)
     SECRET_KEY: str = Field(
         default="",

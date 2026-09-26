@@ -287,8 +287,10 @@ class EvidenceService:
                 )
 
             sha256 = hashlib.sha256(content).hexdigest()
-            sha1 = hashlib.sha1(content).hexdigest()
-            md5 = hashlib.md5(content).hexdigest()
+            # Legacy fingerprints are retained for compatibility; SHA-256 is
+            # the authoritative integrity and duplicate-detection hash.
+            sha1 = hashlib.sha1(content, usedforsecurity=False).hexdigest()
+            md5 = hashlib.md5(content, usedforsecurity=False).hexdigest()
 
             # Duplicate detection
             existing = await self.repo.find_one(sha256_hash=sha256)

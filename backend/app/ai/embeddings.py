@@ -138,7 +138,7 @@ class PgvectorStore(VectorStore):
                     VALUES (:id, :vector::vector, :metadata::jsonb)
                     ON CONFLICT (id)
                     DO UPDATE SET vector = :vector::vector, metadata = :metadata::jsonb
-                    """),
+                    """),  # nosec B608 - TABLE_NAME is a fixed class constant
                     {
                         "id": id,
                         "vector": str(vector),
@@ -164,7 +164,7 @@ class PgvectorStore(VectorStore):
                     FROM {self.TABLE_NAME}
                     ORDER BY vector <=> :vector::vector
                     LIMIT :top_k
-                    """),
+                    """),  # nosec B608 - TABLE_NAME is a fixed class constant
                     {
                         "vector": str(vector),
                         "top_k": top_k,
@@ -187,7 +187,7 @@ class PgvectorStore(VectorStore):
         async with AsyncSessionLocal() as db:
             try:
                 await db.execute(
-                    text(f"DELETE FROM {self.TABLE_NAME} WHERE id = :id"),
+                    text(f"DELETE FROM {self.TABLE_NAME} WHERE id = :id"),  # nosec B608 - fixed table constant
                     {"id": id},
                 )
                 await db.commit()
