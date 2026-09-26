@@ -43,7 +43,7 @@ _MIME_MAGIC_BYTES: list[tuple[bytes, int, str]] = [
     (b"\xff\xd8\xff", 0, "image/jpeg"),
     (b"GIF87a", 0, "image/gif"),
     (b"GIF89a", 0, "image/gif"),
-    (b"RIFF", 0, "image/webp"),        # WEBP header
+    (b"RIFF", 0, "image/webp"),  # WEBP header
     (b"%PDF", 0, "application/pdf"),
     (b"PK\x03\x04", 0, "application/zip"),
     (b"\x1f\x8b\x08", 0, "application/gzip"),
@@ -58,8 +58,12 @@ _MIME_MAGIC_BYTES: list[tuple[bytes, int, str]] = [
     (b"\xff\xf3", 0, "audio/mpeg"),
     (b"OggS", 0, "audio/ogg"),
     (b"RIFF", 0, "audio/wav"),
-    (b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1", 0, "application/vnd.ms-excel"),   # OLE2 (xls/doc/ppt)
-    (b"Microsoft Office", 0, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),  # Approximate
+    (b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1", 0, "application/vnd.ms-excel"),  # OLE2 (xls/doc/ppt)
+    (
+        b"Microsoft Office",
+        0,
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ),  # Approximate
 ]
 
 
@@ -69,8 +73,11 @@ def _detect_mime_from_magic(content: bytes) -> str | None:
     Returns None if no magic signature matches.
     """
     for signature, offset, mime in _MIME_MAGIC_BYTES:
-        if len(content) >= offset + len(signature) and content[offset : offset + len(signature)] == signature:
-                return mime
+        if (
+            len(content) >= offset + len(signature)
+            and content[offset : offset + len(signature)] == signature
+        ):
+            return mime
     return None
 
 
@@ -94,16 +101,22 @@ class EvidenceService:
         member_repo = BaseRepository(self.db, WorkspaceMember)
         member = await member_repo.find_one(workspace_id=workspace_id, user_id=user_id)
         if not member:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this workspace")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this workspace"
+            )
         return member.role
 
-    async def _check_project_belongs_to_workspace(self, project_id: uuid.UUID, workspace_id: uuid.UUID | None = None) -> Project:
+    async def _check_project_belongs_to_workspace(
+        self, project_id: uuid.UUID, workspace_id: uuid.UUID | None = None
+    ) -> Project:
         proj_repo = BaseRepository(self.db, Project)
         proj = await proj_repo.get(project_id)
         if not proj:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
         if workspace_id is not None and proj.workspace_id != workspace_id:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found in this workspace")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Project not found in this workspace"
+            )
         return proj
 
     def _generate_evidence_number(self) -> str:
@@ -114,9 +127,7 @@ class EvidenceService:
 
     async def _sync_tags(self, evidence: Evidence, tags: list[str]) -> None:
         """Replace all tags on evidence with the provided list."""
-        await self.db.execute(
-            sa_delete(EvidenceTag).where(EvidenceTag.evidence_id == evidence.id)
-        )
+        await self.db.execute(sa_delete(EvidenceTag).where(EvidenceTag.evidence_id == evidence.id))
         for tag_name in tags:
             tag_name = tag_name.strip().lower()
             if tag_name:
@@ -148,7 +159,10 @@ class EvidenceService:
         workspace_id = proj.workspace_id
         ws_role = await self._check_member(workspace_id, user_id)
         if ws_role not in (WorkspaceRole.OWNER, WorkspaceRole.ADMIN, WorkspaceRole.INVESTIGATOR):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions to create evidence")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions to create evidence",
+            )
 
         tags = kwargs.pop("tags", [])
 
@@ -165,8 +179,9 @@ class EvidenceService:
         if tags:
             await self._sync_tags(evidence, tags)
 
-        await self.custody.record(evidence.id, user_id, "create",
-                                  notes=f"Evidence '{evidence.title}' created")
+        await self.custody.record(
+            evidence.id, user_id, "create", notes=f"Evidence '{evidence.title}' created"
+        )
         await self.db.commit()
         await self.db.refresh(evidence)
         logger.info("Evidence created", ev_id=str(evidence.id), num=evidence.evidence_number)
@@ -183,7 +198,9 @@ class EvidenceService:
         ev = await self.get(evidence_id, user_id)
         ws_role = await self._check_member(ev.workspace_id, user_id)
         if ws_role not in (WorkspaceRole.OWNER, WorkspaceRole.ADMIN, WorkspaceRole.INVESTIGATOR):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions"
+            )
 
         tags = kwargs.pop("tags", None)
         changed = []
@@ -200,8 +217,9 @@ class EvidenceService:
             changed.append("tags")
 
         if changed:
-            await self.custody.record(ev.id, user_id, "update",
-                                      notes=f"Fields updated: {', '.join(changed)}")
+            await self.custody.record(
+                ev.id, user_id, "update", notes=f"Fields updated: {', '.join(changed)}"
+            )
         await self.db.commit()
         await self.db.refresh(ev)
         return ev
@@ -210,33 +228,42 @@ class EvidenceService:
         ev = await self.get(evidence_id, user_id)
         ws_role = await self._check_member(ev.workspace_id, user_id)
         if ws_role not in (WorkspaceRole.OWNER, WorkspaceRole.ADMIN, WorkspaceRole.INVESTIGATOR):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions"
+            )
 
         ev.is_deleted = True
         ev.deleted_at = datetime.now(UTC)
-        await self.custody.record(ev.id, user_id, "delete",
-                                  notes=f"Evidence '{ev.title}' deleted")
+        await self.custody.record(ev.id, user_id, "delete", notes=f"Evidence '{ev.title}' deleted")
         await self.db.commit()
 
     async def restore(self, evidence_id: uuid.UUID, user_id: uuid.UUID) -> Evidence:
         ev = await self.repo.get(evidence_id)
         if not ev or not ev.is_deleted:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Deleted evidence not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Deleted evidence not found"
+            )
         await self._check_member(ev.workspace_id, user_id)
 
         ev.is_deleted = False
         ev.deleted_at = None
-        await self.custody.record(ev.id, user_id, "restore",
-                                  notes=f"Evidence '{ev.title}' restored")
+        await self.custody.record(
+            ev.id, user_id, "restore", notes=f"Evidence '{ev.title}' restored"
+        )
         await self.db.commit()
         await self.db.refresh(ev)
         return ev
 
     # ── File Upload ─────────────────────────────────────────────────────
 
-    async def upload_file(self, evidence_id: uuid.UUID, file: UploadFile, user_id: uuid.UUID,
-                          investigation_id: uuid.UUID | None = None,
-                          change_notes: str | None = None) -> Evidence:
+    async def upload_file(
+        self,
+        evidence_id: uuid.UUID,
+        file: UploadFile,
+        user_id: uuid.UUID,
+        investigation_id: uuid.UUID | None = None,
+        change_notes: str | None = None,
+    ) -> Evidence:
         ev = await self.get(evidence_id, user_id)
 
         # Enforce concurrent upload limit (memory guard)
@@ -247,11 +274,14 @@ class EvidenceService:
             size = file.file.tell()
             file.file.seek(0)
             if size > max_bytes:
-                raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                                    detail=f"File exceeds maximum size of {settings.MAX_UPLOAD_SIZE_MB}MB")
+                raise HTTPException(
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    detail=f"File exceeds maximum size of {settings.MAX_UPLOAD_SIZE_MB}MB",
+                )
             if size == 0:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                    detail="Uploaded file is empty")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST, detail="Uploaded file is empty"
+                )
 
             # Compute hashes
             content = await file.read()
@@ -274,7 +304,7 @@ class EvidenceService:
                 raise HTTPException(
                     status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
                     detail=f"File type '{resolved_mime}' is not allowed. "
-                           f"Allowed types: {', '.join(settings.ALLOWED_MIME_TYPES[:10])}",
+                    f"Allowed types: {', '.join(settings.ALLOWED_MIME_TYPES[:10])}",
                 )
 
             # If magic bytes detected a different type than declared, log it
@@ -295,8 +325,10 @@ class EvidenceService:
             # Duplicate detection
             existing = await self.repo.find_one(sha256_hash=sha256)
             if existing and existing.id != evidence_id:
-                raise HTTPException(status_code=status.HTTP_409_CONFLICT,
-                                    detail=f"Duplicate file detected (SHA256: {sha256[:16]}...) already exists as evidence {existing.evidence_number}")
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"Duplicate file detected (SHA256: {sha256[:16]}...) already exists as evidence {existing.evidence_number}",
+                )
 
             # Sanitize filename
             safe_filename = sanitize_filename(file.filename or "unnamed")
@@ -336,18 +368,30 @@ class EvidenceService:
 
             # ── Auto-Verify Pipeline ──────────────────────────────────────────
             # Step 1: Set status to VERIFIED
-            previous_status = ev.status.value if hasattr(ev.status, 'value') else ev.status
+            previous_status = ev.status.value if hasattr(ev.status, "value") else ev.status
             ev.status = EvidenceStatus.VERIFIED
             ev.verification_timestamp = datetime.now(UTC)
 
-            await self.custody.record(ev.id, user_id, "status_change",
-                                      notes=f"Status changed from {previous_status} to verified (file uploaded & hashed)")
-            await self.custody.record(ev.id, user_id, "upload",
-                                      notes=f"File uploaded: {safe_filename} ({size} bytes)",
-                                      details=f"sha256={sha256}")
-            await self.custody.record(ev.id, user_id, "verify",
-                                      notes="Auto-verification passed — all hashes computed and stored",
-                                      details=f"sha256={sha256} sha1={sha1} md5={md5}")
+            await self.custody.record(
+                ev.id,
+                user_id,
+                "status_change",
+                notes=f"Status changed from {previous_status} to verified (file uploaded & hashed)",
+            )
+            await self.custody.record(
+                ev.id,
+                user_id,
+                "upload",
+                notes=f"File uploaded: {safe_filename} ({size} bytes)",
+                details=f"sha256={sha256}",
+            )
+            await self.custody.record(
+                ev.id,
+                user_id,
+                "verify",
+                notes="Auto-verification passed — all hashes computed and stored",
+                details=f"sha256={sha256} sha1={sha1} md5={md5}",
+            )
 
             # Step 2: Link to investigation if provided
             if investigation_id:
@@ -387,31 +431,47 @@ class EvidenceService:
 
     # ── Download ────────────────────────────────────────────────────────
 
-    async def download_file(self, evidence_id: uuid.UUID, user_id: uuid.UUID) -> tuple[bytes, str, str]:
+    async def download_file(
+        self, evidence_id: uuid.UUID, user_id: uuid.UUID
+    ) -> tuple[bytes, str, str]:
         ev = await self.get(evidence_id, user_id)
         if not ev.storage_path:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No file stored for this evidence")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="No file stored for this evidence"
+            )
 
         data = await self.storage.retrieve(ev.storage_path)
         if data is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found on storage")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="File not found on storage"
+            )
 
-        await self.custody.record(ev.id, user_id, "download",
-                                  notes=f"File downloaded: {ev.original_filename}")
+        await self.custody.record(
+            ev.id, user_id, "download", notes=f"File downloaded: {ev.original_filename}"
+        )
         await self.db.commit()
         return data, ev.original_filename or "download", ev.mime_type or "application/octet-stream"
 
     # ── Hash Verification ───────────────────────────────────────────────
 
-    async def verify_hashes(self, evidence_id: uuid.UUID, user_id: uuid.UUID,
-                            sha256: str | None = None, sha1: str | None = None,
-                            md5: str | None = None) -> dict[str, Any]:
+    async def verify_hashes(
+        self,
+        evidence_id: uuid.UUID,
+        user_id: uuid.UUID,
+        sha256: str | None = None,
+        sha1: str | None = None,
+        md5: str | None = None,
+    ) -> dict[str, Any]:
         ev = await self.get(evidence_id, user_id)
         results: dict[str, Any] = {"verified": True, "checks": {}}
 
         if sha256:
             match = ev.sha256_hash == sha256.lower()
-            results["checks"]["sha256"] = {"expected": ev.sha256_hash, "provided": sha256, "match": match}
+            results["checks"]["sha256"] = {
+                "expected": ev.sha256_hash,
+                "provided": sha256,
+                "match": match,
+            }
             if not match:
                 results["verified"] = False
 
@@ -428,39 +488,51 @@ class EvidenceService:
                 results["verified"] = False
 
         ev.verification_timestamp = datetime.now(UTC)
-        await self.custody.record(ev.id, user_id, "verify",
-                                  notes=f"Hash verification: {'passed' if results['verified'] else 'FAILED'}",
-                                  details=str(results))
+        await self.custody.record(
+            ev.id,
+            user_id,
+            "verify",
+            notes=f"Hash verification: {'passed' if results['verified'] else 'FAILED'}",
+            details=str(results),
+        )
         await self.db.commit()
         return results
 
     # ── List / Search ──────────────────────────────────────────────────
 
-    async def list_for_project(self, project_id: uuid.UUID, _user_id: uuid.UUID,
-                                skip: int = 0, limit: int = 50) -> list[dict]:
-        ev_list = await self.repo.find_many(project_id=project_id, is_deleted=False,
-                                              order_by="created_at", descending=True,
-                                              skip=skip, limit=limit)
+    async def list_for_project(
+        self, project_id: uuid.UUID, _user_id: uuid.UUID, skip: int = 0, limit: int = 50
+    ) -> list[dict]:
+        ev_list = await self.repo.find_many(
+            project_id=project_id,
+            is_deleted=False,
+            order_by="created_at",
+            descending=True,
+            skip=skip,
+            limit=limit,
+        )
         # Batch-load tags for all evidence items (eliminates N+1)
         tag_map = await self._batch_load_tags([ev.id for ev in ev_list])
         result = []
         for ev in ev_list:
             tags = tag_map.get(ev.id, [])
-            result.append({
-                "id": ev.id,
-                "project_id": ev.project_id,
-                "title": ev.title,
-                "evidence_number": ev.evidence_number,
-                "category": ev.category,
-                "status": ev.status.value if hasattr(ev.status, 'value') else ev.status,
-                "priority": ev.priority.value if hasattr(ev.priority, 'value') else ev.priority,
-                "sha256_hash": ev.sha256_hash,
-                "mime_type": ev.mime_type,
-                "file_size": ev.file_size,
-                "original_filename": ev.original_filename,
-                "tag_names": tags,
-                "created_at": ev.created_at,
-            })
+            result.append(
+                {
+                    "id": ev.id,
+                    "project_id": ev.project_id,
+                    "title": ev.title,
+                    "evidence_number": ev.evidence_number,
+                    "category": ev.category,
+                    "status": ev.status.value if hasattr(ev.status, "value") else ev.status,
+                    "priority": ev.priority.value if hasattr(ev.priority, "value") else ev.priority,
+                    "sha256_hash": ev.sha256_hash,
+                    "mime_type": ev.mime_type,
+                    "file_size": ev.file_size,
+                    "original_filename": ev.original_filename,
+                    "tag_names": tags,
+                    "created_at": ev.created_at,
+                }
+            )
         return result
 
     async def count_for_project(self, project_id: uuid.UUID) -> int:
@@ -479,8 +551,12 @@ class EvidenceService:
         if params.get("query"):
             q = f"%{params['query']}%"
             query = query.where(
-                or_(Evidence.title.ilike(q), Evidence.description.ilike(q),
-                    Evidence.evidence_number.ilike(q), Evidence.original_filename.ilike(q))
+                or_(
+                    Evidence.title.ilike(q),
+                    Evidence.description.ilike(q),
+                    Evidence.evidence_number.ilike(q),
+                    Evidence.original_filename.ilike(q),
+                )
             )
         if params.get("project_id"):
             query = query.where(Evidence.project_id == params["project_id"])
@@ -511,10 +587,15 @@ class EvidenceService:
             tag_list = params["tags"]
             # Single EXISTS clause matching all required tags (eliminates N correlated subqueries)
             for tag in tag_list:
-                tag_subq = select(EvidenceTag.evidence_id).where(
-                    EvidenceTag.tag == tag,
-                    EvidenceTag.evidence_id == Evidence.id,
-                ).correlate(Evidence).exists()
+                tag_subq = (
+                    select(EvidenceTag.evidence_id)
+                    .where(
+                        EvidenceTag.tag == tag,
+                        EvidenceTag.evidence_id == Evidence.id,
+                    )
+                    .correlate(Evidence)
+                    .exists()
+                )
                 query = query.where(tag_subq)
 
         # Count
@@ -538,23 +619,25 @@ class EvidenceService:
         items = []
         for ev in ev_list:
             tags = tag_map.get(ev.id, [])
-            items.append({
-                "id": ev.id,
-                "project_id": ev.project_id,
-                "workspace_id": ev.workspace_id,
-                "title": ev.title,
-                "evidence_number": ev.evidence_number,
-                "category": ev.category,
-                "status": ev.status.value if hasattr(ev.status, 'value') else ev.status,
-                "priority": ev.priority.value if hasattr(ev.priority, 'value') else ev.priority,
-                "sha256_hash": ev.sha256_hash,
-                "mime_type": ev.mime_type,
-                "file_size": ev.file_size,
-                "original_filename": ev.original_filename,
-                "tag_names": tags,
-                "created_by": str(ev.created_by),
-                "created_at": ev.created_at.isoformat() if ev.created_at else None,
-            })
+            items.append(
+                {
+                    "id": ev.id,
+                    "project_id": ev.project_id,
+                    "workspace_id": ev.workspace_id,
+                    "title": ev.title,
+                    "evidence_number": ev.evidence_number,
+                    "category": ev.category,
+                    "status": ev.status.value if hasattr(ev.status, "value") else ev.status,
+                    "priority": ev.priority.value if hasattr(ev.priority, "value") else ev.priority,
+                    "sha256_hash": ev.sha256_hash,
+                    "mime_type": ev.mime_type,
+                    "file_size": ev.file_size,
+                    "original_filename": ev.original_filename,
+                    "tag_names": tags,
+                    "created_by": str(ev.created_by),
+                    "created_at": ev.created_at.isoformat() if ev.created_at else None,
+                }
+            )
         return items, total
 
     # ── Statistics ──────────────────────────────────────────────────────
@@ -576,32 +659,50 @@ class EvidenceService:
         total_size = agg_row.total_size
 
         # Per status (single GROUP BY query instead of 6 separate count queries)
-        status_query = select(
-            Evidence.status, func.count(Evidence.id)
-        ).where(*base_filters).group_by(Evidence.status)
+        status_query = (
+            select(Evidence.status, func.count(Evidence.id))
+            .where(*base_filters)
+            .group_by(Evidence.status)
+        )
         status_result = await self.db.execute(status_query)
-        status_counts = {row[0].value if hasattr(row[0], 'value') else row[0]: row[1] for row in status_result}
+        status_counts = {
+            row[0].value if hasattr(row[0], "value") else row[0]: row[1] for row in status_result
+        }
 
         # Per category
-        cat_query = select(Evidence.category, func.count(Evidence.id)).where(
-            Evidence.project_id == project_id, Evidence.is_deleted == False,
-        ).group_by(Evidence.category)
+        cat_query = (
+            select(Evidence.category, func.count(Evidence.id))
+            .where(
+                Evidence.project_id == project_id,
+                Evidence.is_deleted == False,
+            )
+            .group_by(Evidence.category)
+        )
         cat_result = await self.db.execute(cat_query)
         by_category = {row[0]: row[1] for row in cat_result}
 
         # Per priority
-        pri_query = select(Evidence.priority, func.count(Evidence.id)).where(
-            Evidence.project_id == project_id, Evidence.is_deleted == False,
-        ).group_by(Evidence.priority)
+        pri_query = (
+            select(Evidence.priority, func.count(Evidence.id))
+            .where(
+                Evidence.project_id == project_id,
+                Evidence.is_deleted == False,
+            )
+            .group_by(Evidence.priority)
+        )
         pri_result = await self.db.execute(pri_query)
-        by_priority = {row[0].value if hasattr(row[0], 'value') else row[0]: row[1] for row in pri_result}
+        by_priority = {
+            row[0].value if hasattr(row[0], "value") else row[0]: row[1] for row in pri_result
+        }
 
         # Recent uploads (last 7 days)
         from datetime import timedelta
+
         week_ago = datetime.now(UTC) - timedelta(days=7)
         recent_result = await self.db.execute(
             select(func.count(Evidence.id)).where(
-                Evidence.project_id == project_id, Evidence.is_deleted == False,
+                Evidence.project_id == project_id,
+                Evidence.is_deleted == False,
                 Evidence.upload_timestamp >= week_ago,
             )
         )
@@ -618,10 +719,14 @@ class EvidenceService:
 
     # ── Versioning ──────────────────────────────────────────────────────
 
-    async def list_versions(self, evidence_id: uuid.UUID, user_id: uuid.UUID) -> list[EvidenceVersion]:
+    async def list_versions(
+        self, evidence_id: uuid.UUID, user_id: uuid.UUID
+    ) -> list[EvidenceVersion]:
         ev = await self.get(evidence_id, user_id)
         ver_repo = BaseRepository(self.db, EvidenceVersion)
-        versions = await ver_repo.find_many(evidence_id=ev.id, order_by="version_number", descending=True)
+        versions = await ver_repo.find_many(
+            evidence_id=ev.id, order_by="version_number", descending=True
+        )
         return versions
 
     async def get_version(self, version_id: uuid.UUID, user_id: uuid.UUID) -> EvidenceVersion:
@@ -637,7 +742,9 @@ class EvidenceService:
 
     # ── Comments ────────────────────────────────────────────────────────
 
-    async def add_comment(self, evidence_id: uuid.UUID, user_id: uuid.UUID, body: str) -> EvidenceComment:
+    async def add_comment(
+        self, evidence_id: uuid.UUID, user_id: uuid.UUID, body: str
+    ) -> EvidenceComment:
         await self.get(evidence_id, user_id)
         comment = EvidenceComment(evidence_id=evidence_id, author_id=user_id, body=body)
         self.db.add(comment)
@@ -645,13 +752,17 @@ class EvidenceService:
         await self.db.refresh(comment)
         return comment
 
-    async def edit_comment(self, comment_id: uuid.UUID, user_id: uuid.UUID, body: str) -> EvidenceComment:
+    async def edit_comment(
+        self, comment_id: uuid.UUID, user_id: uuid.UUID, body: str
+    ) -> EvidenceComment:
         comment_repo = BaseRepository(self.db, EvidenceComment)
         comment = await comment_repo.get(comment_id)
         if not comment:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
         if comment.author_id != user_id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Can only edit own comments")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Can only edit own comments"
+            )
         comment.body = body
         comment.is_edited = True
         comment.edited_at = datetime.now(UTC)
@@ -665,16 +776,24 @@ class EvidenceService:
         if not comment:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
         if comment.author_id != user_id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Can only delete own comments")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Can only delete own comments"
+            )
         await comment_repo.delete(comment_id, hard=True)
         await self.db.commit()
 
-    async def list_comments(self, evidence_id: uuid.UUID, user_id: uuid.UUID) -> list[EvidenceComment]:
+    async def list_comments(
+        self, evidence_id: uuid.UUID, user_id: uuid.UUID
+    ) -> list[EvidenceComment]:
         await self.get(evidence_id, user_id)
         comment_repo = BaseRepository(self.db, EvidenceComment)
-        return await comment_repo.find_many(evidence_id=evidence_id, order_by="created_at", descending=True)
+        return await comment_repo.find_many(
+            evidence_id=evidence_id, order_by="created_at", descending=True
+        )
 
-    async def bulk_action(self, evidence_ids: list[uuid.UUID], action: str, user_id: uuid.UUID) -> dict[str, Any]:
+    async def bulk_action(
+        self, evidence_ids: list[uuid.UUID], action: str, user_id: uuid.UUID
+    ) -> dict[str, Any]:
         results: dict[str, Any] = {"affected": 0, "errors": []}
         for ev_id in evidence_ids:
             try:

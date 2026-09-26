@@ -34,17 +34,28 @@ class InvitationService:
         member_repo = BaseRepository(self.db, WorkspaceMember)
         member = await member_repo.find_one(workspace_id=workspace_id, user_id=user_id)
         if not member:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this workspace")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this workspace"
+            )
         if member.role not in (WorkspaceRole.OWNER, WorkspaceRole.ADMIN):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin or Owner role required")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Admin or Owner role required"
+            )
 
-    async def invite(self, workspace_id: uuid.UUID, email: str, role: WorkspaceRole, invited_by: uuid.UUID) -> Invitation:
+    async def invite(
+        self, workspace_id: uuid.UUID, email: str, role: WorkspaceRole, invited_by: uuid.UUID
+    ) -> Invitation:
         await self._check_admin(workspace_id, invited_by)
 
         # Check for pending invitation to same email + workspace
-        existing = await self.repo.find_one(workspace_id=workspace_id, email=email, accepted_at=None, declined_at=None)
+        existing = await self.repo.find_one(
+            workspace_id=workspace_id, email=email, accepted_at=None, declined_at=None
+        )
         if existing and not existing.is_expired:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="A pending invitation already exists for this email")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A pending invitation already exists for this email",
+            )
 
         # Check if user is already a member
         user_result = await self.db.execute(select(User).where(User.email == email))
@@ -53,7 +64,10 @@ class InvitationService:
             member_repo = BaseRepository(self.db, WorkspaceMember)
             existing_member = await member_repo.find_one(workspace_id=workspace_id, user_id=user.id)
             if existing_member:
-                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User is already a member of this workspace")
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="User is already a member of this workspace",
+                )
 
         token = secrets.token_urlsafe(32)
         expires_at = datetime.now(UTC) + timedelta(days=7)
@@ -79,7 +93,9 @@ class InvitationService:
                 html=f'<p>You have been invited to join an EchoTrace AI workspace.</p><p><a href="{invitation_link}">Accept invitation</a></p>',
             )
         except Exception as exc:
-            logger.error("Invitation email delivery failed", invitation_id=str(invitation.id), error=str(exc))
+            logger.error(
+                "Invitation email delivery failed", invitation_id=str(invitation.id), error=str(exc)
+            )
 
         logger.info("Invitation created", ws_id=str(workspace_id), email=email, role=role.value)
         return invitation
@@ -87,13 +103,21 @@ class InvitationService:
     async def accept(self, token: str, user_id: uuid.UUID) -> dict:
         invitation = await self.repo.find_one(token=token)
         if not invitation:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found"
+            )
         if invitation.is_expired:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invitation has expired")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invitation has expired"
+            )
         if invitation.is_accepted:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invitation already accepted")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invitation already accepted"
+            )
         if invitation.is_declined:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invitation already declined")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invitation already declined"
+            )
 
         invitation.accept()
 
@@ -111,21 +135,33 @@ class InvitationService:
     async def decline(self, token: str) -> dict:
         invitation = await self.repo.find_one(token=token)
         if not invitation:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Invitation not found"
+            )
         if invitation.is_accepted:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invitation already accepted")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invitation already accepted"
+            )
         if invitation.is_declined:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invitation already declined")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Invitation already declined"
+            )
 
         invitation.decline()
         await self.db.commit()
 
-        logger.info("Invitation declined", ws_id=str(invitation.workspace_id), email=invitation.email)
+        logger.info(
+            "Invitation declined", ws_id=str(invitation.workspace_id), email=invitation.email
+        )
         return {"message": "Invitation declined"}
 
-    async def list_for_workspace(self, workspace_id: uuid.UUID, user_id: uuid.UUID) -> list[Invitation]:
+    async def list_for_workspace(
+        self, workspace_id: uuid.UUID, user_id: uuid.UUID
+    ) -> list[Invitation]:
         await self._check_admin(workspace_id, user_id)
-        return await self.repo.find_many(workspace_id=workspace_id, order_by="created_at", descending=True)
+        return await self.repo.find_many(
+            workspace_id=workspace_id, order_by="created_at", descending=True
+        )
 
     async def list_pending_for_user(self, email: str) -> list[Invitation]:
         return await self.repo.find_many(email=email, accepted_at=None, declined_at=None)

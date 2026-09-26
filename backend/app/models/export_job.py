@@ -52,20 +52,23 @@ class ExportJob(Base, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False, index=True
     )
     workspace_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     entity_type: Mapped[ExportEntityType] = mapped_column(
         Enum(ExportEntityType, name="export_entity_type"), nullable=False
     )
-    entity_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), nullable=False, index=True
-    )
+    entity_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False, index=True)
     format: Mapped[ExportFormat] = mapped_column(
         Enum(ExportFormat, name="export_format"), nullable=False
     )
     status: Mapped[ExportJobStatus] = mapped_column(
         Enum(ExportJobStatus, name="export_job_status"),
-        default=ExportJobStatus.QUEUED, nullable=False, index=True
+        default=ExportJobStatus.QUEUED,
+        nullable=False,
+        index=True,
     )
     file_path: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     file_size: Mapped[int | None] = mapped_column(nullable=True)
@@ -75,7 +78,9 @@ class ExportJob(Base, TimestampMixin):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     attempts: Mapped[int] = mapped_column(nullable=False, default=0, server_default="0")
     max_attempts: Mapped[int] = mapped_column(nullable=False, default=3, server_default="3")
-    available_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    available_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True, index=True
+    )
     locked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     locked_by: Mapped[str | None] = mapped_column(String(128), nullable=True)
 

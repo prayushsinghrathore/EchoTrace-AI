@@ -44,18 +44,22 @@ class EvidencePriority(str, enum.Enum):
 class Evidence(Base, TimestampMixin):
     __tablename__ = "evidence"
 
-    __table_args__ = (
-        {"comment": "Digital evidence items within projects"},
-    )
+    __table_args__ = ({"comment": "Digital evidence items within projects"},)
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True
     )
     project_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey("projects.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     workspace_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     created_by: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
@@ -66,14 +70,27 @@ class Evidence(Base, TimestampMixin):
 
     title: Mapped[str] = mapped_column(String(500), nullable=False, index=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    evidence_number: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    evidence_number: Mapped[str] = mapped_column(
+        String(100), unique=True, nullable=False, index=True
+    )
 
     category: Mapped[str] = mapped_column(String(100), nullable=False, default="other", index=True)
     status: Mapped[EvidenceStatus] = mapped_column(
-        Enum(EvidenceStatus, name="evidence_status", values_callable=lambda x: [e.value for e in x]), default=EvidenceStatus.DRAFT, nullable=False, index=True
+        Enum(
+            EvidenceStatus, name="evidence_status", values_callable=lambda x: [e.value for e in x]
+        ),
+        default=EvidenceStatus.DRAFT,
+        nullable=False,
+        index=True,
     )
     priority: Mapped[EvidencePriority] = mapped_column(
-        Enum(EvidencePriority, name="evidence_priority", values_callable=lambda x: [e.value for e in x]), default=EvidencePriority.MEDIUM, nullable=False
+        Enum(
+            EvidencePriority,
+            name="evidence_priority",
+            values_callable=lambda x: [e.value for e in x],
+        ),
+        default=EvidencePriority.MEDIUM,
+        nullable=False,
     )
     source: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
@@ -89,8 +106,12 @@ class Evidence(Base, TimestampMixin):
     stored_filename: Mapped[str | None] = mapped_column(String(500), nullable=True)
     storage_path: Mapped[str | None] = mapped_column(String(1000), nullable=True)
 
-    upload_timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    verification_timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    upload_timestamp: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    verification_timestamp: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -99,19 +120,27 @@ class Evidence(Base, TimestampMixin):
 
     # Relationships
     versions: Mapped[list[EvidenceVersion]] = relationship(
-        back_populates="evidence", cascade="all, delete-orphan", passive_deletes=True,
+        back_populates="evidence",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
         order_by="EvidenceVersion.version_number.desc()",
     )
     comments: Mapped[list[EvidenceComment]] = relationship(
-        back_populates="evidence", cascade="all, delete-orphan", passive_deletes=True,
+        back_populates="evidence",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
         order_by="EvidenceComment.created_at.desc()",
     )
     custody_events: Mapped[list[ChainOfCustodyEvent]] = relationship(
-        back_populates="evidence", cascade="all, delete-orphan", passive_deletes=True,
+        back_populates="evidence",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
         order_by="ChainOfCustodyEvent.timestamp.desc()",
     )
     tags: Mapped[list[EvidenceTag]] = relationship(
-        back_populates="evidence", cascade="all, delete-orphan", passive_deletes=True,
+        back_populates="evidence",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
     def __repr__(self) -> str:

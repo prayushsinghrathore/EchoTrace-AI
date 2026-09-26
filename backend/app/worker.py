@@ -101,7 +101,7 @@ async def run_export_job(job_id: uuid.UUID) -> None:
                 job.error = str(exc)[:1000]
             else:
                 job.status = ExportJobStatus.QUEUED
-                job.available_at = datetime.now(UTC) + timedelta(seconds=2 ** job.attempts)
+                job.available_at = datetime.now(UTC) + timedelta(seconds=2**job.attempts)
             job.locked_by = None
             job.locked_at = None
             await db.commit()
@@ -117,7 +117,7 @@ async def release_or_fail(model: Any, status: Any, job_id: uuid.UUID) -> None:
             job.error = "Worker execution failed after maximum attempts"
         else:
             job.status = status.QUEUED
-            job.available_at = datetime.now(UTC) + timedelta(seconds=2 ** job.attempts)
+            job.available_at = datetime.now(UTC) + timedelta(seconds=2**job.attempts)
         job.locked_by = None
         job.locked_at = None
         await db.commit()

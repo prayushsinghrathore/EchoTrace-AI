@@ -27,9 +27,7 @@ class RequestBodySizeLimitMiddleware(BaseHTTPMiddleware):
     avoiding unnecessary I/O on oversized payloads.
     """
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         content_length_str = request.headers.get("content-length")
         max_size = settings.MAX_REQUEST_BODY_SIZE
 

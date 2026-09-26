@@ -23,7 +23,9 @@ async def create_org(
     user: User = Depends(get_current_user),
 ):
     svc = OrganizationService(db)
-    return await svc.create(name=body.name, slug=body.slug, owner_id=user.id, description=body.description)
+    return await svc.create(
+        name=body.name, slug=body.slug, owner_id=user.id, description=body.description
+    )
 
 
 @router.get("", response_model=list[OrganizationResponse])

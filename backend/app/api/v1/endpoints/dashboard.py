@@ -39,9 +39,7 @@ async def dashboard_stats(
     """
     # User's organizations (where they are owner)
     org_count_result = await db.execute(
-        select(func.count(Organization.id)).where(
-            Organization.owner_id == user.id
-        )
+        select(func.count(Organization.id)).where(Organization.owner_id == user.id)
     )
     org_count = org_count_result.scalar() or 0
 

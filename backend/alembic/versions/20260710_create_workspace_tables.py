@@ -27,13 +27,34 @@ def upgrade() -> None:
     # ── Organizations ────────────────────────────────────────────────────
     op.create_table(
         "organizations",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()"), index=True),
+        sa.Column(
+            "id",
+            postgresql.UUID(as_uuid=True),
+            primary_key=True,
+            server_default=sa.text("gen_random_uuid()"),
+            index=True,
+        ),
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("slug", sa.String(120), nullable=False, index=True),
-        sa.Column("owner_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="RESTRICT"), nullable=False),
+        sa.Column(
+            "owner_id",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("users.id", ondelete="RESTRICT"),
+            nullable=False,
+        ),
         sa.Column("description", sa.Text, nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.UniqueConstraint("slug", name="uq_organizations_slug"),
         comment="Top-level tenant organizations",
     )
@@ -41,13 +62,35 @@ def upgrade() -> None:
     # ── Workspaces ───────────────────────────────────────────────────────
     op.create_table(
         "workspaces",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()"), index=True),
-        sa.Column("organization_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column(
+            "id",
+            postgresql.UUID(as_uuid=True),
+            primary_key=True,
+            server_default=sa.text("gen_random_uuid()"),
+            index=True,
+        ),
+        sa.Column(
+            "organization_id",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("organizations.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("slug", sa.String(120), nullable=False),
         sa.Column("description", sa.Text, nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.UniqueConstraint("slug", "organization_id", name="uq_workspace_org_slug"),
         comment="Workspaces within organizations",
     )
@@ -56,11 +99,35 @@ def upgrade() -> None:
     # ── Workspace Members ────────────────────────────────────────────────
     op.create_table(
         "workspace_members",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
-        sa.Column("workspace_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True),
-        sa.Column("user_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True),
-        sa.Column("role", sa.Enum("owner", "admin", "investigator", "analyst", "viewer", name="workspace_role"), nullable=False, server_default="viewer"),
-        sa.Column("joined_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "id",
+            postgresql.UUID(as_uuid=True),
+            primary_key=True,
+            server_default=sa.text("gen_random_uuid()"),
+        ),
+        sa.Column(
+            "workspace_id",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("workspaces.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "user_id",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("users.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
+        sa.Column(
+            "role",
+            sa.Enum("owner", "admin", "investigator", "analyst", "viewer", name="workspace_role"),
+            nullable=False,
+            server_default="viewer",
+        ),
+        sa.Column(
+            "joined_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False
+        ),
         sa.UniqueConstraint("workspace_id", "user_id", name="uq_workspace_user"),
         comment="User membership in workspaces with role",
     )
@@ -68,14 +135,42 @@ def upgrade() -> None:
     # ── Projects ─────────────────────────────────────────────────────────
     op.create_table(
         "projects",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()"), index=True),
-        sa.Column("workspace_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column(
+            "id",
+            postgresql.UUID(as_uuid=True),
+            primary_key=True,
+            server_default=sa.text("gen_random_uuid()"),
+            index=True,
+        ),
+        sa.Column(
+            "workspace_id",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("workspaces.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("name", sa.String(255), nullable=False),
         sa.Column("slug", sa.String(120), nullable=False),
         sa.Column("description", sa.Text, nullable=True),
-        sa.Column("status", sa.Enum("active", "archived", name="project_status"), nullable=False, server_default="active", index=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "status",
+            sa.Enum("active", "archived", name="project_status"),
+            nullable=False,
+            server_default="active",
+            index=True,
+        ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.UniqueConstraint("slug", "workspace_id", name="uq_project_ws_slug"),
         comment="Investigation projects within workspaces",
     )
@@ -84,17 +179,48 @@ def upgrade() -> None:
     # ── Invitations ──────────────────────────────────────────────────────
     op.create_table(
         "invitations",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True, server_default=sa.text("gen_random_uuid()")),
-        sa.Column("workspace_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True),
+        sa.Column(
+            "id",
+            postgresql.UUID(as_uuid=True),
+            primary_key=True,
+            server_default=sa.text("gen_random_uuid()"),
+        ),
+        sa.Column(
+            "workspace_id",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("workspaces.id", ondelete="CASCADE"),
+            nullable=False,
+            index=True,
+        ),
         sa.Column("email", sa.String(320), nullable=False),
-        sa.Column("invited_by", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id", ondelete="RESTRICT"), nullable=False),
-        sa.Column("role", sa.Enum("owner", "admin", "investigator", "analyst", "viewer", name="workspace_role"), nullable=False, server_default="viewer"),
+        sa.Column(
+            "invited_by",
+            postgresql.UUID(as_uuid=True),
+            sa.ForeignKey("users.id", ondelete="RESTRICT"),
+            nullable=False,
+        ),
+        sa.Column(
+            "role",
+            sa.Enum("owner", "admin", "investigator", "analyst", "viewer", name="workspace_role"),
+            nullable=False,
+            server_default="viewer",
+        ),
         sa.Column("token", sa.String(128), unique=True, nullable=False, index=True),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("accepted_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("declined_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         comment="Pending workspace invitations",
     )
 

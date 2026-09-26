@@ -19,7 +19,9 @@ class EmailService:
 
     async def send(self, *, to: str, subject: str, text: str, html: str | None = None) -> None:
         if settings.EMAIL_PROVIDER == "console":
-            logger.info("Email delivery (console)", extra={"to": to, "subject": subject, "body": text})
+            logger.info(
+                "Email delivery (console)", extra={"to": to, "subject": subject, "body": text}
+            )
             return
         try:
             if settings.EMAIL_PROVIDER == "resend":
@@ -76,7 +78,9 @@ class EmailService:
                 json=payload,
             )
             if response.is_error:
-                raise RuntimeError(f"Resend API returned HTTP {response.status_code}: {response.text[:500]}")
+                raise RuntimeError(
+                    f"Resend API returned HTTP {response.status_code}: {response.text[:500]}"
+                )
 
     def _send_smtp(self, to: str, subject: str, text: str, html: str | None) -> None:
         message = EmailMessage()
@@ -88,7 +92,9 @@ class EmailService:
             message.add_alternative(html, subtype="html")
 
         smtp_class = smtplib.SMTP_SSL if settings.SMTP_USE_TLS else smtplib.SMTP
-        with smtp_class(settings.SMTP_HOST, settings.SMTP_PORT, timeout=settings.EMAIL_TIMEOUT_SECONDS) as client:
+        with smtp_class(
+            settings.SMTP_HOST, settings.SMTP_PORT, timeout=settings.EMAIL_TIMEOUT_SECONDS
+        ) as client:
             if settings.SMTP_USE_STARTTLS:
                 client.starttls()
             if settings.SMTP_USERNAME:

@@ -27,9 +27,7 @@ class Invitation(Base, TimestampMixin):
 
     __tablename__ = "invitations"
 
-    __table_args__ = (
-        {"comment": "Pending workspace invitations"},
-    )
+    __table_args__ = ({"comment": "Pending workspace invitations"},)
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -98,6 +96,7 @@ class Invitation(Base, TimestampMixin):
     @property
     def is_expired(self) -> bool:
         import datetime as dt_module
+
         return dt_module.datetime.now(dt_module.UTC) > self.expires_at
 
     @property
@@ -110,10 +109,12 @@ class Invitation(Base, TimestampMixin):
 
     def accept(self) -> None:
         import datetime as dt_module
+
         self.accepted_at = dt_module.datetime.now(dt_module.UTC)
 
     def decline(self) -> None:
         import datetime as dt_module
+
         self.declined_at = dt_module.datetime.now(dt_module.UTC)
 
     def __repr__(self) -> str:

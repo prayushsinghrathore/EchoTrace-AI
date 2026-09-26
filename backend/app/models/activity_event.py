@@ -44,16 +44,28 @@ class ActivityEvent(Base, TimestampMixin):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True
     )
     workspace_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     investigation_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("investigations.id", ondelete="CASCADE"), nullable=True, index=True
+        UUID(as_uuid=True),
+        ForeignKey("investigations.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
     )
     actor_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False, index=True
     )
     event_type: Mapped[ActivityEventType] = mapped_column(
-        Enum(ActivityEventType, name="activity_event_type", values_callable=lambda x: [e.value for e in x]), nullable=False, index=True
+        Enum(
+            ActivityEventType,
+            name="activity_event_type",
+            values_callable=lambda x: [e.value for e in x],
+        ),
+        nullable=False,
+        index=True,
     )
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)

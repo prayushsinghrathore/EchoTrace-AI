@@ -33,12 +33,15 @@ class Settings(BaseSettings):
     # ── General ─────────────────────────────────────────────────────────
     PROJECT_NAME: str = "EchoTrace AI"
     VERSION: str = "1.0.0"
-    ENVIRONMENT: str = Field(default="development", pattern="^(development|staging|production|test)$")
+    ENVIRONMENT: str = Field(
+        default="development", pattern="^(development|staging|production|test)$"
+    )
     DEBUG: bool = True
     LOG_LEVEL: str = Field(default="DEBUG", pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$")
     API_V1_PREFIX: str = "/api/v1"
     BACKEND_CORS_ORIGINS: list[str] = [
-        "http://localhost:3000", "http://localhost:8000",
+        "http://localhost:3000",
+        "http://localhost:8000",
         "https://echotrace-ai.vercel.app",
     ]
 
@@ -105,7 +108,9 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def enforce_secret_key_in_production(self) -> Settings:
         """Require a proper SECRET_KEY in production/staging environments."""
-        if (self.is_production or self.is_staging) and (not self.SECRET_KEY or len(self.SECRET_KEY) < 32):
+        if (self.is_production or self.is_staging) and (
+            not self.SECRET_KEY or len(self.SECRET_KEY) < 32
+        ):
             raise ValueError(
                 "SECRET_KEY must be set and at least 32 characters long "
                 "in production/staging environments."
@@ -146,18 +151,36 @@ class Settings(BaseSettings):
     STORAGE_S3_ENDPOINT: str = ""
     STORAGE_S3_PREFIX: str = "evidence"
     MAX_UPLOAD_SIZE_MB: int = Field(default=500, ge=1, le=10240)
-    UPLOAD_CONCURRENCY_LIMIT: int = Field(default=5, ge=1, le=50,
-                                          description="Max concurrent uploads (memory guard)")
+    UPLOAD_CONCURRENCY_LIMIT: int = Field(
+        default=5, ge=1, le=50, description="Max concurrent uploads (memory guard)"
+    )
     ALLOWED_MIME_TYPES: list[str] = [
-        "application/pdf", "application/zip", "application/x-tar", "application/gzip",
-        "application/x-7z-compressed", "application/x-rar-compressed",
-        "image/jpeg", "image/png", "image/tiff", "image/webp",
-        "text/plain", "text/csv", "text/html", "text/xml", "text/json",
-        "application/json", "application/xml",
-        "application/vnd.ms-excel", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/pdf",
+        "application/zip",
+        "application/x-tar",
+        "application/gzip",
+        "application/x-7z-compressed",
+        "application/x-rar-compressed",
+        "image/jpeg",
+        "image/png",
+        "image/tiff",
+        "image/webp",
+        "text/plain",
+        "text/csv",
+        "text/html",
+        "text/xml",
+        "text/json",
+        "application/json",
+        "application/xml",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "video/mp4", "video/x-msvideo", "video/x-matroska",
-        "audio/mpeg", "audio/wav", "audio/ogg",
+        "video/mp4",
+        "video/x-msvideo",
+        "video/x-matroska",
+        "audio/mpeg",
+        "audio/wav",
+        "audio/ogg",
         "application/octet-stream",
     ]
 
@@ -209,12 +232,19 @@ class Settings(BaseSettings):
     DB_MAX_OVERFLOW: int = Field(default=5, ge=0, le=50)
     DB_ECHO: bool = False
     DB_POOL_RECYCLE: int = Field(default=3600, ge=60, le=86400)
-    DB_SSL_MODE: str = Field(default="disable", pattern="^(disable|require)$",
-                             description="SSL mode for asyncpg: disable | require")
+    DB_SSL_MODE: str = Field(
+        default="disable",
+        pattern="^(disable|require)$",
+        description="SSL mode for asyncpg: disable | require",
+    )
 
     # ── Request Limits ─────────────────────────────────────────────────
-    MAX_REQUEST_BODY_SIZE: int = Field(default=10_485_760, ge=65_536, le=1_073_741_824,
-                                       description="Max request body size in bytes (default 10MB)")
+    MAX_REQUEST_BODY_SIZE: int = Field(
+        default=10_485_760,
+        ge=65_536,
+        le=1_073_741_824,
+        description="Max request body size in bytes (default 10MB)",
+    )
 
     # ── Compression ────────────────────────────────────────────────────
     COMPRESSION_ENABLED: bool = True

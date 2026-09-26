@@ -23,7 +23,10 @@ class EvidenceVersion(Base, TimestampMixin):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     evidence_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("evidence.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey("evidence.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     version_number: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     created_by: Mapped[uuid.UUID] = mapped_column(

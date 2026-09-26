@@ -42,11 +42,13 @@ class ConnectionManager:
         ws_id = str(workspace_id)
         if ws_id not in self._connections:
             self._connections[ws_id] = []
-        self._connections[ws_id].append({
-            "websocket": websocket,
-            "user_id": str(user_id),
-            "workspace_id": ws_id,
-        })
+        self._connections[ws_id].append(
+            {
+                "websocket": websocket,
+                "user_id": str(user_id),
+                "workspace_id": ws_id,
+            }
+        )
         logger.debug(
             "WebSocket connected",
             user_id=str(user_id),
@@ -80,13 +82,15 @@ class ConnectionManager:
         if ws_id not in self._connections:
             return 0
 
-        message = json.dumps({
-            "type": event_type,
-            "data": data,
-            "timestamp": __import__("datetime").datetime.now(
-                __import__("datetime").timezone.utc
-            ).isoformat(),
-        })
+        message = json.dumps(
+            {
+                "type": event_type,
+                "data": data,
+                "timestamp": __import__("datetime")
+                .datetime.now(__import__("datetime").timezone.utc)
+                .isoformat(),
+            }
+        )
 
         stale = []
         count = 0
@@ -114,10 +118,12 @@ class ConnectionManager:
     ) -> int:
         """Broadcast an event to all connections for a specific user."""
         uid = str(user_id)
-        message = json.dumps({
-            "type": event_type,
-            "data": data,
-        })
+        message = json.dumps(
+            {
+                "type": event_type,
+                "data": data,
+            }
+        )
         count = 0
         for ws_list in self._connections.values():
             for conn in ws_list:
@@ -149,7 +155,9 @@ async def authenticate_websocket(websocket: WebSocket) -> tuple[uuid.UUID, uuid.
     workspace_id_str = websocket.query_params.get("workspace_id")
 
     if not token or not workspace_id_str:
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Missing token or workspace_id")
+        await websocket.close(
+            code=status.WS_1008_POLICY_VIOLATION, reason="Missing token or workspace_id"
+        )
         return None
 
     try:

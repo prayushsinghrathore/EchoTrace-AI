@@ -39,7 +39,9 @@ class S3StorageProvider(StorageProvider):
         clean = path.lstrip("/")
         return f"{self.prefix}/{clean}" if self.prefix else clean
 
-    async def store(self, data: bytes | BinaryIO, filename: str, mime_type: str, path: str | None = None) -> StoredFile:
+    async def store(
+        self, data: bytes | BinaryIO, filename: str, mime_type: str, path: str | None = None
+    ) -> StoredFile:
         safe_filename = filename.replace("/", "_").replace("\\", "_")
         safe_name = f"{uuid.uuid4().hex}_{safe_filename}"
         relative = path or f"uploads/{safe_name[:2]}/{safe_name[2:4]}"
@@ -52,11 +54,15 @@ class S3StorageProvider(StorageProvider):
             Body=payload,
             ContentType=mime_type,
         )
-        return StoredFile(path=relative_path, filename=filename, size=len(payload), mime_type=mime_type)
+        return StoredFile(
+            path=relative_path, filename=filename, size=len(payload), mime_type=mime_type
+        )
 
     async def retrieve(self, path: str) -> bytes | None:
         try:
-            response = await asyncio.to_thread(self.client.get_object, Bucket=self.bucket, Key=self._key(path))
+            response = await asyncio.to_thread(
+                self.client.get_object, Bucket=self.bucket, Key=self._key(path)
+            )
             return await asyncio.to_thread(response["Body"].read)
         except self.client.exceptions.ClientError as exc:
             if exc.response.get("Error", {}).get("Code") in ("NoSuchKey", "404"):
@@ -70,7 +76,9 @@ class S3StorageProvider(StorageProvider):
 
     async def exists(self, path: str) -> bool:
         try:
-            await asyncio.to_thread(self.client.head_object, Bucket=self.bucket, Key=self._key(path))
+            await asyncio.to_thread(
+                self.client.head_object, Bucket=self.bucket, Key=self._key(path)
+            )
             return True
         except self.client.exceptions.ClientError:
             return False

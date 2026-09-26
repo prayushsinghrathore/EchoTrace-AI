@@ -29,9 +29,7 @@ class RefreshToken(Base, TimestampMixin):
 
     __tablename__ = "refresh_tokens"
 
-    __table_args__ = (
-        {"comment": "Stored refresh tokens for rotation and revocation"},
-    )
+    __table_args__ = ({"comment": "Stored refresh tokens for rotation and revocation"},)
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -114,6 +112,7 @@ class RefreshToken(Base, TimestampMixin):
     def is_expired(self) -> bool:
         """Check if the token has expired."""
         import datetime as dt_module
+
         return dt_module.datetime.now(self.expires_at.tzinfo) > self.expires_at
 
     def revoke(self, action: str = "logout") -> None:
@@ -123,7 +122,4 @@ class RefreshToken(Base, TimestampMixin):
         self.revoked_by_action = action
 
     def __repr__(self) -> str:
-        return (
-            f"<RefreshToken id={self.id} user_id={self.user_id} "
-            f"revoked={self.is_revoked}>"
-        )
+        return f"<RefreshToken id={self.id} user_id={self.user_id} " f"revoked={self.is_revoked}>"

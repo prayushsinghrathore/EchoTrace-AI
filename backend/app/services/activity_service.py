@@ -66,8 +66,13 @@ class ActivityService:
             try:
                 filters["event_type"] = ActivityEventType(event_type)
             except ValueError:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid event type: {event_type}") from None
-        events = await self.repo.find_many(**filters, order_by="occurred_at", descending=True, skip=skip, limit=limit)
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid event type: {event_type}",
+                ) from None
+        events = await self.repo.find_many(
+            **filters, order_by="occurred_at", descending=True, skip=skip, limit=limit
+        )
         total = await self.repo.count(**filters)
         return events, total
 
@@ -79,7 +84,9 @@ class ActivityService:
         limit: int = 50,
     ) -> tuple[list[ActivityEvent], int]:
         filters: dict[str, Any] = {"investigation_id": investigation_id}
-        events = await self.repo.find_many(**filters, order_by="occurred_at", descending=True, skip=skip, limit=limit)
+        events = await self.repo.find_many(
+            **filters, order_by="occurred_at", descending=True, skip=skip, limit=limit
+        )
         total = await self.repo.count(**filters)
         return events, total
 
@@ -87,4 +94,6 @@ class ActivityService:
         member_repo = BaseRepository(self.db, WorkspaceMember)
         member = await member_repo.find_one(workspace_id=workspace_id, user_id=user_id)
         if not member:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this workspace")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this workspace"
+            )

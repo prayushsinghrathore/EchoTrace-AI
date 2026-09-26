@@ -14,8 +14,12 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     for table in ("ai_jobs", "export_jobs"):
-        op.add_column(table, sa.Column("attempts", sa.Integer(), nullable=False, server_default="0"))
-        op.add_column(table, sa.Column("max_attempts", sa.Integer(), nullable=False, server_default="3"))
+        op.add_column(
+            table, sa.Column("attempts", sa.Integer(), nullable=False, server_default="0")
+        )
+        op.add_column(
+            table, sa.Column("max_attempts", sa.Integer(), nullable=False, server_default="3")
+        )
         op.add_column(table, sa.Column("available_at", sa.DateTime(timezone=True), nullable=True))
         op.add_column(table, sa.Column("locked_at", sa.DateTime(timezone=True), nullable=True))
         op.add_column(table, sa.Column("locked_by", sa.String(length=128), nullable=True))

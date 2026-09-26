@@ -36,12 +36,14 @@ class ReportRenderer:
         ]
 
         if data.timeline:
-            lines.extend([
-                "---",
-                "",
-                "## Timeline",
-                "",
-            ])
+            lines.extend(
+                [
+                    "---",
+                    "",
+                    "## Timeline",
+                    "",
+                ]
+            )
             for event in data.timeline:
                 dt = event.get("date", "?")
                 title = event.get("title", "Untitled")
@@ -51,12 +53,14 @@ class ReportRenderer:
                     lines.append(f"  - {desc}")
 
         if data.entities:
-            lines.extend([
-                "---",
-                "",
-                "## Entities",
-                "",
-            ])
+            lines.extend(
+                [
+                    "---",
+                    "",
+                    "## Entities",
+                    "",
+                ]
+            )
             for ent in data.entities:
                 etype = ent.get("type", "?")
                 label = ent.get("label", "Unnamed")
@@ -66,12 +70,14 @@ class ReportRenderer:
                     lines.append(f"  - {desc}")
 
         if data.relationships:
-            lines.extend([
-                "---",
-                "",
-                "## Relationships",
-                "",
-            ])
+            lines.extend(
+                [
+                    "---",
+                    "",
+                    "## Relationships",
+                    "",
+                ]
+            )
             for rel in data.relationships:
                 rtype = rel.get("type", "?")
                 src = rel.get("source", "?")
@@ -82,7 +88,9 @@ class ReportRenderer:
         if data.findings:
             lines.extend(["\n---\n\n## Findings\n"])
             for f_item in data.findings:
-                lines.append(f"- **{f_item.get('title', 'Finding')}:** {f_item.get('description', '')}")
+                lines.append(
+                    f"- **{f_item.get('title', 'Finding')}:** {f_item.get('description', '')}"
+                )
 
         if data.recommendations:
             lines.extend(["\n---\n\n## Recommendations\n"])
@@ -91,11 +99,13 @@ class ReportRenderer:
                 lines.append(f"- **[{pri}]** {rec.get('title', '')}: {rec.get('description', '')}")
 
         if data.statistics:
-            lines.extend([
-                "\n---\n",
-                "## Statistics",
-                "",
-            ])
+            lines.extend(
+                [
+                    "\n---\n",
+                    "## Statistics",
+                    "",
+                ]
+            )
             for k, v in data.statistics.items():
                 lines.append(f"- **{k.replace('_', ' ').title()}:** {v}")
 

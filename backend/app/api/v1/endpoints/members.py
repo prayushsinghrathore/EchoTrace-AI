@@ -54,7 +54,9 @@ async def update_member(
     return await svc.update_member(ws_id, member_id, body.role, user.id)
 
 
-@router.delete("/{ws_id}/members/{member_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+@router.delete(
+    "/{ws_id}/members/{member_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None
+)
 async def remove_member(
     ws_id: uuid.UUID,
     member_id: uuid.UUID,

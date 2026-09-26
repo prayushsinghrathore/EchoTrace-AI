@@ -97,8 +97,16 @@ class MetricsCollector:
     def get_snapshot(self) -> dict[str, Any]:
         with self._lock:
             uptime = time.time() - self._start_time
-            avg_latency = round(self._latency_total / self._latency_count, 2) if self._latency_count > 0 else 0.0
-            avg_db = round(self._db_latency_total / self._db_latency_count, 2) if self._db_latency_count > 0 else 0.0
+            avg_latency = (
+                round(self._latency_total / self._latency_count, 2)
+                if self._latency_count > 0
+                else 0.0
+            )
+            avg_db = (
+                round(self._db_latency_total / self._db_latency_count, 2)
+                if self._db_latency_count > 0
+                else 0.0
+            )
             total_cache = self._cache_hits + self._cache_misses
             cache_rate = round(self._cache_hits / total_cache * 100, 1) if total_cache > 0 else 0.0
             rps = round(self._request_count / uptime, 2) if uptime > 0 else 0.0

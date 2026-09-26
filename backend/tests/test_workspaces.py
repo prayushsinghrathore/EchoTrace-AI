@@ -11,15 +11,21 @@ from httpx import AsyncClient
 
 
 async def _register_and_login(client: AsyncClient, email: str) -> str:
-    await client.post("/api/v1/auth/register", json={
-        "email": email,
-        "password": "SecureP@ss1",
-        "display_name": "Test User",
-    })
-    resp = await client.post("/api/v1/auth/login", json={
-        "email": email,
-        "password": "SecureP@ss1",
-    })
+    await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": email,
+            "password": "SecureP@ss1",
+            "display_name": "Test User",
+        },
+    )
+    resp = await client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": email,
+            "password": "SecureP@ss1",
+        },
+    )
     return resp.json()["access_token"]
 
 
@@ -114,7 +120,12 @@ class TestWorkspaces:
         token, org_id = await self._setup(client)
         resp = await client.post(
             "/api/v1/workspaces",
-            json={"organization_id": org_id, "name": "Test WS", "slug": "test-ws", "description": "Test workspace"},
+            json={
+                "organization_id": org_id,
+                "name": "Test WS",
+                "slug": "test-ws",
+                "description": "Test workspace",
+            },
             headers={"Authorization": f"Bearer {token}"},
         )
         assert resp.status_code == 201
@@ -234,7 +245,9 @@ class TestPermissions:
         resp = await client.get("/api/v1/workspaces")
         assert resp.status_code == 401
 
-        resp = await client.get("/api/v1/projects?workspace_id=00000000-0000-0000-0000-000000000000")
+        resp = await client.get(
+            "/api/v1/projects?workspace_id=00000000-0000-0000-0000-000000000000"
+        )
         assert resp.status_code == 401
 
     async def test_non_member_cannot_access_workspace(self, client: AsyncClient) -> None:
@@ -267,19 +280,45 @@ class TestPermissions:
         token2 = await _register_and_login(client, "user2@iso.com")
 
         # User 1 creates org, workspace, project
-        org1 = await client.post("/api/v1/organizations", json={"name": "Iso1", "slug": "iso1"}, headers={"Authorization": f"Bearer {token1}"})
+        org1 = await client.post(
+            "/api/v1/organizations",
+            json={"name": "Iso1", "slug": "iso1"},
+            headers={"Authorization": f"Bearer {token1}"},
+        )
         org1_id = org1.json()["id"]
-        ws1 = await client.post("/api/v1/workspaces", json={"organization_id": org1_id, "name": "WS1", "slug": "ws1"}, headers={"Authorization": f"Bearer {token1}"})
+        ws1 = await client.post(
+            "/api/v1/workspaces",
+            json={"organization_id": org1_id, "name": "WS1", "slug": "ws1"},
+            headers={"Authorization": f"Bearer {token1}"},
+        )
         ws1_id = ws1.json()["id"]
-        await client.post("/api/v1/projects", json={"workspace_id": ws1_id, "name": "P1", "slug": "p1"}, headers={"Authorization": f"Bearer {token1}"})
+        await client.post(
+            "/api/v1/projects",
+            json={"workspace_id": ws1_id, "name": "P1", "slug": "p1"},
+            headers={"Authorization": f"Bearer {token1}"},
+        )
 
         # User 2 creates org, workspace, project
-        org2 = await client.post("/api/v1/organizations", json={"name": "Iso2", "slug": "iso2"}, headers={"Authorization": f"Bearer {token2}"})
+        org2 = await client.post(
+            "/api/v1/organizations",
+            json={"name": "Iso2", "slug": "iso2"},
+            headers={"Authorization": f"Bearer {token2}"},
+        )
         org2_id = org2.json()["id"]
-        ws2 = await client.post("/api/v1/workspaces", json={"organization_id": org2_id, "name": "WS2", "slug": "ws2"}, headers={"Authorization": f"Bearer {token2}"})
+        ws2 = await client.post(
+            "/api/v1/workspaces",
+            json={"organization_id": org2_id, "name": "WS2", "slug": "ws2"},
+            headers={"Authorization": f"Bearer {token2}"},
+        )
         ws2_id = ws2.json()["id"]
-        await client.post("/api/v1/projects", json={"workspace_id": ws2_id, "name": "P2", "slug": "p2"}, headers={"Authorization": f"Bearer {token2}"})
+        await client.post(
+            "/api/v1/projects",
+            json={"workspace_id": ws2_id, "name": "P2", "slug": "p2"},
+            headers={"Authorization": f"Bearer {token2}"},
+        )
 
         # User 2 cannot access User 1's workspace projects
-        resp = await client.get(f"/api/v1/projects?workspace_id={ws1_id}", headers={"Authorization": f"Bearer {token2}"})
+        resp = await client.get(
+            f"/api/v1/projects?workspace_id={ws1_id}", headers={"Authorization": f"Bearer {token2}"}
+        )
         assert resp.status_code == 403

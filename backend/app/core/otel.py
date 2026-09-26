@@ -52,6 +52,7 @@ def setup_opentelemetry(app: Any = None) -> None:
     from opentelemetry.sdk.resources import Resource
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
     resource = Resource.create(
         attributes={
             "service.name": "echotrace-backend",

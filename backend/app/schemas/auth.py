@@ -60,9 +60,7 @@ class RegisterRequest(BaseModel):
             errors.append("a special character")
 
         if errors:
-            raise ValueError(
-                f"Password must contain: {', '.join(errors)}"
-            )
+            raise ValueError(f"Password must contain: {', '.join(errors)}")
 
         return v
 

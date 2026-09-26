@@ -131,8 +131,10 @@ def rate_limit(endpoint: str) -> Callable:
             ...
     """
     if not settings.RATE_LIMIT_ENABLED:
+
         async def _noop_dependency(_request: Request) -> None:
             return None
+
         return _noop_dependency
 
     _ensure_limiters()

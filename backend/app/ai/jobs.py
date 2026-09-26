@@ -23,6 +23,7 @@ from app.repositories.base import BaseRepository
 
 logger = get_logger(__name__)
 
+
 async def _execute_job(job_id: uuid.UUID, worker_id: str | None = None) -> None:
     """Execute a single AI job with full lifecycle management."""
     async with AsyncSessionLocal() as db:
@@ -55,9 +56,7 @@ async def _execute_job(job_id: uuid.UUID, worker_id: str | None = None) -> None:
             provider = svc._get_provider()
             prompt = await svc._load_prompt(job.job_type.value)
 
-            result, usage_meta = await _run_job_operation(
-                svc, provider, prompt, job, db
-            )
+            result, usage_meta = await _run_job_operation(svc, provider, prompt, job, db)
 
             # Cache and finalize
             result_dict = result.model_dump() if hasattr(result, "model_dump") else result
@@ -96,8 +95,9 @@ async def _execute_job(job_id: uuid.UUID, worker_id: str | None = None) -> None:
                         job.mark_failed(str(exc)[:1000])
                     else:
                         from datetime import UTC, datetime, timedelta
+
                         job.status = AIJobStatus.QUEUED
-                        job.available_at = datetime.now(UTC) + timedelta(seconds=2 ** job.attempts)
+                        job.available_at = datetime.now(UTC) + timedelta(seconds=2**job.attempts)
                     job.locked_by = None
                     job.locked_at = None
                     await db.commit()
@@ -121,7 +121,8 @@ async def _run_job_operation(
     if job.job_type == AIJobType.SUMMARIZE:
         evidence_text = await _load_evidence_batch(job.evidence_ids or [])
         result = await provider.summarize(
-            evidence_text, prompt_template=prompt,
+            evidence_text,
+            prompt_template=prompt,
             max_length=(job.options or {}).get("max_length"),
         )
         return result, {}
@@ -204,8 +205,10 @@ async def _load_evidence_batch(
             ev_uuid = uuid.UUID(eid) if isinstance(eid, str) else eid
             # Use a system user for background jobs
             from app.db.session import AsyncSessionLocal
+
             async with AsyncSessionLocal() as db:
                 from app.models.evidence import Evidence
+
                 ev_repo = BaseRepository(db, Evidence)
                 ev = await ev_repo.get(ev_uuid)
                 if ev and not ev.is_deleted:
@@ -223,9 +226,7 @@ async def _load_evidence_batch(
     return "\n---\n".join(texts) if texts else "No evidence available."
 
 
-async def _load_entities_context(
-    investigation_id: uuid.UUID | None
-) -> str:
+async def _load_entities_context(investigation_id: uuid.UUID | None) -> str:
     """Load entities for an investigation as context text."""
     from app.models.entity import Entity
 
@@ -238,8 +239,7 @@ async def _load_entities_context(
         if not entities:
             return "No entities available."
         return "\n".join(
-            f"{e.type.value if hasattr(e.type, 'value') else e.type}: {e.label}"
-            for e in entities
+            f"{e.type.value if hasattr(e.type, 'value') else e.type}: {e.label}" for e in entities
         )
 
 

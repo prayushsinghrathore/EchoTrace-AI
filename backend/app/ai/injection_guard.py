@@ -20,17 +20,31 @@ logger = get_logger(__name__)
 
 # Direct system prompt override attempts
 SYSTEM_PROMPT_OVERRIDE_PATTERNS: list[re.Pattern[str]] = [
-    re.compile(r"ignore\s+(all\s+)?(previous|above|prior)\s+(instructions|directions|prompts)", re.IGNORECASE),
-    re.compile(r"forget\s+(all\s+)?(previous|above|prior)\s+(instructions|directions|prompts)", re.IGNORECASE),
-    re.compile(r"disregard\s+(all\s+)?(previous|above|prior)\s+(instructions|directions|prompts)", re.IGNORECASE),
+    re.compile(
+        r"ignore\s+(all\s+)?(previous|above|prior)\s+(instructions|directions|prompts)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"forget\s+(all\s+)?(previous|above|prior)\s+(instructions|directions|prompts)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"disregard\s+(all\s+)?(previous|above|prior)\s+(instructions|directions|prompts)",
+        re.IGNORECASE,
+    ),
     re.compile(r"system\s*(prompt|message|instruction)", re.IGNORECASE),
 ]
 
 # Jailbreak and role-play attempts
 JAILBREAK_PATTERNS: list[re.Pattern[str]] = [
-    re.compile(r"(you(\s+are)?\s+)?now\s+(acting\s+as|you\s+are)?\s*(dan|jailbreak)", re.IGNORECASE),
+    re.compile(
+        r"(you(\s+are)?\s+)?now\s+(acting\s+as|you\s+are)?\s*(dan|jailbreak)", re.IGNORECASE
+    ),
     re.compile(r"\byou(\s+are)?\s+now\s+dan\b", re.IGNORECASE),
-    re.compile(r"do\s+(not\s+)?(have\s+)?(any\s+)?(restrictions|limitations|boundaries|rules)", re.IGNORECASE),
+    re.compile(
+        r"do\s+(not\s+)?(have\s+)?(any\s+)?(restrictions|limitations|boundaries|rules)",
+        re.IGNORECASE,
+    ),
     re.compile(r"output\s+(in\s+)?(raw|unfiltered|uncensored)", re.IGNORECASE),
     re.compile(r"no\s+(filter|restriction|rule|limit|boundary|censorship)", re.IGNORECASE),
     re.compile(r"bypass\s+(the\s+)?(filter|restriction|safety|guardrail)", re.IGNORECASE),
@@ -38,7 +52,10 @@ JAILBREAK_PATTERNS: list[re.Pattern[str]] = [
 
 # Instruction manipulation attempts
 INSTRUCTION_MANIPULATION_PATTERNS: list[re.Pattern[str]] = [
-    re.compile(r"repeat\s+(the\s+)?(above|previous|entire)\s+(text|prompt|message|instruction)", re.IGNORECASE),
+    re.compile(
+        r"repeat\s+(the\s+)?(above|previous|entire)\s+(text|prompt|message|instruction)",
+        re.IGNORECASE,
+    ),
     re.compile(r"print\s+(the\s+)?(system\s+)?prompt", re.IGNORECASE),
     re.compile(r"show\s+(me\s+)?(the\s+)?(system\s+)?(prompt|instructions)", re.IGNORECASE),
     re.compile(r"what\s+(is|are|were)\s+(my|the)\s+(system\s+)?prompt", re.IGNORECASE),
@@ -95,12 +112,14 @@ def scan_for_injection(text: str) -> InjectionDetectionResult:
             if match:
                 result.is_injection = True
                 matched_text = match.group(0)[:100]
-                result.matched_patterns.append({
-                    "category": category,
-                    "pattern": pattern.pattern[:80],
-                    "matched": matched_text,
-                    "position": match.start(),
-                })
+                result.matched_patterns.append(
+                    {
+                        "category": category,
+                        "pattern": pattern.pattern[:80],
+                        "matched": matched_text,
+                        "position": match.start(),
+                    }
+                )
                 logger.warning(
                     "Prompt injection pattern detected",
                     category=category,

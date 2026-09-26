@@ -89,6 +89,7 @@ class BaseRepository(Generic[ModelType]):
             )
         else:
             from sqlalchemy import func as sa_func
+
             result = await self.session.execute(
                 sa_update(self.model)
                 .where(self.model.id == id)  # type: ignore[attr-defined]
@@ -99,6 +100,7 @@ class BaseRepository(Generic[ModelType]):
 
     async def count(self, **filters: Any) -> int:
         from sqlalchemy.sql.functions import count as sa_count
+
         stmt = select(sa_count(self.model.id))  # type: ignore[attr-defined]
         for field, value in filters.items():
             if hasattr(self.model, field):
@@ -108,6 +110,7 @@ class BaseRepository(Generic[ModelType]):
 
     async def exists(self, **filters: Any) -> bool:
         from sqlalchemy import exists as sa_exists
+
         stmt = sa_exists(
             select(self.model).where(
                 *[getattr(self.model, field) == value for field, value in filters.items()]

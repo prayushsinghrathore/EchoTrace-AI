@@ -83,7 +83,9 @@ class AICache:
         logger.debug("AI cache hit", key=key[:16], model=model)
         return True, entry.result
 
-    async def get_async(self, evidence_text: str, prompt_text: str, model: str, version: str) -> tuple[bool, Any | None]:
+    async def get_async(
+        self, evidence_text: str, prompt_text: str, model: str, version: str
+    ) -> tuple[bool, Any | None]:
         """Read Redis first, then use the local cache as a development fallback."""
         if not settings.AI_CACHE_ENABLED:
             return False, None
@@ -131,9 +133,7 @@ class AICache:
         if client is not None:
             try:
                 key = self._make_key(evidence_text, prompt_text, model, version)
-                await client.setex(
-                    self._redis_key(key), self._ttl, json.dumps(result, default=str)
-                )
+                await client.setex(self._redis_key(key), self._ttl, json.dumps(result, default=str))
             except Exception as exc:
                 logger.warning("Redis AI cache write failed", error=str(exc))
 
@@ -146,9 +146,13 @@ class AICache:
         if self._redis is None:
             try:
                 import redis.asyncio as aioredis
+
                 self._redis = aioredis.from_url(
-                    settings.REDIS_URL, encoding="utf-8", decode_responses=True,
-                    socket_connect_timeout=2, socket_timeout=2,
+                    settings.REDIS_URL,
+                    encoding="utf-8",
+                    decode_responses=True,
+                    socket_connect_timeout=2,
+                    socket_timeout=2,
                 )
             except ImportError:
                 return None

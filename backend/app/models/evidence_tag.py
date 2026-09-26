@@ -26,7 +26,10 @@ class EvidenceTag(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     evidence_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("evidence.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey("evidence.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     tag: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
 

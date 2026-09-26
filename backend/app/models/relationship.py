@@ -1,4 +1,5 @@
 """Relationship model — connections between entities."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -39,17 +40,46 @@ class Relationship(Base, TimestampMixin):
     __tablename__ = "relationships"
     __table_args__ = ({"comment": "Relationships between entities"},)
 
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    investigation_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("investigations.id", ondelete="CASCADE"), nullable=False, index=True)
-    source_entity_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("entities.id", ondelete="CASCADE"), nullable=False, index=True)
-    target_entity_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("entities.id", ondelete="CASCADE"), nullable=False, index=True)
-    relationship_type: Mapped[RelationshipType] = mapped_column(SAEnum(RelationshipType, name="relationship_type", values_callable=lambda x: [e.value for e in x]), nullable=False, index=True)
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True
+    )
+    investigation_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("investigations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    source_entity_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("entities.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    target_entity_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("entities.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    relationship_type: Mapped[RelationshipType] = mapped_column(
+        SAEnum(
+            RelationshipType,
+            name="relationship_type",
+            values_callable=lambda x: [e.value for e in x],
+        ),
+        nullable=False,
+        index=True,
+    )
     confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     investigation: Mapped[Investigation] = relationship(back_populates="relationships")
-    src_entity: Mapped[Entity] = relationship(back_populates="src_rels", foreign_keys=[source_entity_id])
-    tgt_entity: Mapped[Entity] = relationship(back_populates="tgt_rels", foreign_keys=[target_entity_id])
+    src_entity: Mapped[Entity] = relationship(
+        back_populates="src_rels", foreign_keys=[source_entity_id]
+    )
+    tgt_entity: Mapped[Entity] = relationship(
+        back_populates="tgt_rels", foreign_keys=[target_entity_id]
+    )
 
     def __repr__(self):
         return f"<Relationship {self.relationship_type.value}: {self.source_entity_id} -> {self.target_entity_id}>"

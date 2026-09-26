@@ -31,7 +31,9 @@ class WorkspaceService:
         org_repo = BaseRepository(self.db, Organization)
         org = await org_repo.get(org_id)
         if not org:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Organization not found"
+            )
         return org
 
     async def _check_org_access(self, org_id: uuid.UUID, user_id: uuid.UUID) -> None:
@@ -40,19 +42,33 @@ class WorkspaceService:
         if org.owner_id != user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
 
-    async def _get_member_role(self, workspace_id: uuid.UUID, user_id: uuid.UUID) -> WorkspaceRole | None:
+    async def _get_member_role(
+        self, workspace_id: uuid.UUID, user_id: uuid.UUID
+    ) -> WorkspaceRole | None:
         member_repo = BaseRepository(self.db, WorkspaceMember)
         member = await member_repo.find_one(workspace_id=workspace_id, user_id=user_id)
         return member.role if member else None
 
-    async def create(self, organization_id: uuid.UUID, name: str, slug: str, user_id: uuid.UUID, description: str | None = None) -> Workspace:
+    async def create(
+        self,
+        organization_id: uuid.UUID,
+        name: str,
+        slug: str,
+        user_id: uuid.UUID,
+        description: str | None = None,
+    ) -> Workspace:
         await self._check_org_access(organization_id, user_id)
 
         existing = await self.repo.find_one(slug=slug, organization_id=organization_id)
         if existing:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Workspace slug '{slug}' already exists in this organization")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"Workspace slug '{slug}' already exists in this organization",
+            )
 
-        ws = Workspace(organization_id=organization_id, name=name, slug=slug, description=description)
+        ws = Workspace(
+            organization_id=organization_id, name=name, slug=slug, description=description
+        )
         self.db.add(ws)
         await self.db.flush()
         await self.db.refresh(ws)
@@ -75,6 +91,7 @@ class WorkspaceService:
     async def get_with_counts(self, ws_id: uuid.UUID) -> dict:
         ws = await self.get(ws_id)
         from app.models.project import Project
+
         project_count = await BaseRepository(self.db, Project).count(workspace_id=ws_id)
         member_count = await BaseRepository(self.db, WorkspaceMember).count(workspace_id=ws_id)
         return {
@@ -91,7 +108,9 @@ class WorkspaceService:
 
     async def list_for_org(self, organization_id: uuid.UUID, user_id: uuid.UUID) -> list[Workspace]:
         await self._check_org_access(organization_id, user_id)
-        return await self.repo.find_many(organization_id=organization_id, order_by="created_at", descending=True)
+        return await self.repo.find_many(
+            organization_id=organization_id, order_by="created_at", descending=True
+        )
 
     async def list_for_user(self, user_id: uuid.UUID) -> list[Workspace]:
         """List all workspaces where the user is a member."""
@@ -108,12 +127,18 @@ class WorkspaceService:
         ws = await self.get(ws_id)
         role = await self._get_member_role(ws_id, user_id)
         if role not in (WorkspaceRole.OWNER, WorkspaceRole.ADMIN):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions"
+            )
 
         if kwargs.get("slug"):
-            existing = await self.repo.find_one(slug=kwargs["slug"], organization_id=ws.organization_id)
+            existing = await self.repo.find_one(
+                slug=kwargs["slug"], organization_id=ws.organization_id
+            )
             if existing and existing.id != ws_id:
-                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug already in use")
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT, detail="Slug already in use"
+                )
 
         for key, val in kwargs.items():
             if val is not None and hasattr(ws, key):
@@ -126,7 +151,10 @@ class WorkspaceService:
         await self.get(ws_id)
         role = await self._get_member_role(ws_id, user_id)
         if role != WorkspaceRole.OWNER:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the owner can delete the workspace")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only the owner can delete the workspace",
+            )
         await self.db.execute(sa_delete(Workspace).where(Workspace.id == ws_id))
         await self.db.commit()
         logger.info("Workspace deleted", ws_id=str(ws_id))

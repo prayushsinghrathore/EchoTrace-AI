@@ -58,10 +58,15 @@ class AuditLog(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True
     )
     workspace_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="SET NULL"), nullable=True, index=True
+        UUID(as_uuid=True),
+        ForeignKey("workspaces.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
     )
     action: Mapped[AuditAction] = mapped_column(
-        Enum(AuditAction, name="audit_action", values_callable=lambda x: [e.value for e in x]), nullable=False, index=True
+        Enum(AuditAction, name="audit_action", values_callable=lambda x: [e.value for e in x]),
+        nullable=False,
+        index=True,
     )
     resource_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
     resource_id: Mapped[str | None] = mapped_column(String(255), nullable=True)

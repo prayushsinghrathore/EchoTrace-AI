@@ -95,6 +95,7 @@ async def call_with_retry(
         if attempt < max_retries:
             delay = min(base_delay * (2 ** (attempt - 1)), max_delay)
             import random
+
             jitter = random.uniform(0, delay * 0.1)
             await asyncio.sleep(delay + jitter)
 

@@ -209,8 +209,13 @@ class TestAISchemas:
     def test_extracted_entities_result_valid(self) -> None:
         data = {
             "entities": [
-                {"type": "person", "label": "John Doe", "confidence": 0.95,
-                 "context": "Email from John", "evidence_ref": "Email #1"},
+                {
+                    "type": "person",
+                    "label": "John Doe",
+                    "confidence": 0.95,
+                    "context": "Email from John",
+                    "evidence_ref": "Email #1",
+                },
             ]
         }
         result = ExtractedEntitiesResult.model_validate(data)
@@ -220,9 +225,14 @@ class TestAISchemas:
     def test_relationships_result_valid(self) -> None:
         data = {
             "relationships": [
-                {"source_entity_label": "A", "target_entity_label": "B",
-                 "relationship_type": "connected_to", "confidence": 0.8,
-                 "reasoning": "They communicated", "evidence_ref": "Log #1"},
+                {
+                    "source_entity_label": "A",
+                    "target_entity_label": "B",
+                    "relationship_type": "connected_to",
+                    "confidence": 0.8,
+                    "reasoning": "They communicated",
+                    "evidence_ref": "Log #1",
+                },
             ]
         }
         result = SuggestedRelationshipsResult.model_validate(data)
@@ -232,8 +242,13 @@ class TestAISchemas:
     def test_timeline_result_valid(self) -> None:
         data = {
             "events": [
-                {"date": "2026-07-10", "title": "Event", "description": "Description",
-                 "confidence": 0.9, "evidence_ref": "Ref"},
+                {
+                    "date": "2026-07-10",
+                    "title": "Event",
+                    "description": "Description",
+                    "confidence": 0.9,
+                    "evidence_ref": "Ref",
+                },
             ]
         }
         result = GeneratedTimelineResult.model_validate(data)
@@ -247,7 +262,9 @@ class TestAISchemas:
             "timeline": [],
             "entities": [],
             "relationships": [],
-            "findings": [{"title": "Finding", "description": "Desc", "confidence": 0.9, "evidence_refs": []}],
+            "findings": [
+                {"title": "Finding", "description": "Desc", "confidence": 0.9, "evidence_refs": []}
+            ],
             "recommendations": [{"title": "Rec", "description": "Desc", "priority": "high"}],
         }
         result = ReportResult.model_validate(data)
@@ -343,18 +360,33 @@ class TestAIAPI:
 
     async def _setup_env(self, client: AsyncClient) -> tuple[str, str]:
         """Create org, workspace, project. Returns (token, ws_id)."""
-        await client.post("/api/v1/auth/register", json={
-            "email": "ai_test@test.com", "password": "SecureP@ss1", "display_name": "AI Test",
-        })
-        login = await client.post("/api/v1/auth/login", json={
-            "email": "ai_test@test.com", "password": "SecureP@ss1",
-        })
+        await client.post(
+            "/api/v1/auth/register",
+            json={
+                "email": "ai_test@test.com",
+                "password": "SecureP@ss1",
+                "display_name": "AI Test",
+            },
+        )
+        login = await client.post(
+            "/api/v1/auth/login",
+            json={
+                "email": "ai_test@test.com",
+                "password": "SecureP@ss1",
+            },
+        )
         token = login.json()["access_token"]
-        org = await client.post("/api/v1/organizations", json={"name": "AI Org", "slug": "ai-org"},
-                                headers={"Authorization": f"Bearer {token}"})
+        org = await client.post(
+            "/api/v1/organizations",
+            json={"name": "AI Org", "slug": "ai-org"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
         org_id = org.json()["id"]
-        ws = await client.post("/api/v1/workspaces", json={"organization_id": org_id, "name": "AI WS", "slug": "ai-ws"},
-                               headers={"Authorization": f"Bearer {token}"})
+        ws = await client.post(
+            "/api/v1/workspaces",
+            json={"organization_id": org_id, "name": "AI WS", "slug": "ai-ws"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
         ws_id = ws.json()["id"]
         return token, ws_id
 
@@ -365,7 +397,9 @@ class TestAIAPI:
 
     async def test_list_providers_authenticated(self, client: AsyncClient) -> None:
         token, ws_id = await self._setup_env(client)
-        resp = await client.get("/api/v1/ai/providers", headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(
+            "/api/v1/ai/providers", headers={"Authorization": f"Bearer {token}"}
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert "active" in data
@@ -373,8 +407,9 @@ class TestAIAPI:
 
     async def test_usage_endpoint(self, client: AsyncClient) -> None:
         token, ws_id = await self._setup_env(client)
-        resp = await client.get(f"/api/v1/ai/usage?workspace_id={ws_id}",
-                                headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(
+            f"/api/v1/ai/usage?workspace_id={ws_id}", headers={"Authorization": f"Bearer {token}"}
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert "total_jobs" in data
@@ -382,28 +417,33 @@ class TestAIAPI:
 
     async def test_usage_without_workspace(self, client: AsyncClient) -> None:
         token, ws_id = await self._setup_env(client)
-        resp = await client.get("/api/v1/ai/usage",
-                                headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get("/api/v1/ai/usage", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 200
 
     async def test_get_job_not_found(self, client: AsyncClient) -> None:
         token, ws_id = await self._setup_env(client)
-        resp = await client.get(f"/api/v1/ai/jobs/{uuid.uuid4()}",
-                                headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(
+            f"/api/v1/ai/jobs/{uuid.uuid4()}", headers={"Authorization": f"Bearer {token}"}
+        )
         assert resp.status_code == 404
 
     async def test_review_suggestion_not_found(self, client: AsyncClient) -> None:
         token, ws_id = await self._setup_env(client)
-        resp = await client.post(f"/api/v1/ai/review/{uuid.uuid4()}/approve",
-                                 headers={"Authorization": f"Bearer {token}"}, json={})
+        resp = await client.post(
+            f"/api/v1/ai/review/{uuid.uuid4()}/approve",
+            headers={"Authorization": f"Bearer {token}"},
+            json={},
+        )
         assert resp.status_code == 404
 
     async def test_bulk_review_no_suggestions(self, client: AsyncClient) -> None:
         token, ws_id = await self._setup_env(client)
         sid = uuid.uuid4()
-        resp = await client.post("/api/v1/ai/review/bulk",
-                                 headers={"Authorization": f"Bearer {token}"},
-                                 json={"suggestion_ids": [str(sid)], "action": "approve"})
+        resp = await client.post(
+            "/api/v1/ai/review/bulk",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"suggestion_ids": [str(sid)], "action": "approve"},
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["approved"] == 0
@@ -443,6 +483,7 @@ class TestTimeoutHandling:
     def test_cache_ttl_expiry(self) -> None:
         """Verify cache entries expire after TTL."""
         import time
+
         cache = AICache(max_size=10, ttl=1)  # 1 second TTL
         cache.set("text", "prompt", "model", "1.0", {"data": "test"})
         time.sleep(1.1)
@@ -458,6 +499,7 @@ class TestAnthropicProvider:
         from unittest.mock import patch
 
         from app.ai.providers.anthropic_provider import AnthropicProvider
+
         with patch.object(AnthropicProvider, "health_check", return_value=True):
             provider = AnthropicProvider(api_key="test-key", model="claude-sonnet-4-20250514")
             assert provider.name == "anthropic"
@@ -466,6 +508,7 @@ class TestAnthropicProvider:
 
     async def test_health_check_returns_bool(self) -> None:
         from app.ai.providers.anthropic_provider import AnthropicProvider
+
         provider = AnthropicProvider(api_key="test-key", model="claude-sonnet-4-20250514")
         result = await provider.health_check()
         assert isinstance(result, bool)
@@ -479,6 +522,7 @@ class TestGeminiProvider:
         from unittest.mock import patch
 
         from app.ai.providers.gemini_provider import GeminiProvider
+
         with patch.object(GeminiProvider, "health_check", return_value=True):
             provider = GeminiProvider(api_key="test-key", model="gemini-2.0-flash")
             assert provider.name == "gemini"
@@ -487,6 +531,7 @@ class TestGeminiProvider:
 
     async def test_health_check_returns_bool(self) -> None:
         from app.ai.providers.gemini_provider import GeminiProvider
+
         provider = GeminiProvider(api_key="test-key", model="gemini-2.0-flash")
         result = await provider.health_check()
         assert isinstance(result, bool)
@@ -497,4 +542,5 @@ class TestRetryUtility:
 
     def test_retry_module_imports(self) -> None:
         from app.ai.retry import call_with_retry
+
         assert callable(call_with_retry)

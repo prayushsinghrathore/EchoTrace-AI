@@ -104,6 +104,7 @@ async def check_database_connection() -> bool:
     """
     try:
         from sqlalchemy import text
+
         async with AsyncSessionLocal() as session:
             await session.execute(text("SELECT 1"))
             return True

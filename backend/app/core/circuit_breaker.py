@@ -10,6 +10,7 @@ Usage:
     async with breaker:
         result = await call_openai_api()
 """
+
 from __future__ import annotations
 
 import time
@@ -105,6 +106,4 @@ class CircuitBreakerOpenError(Exception):
 
 # ── Global breaker instances ─────────────────────────────────────────────────
 
-ai_provider_breaker = CircuitBreaker(
-    "ai-provider", failure_threshold=5, recovery_timeout=30.0
-)
+ai_provider_breaker = CircuitBreaker("ai-provider", failure_threshold=5, recovery_timeout=30.0)

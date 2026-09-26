@@ -55,7 +55,10 @@ class AIJob(Base, TimestampMixin):
     )
 
     workspace_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
 
     investigation_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -78,7 +81,9 @@ class AIJob(Base, TimestampMixin):
     )
 
     provider: Mapped[str] = mapped_column(
-        String(50), nullable=False, comment="LLM provider used (openai, anthropic, gemini, azure, ollama)"
+        String(50),
+        nullable=False,
+        comment="LLM provider used (openai, anthropic, gemini, azure, ollama)",
     )
 
     model: Mapped[str] = mapped_column(
@@ -88,7 +93,9 @@ class AIJob(Base, TimestampMixin):
     evidence_ids: Mapped[list | None] = mapped_column(
         JSON, nullable=True, comment="UUIDs of evidence items processed"
     )
-    options: Mapped[dict | None] = mapped_column(JSON, nullable=True, comment="Operation-specific options")
+    options: Mapped[dict | None] = mapped_column(
+        JSON, nullable=True, comment="Operation-specific options"
+    )
 
     input_tokens: Mapped[int | None] = mapped_column(
         Integer, nullable=True, comment="Number of input/prompt tokens"
@@ -127,9 +134,13 @@ class AIJob(Base, TimestampMixin):
     )
 
     attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
-    max_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=3, server_default="3")
+    max_attempts: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=3, server_default="3"
+    )
     available_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True, index=True,
+        DateTime(timezone=True),
+        nullable=True,
+        index=True,
         comment="Earliest time the job may be claimed by a worker",
     )
     locked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -140,11 +151,18 @@ class AIJob(Base, TimestampMixin):
         self.status = AIJobStatus.RUNNING
         self.attempts = (self.attempts or 0) + 1
 
-    def mark_completed(self, result: dict, input_tokens: int,
-                       output_tokens: int, cost: float,
-                       latency_ms: int, cached: bool = False) -> None:
+    def mark_completed(
+        self,
+        result: dict,
+        input_tokens: int,
+        output_tokens: int,
+        cost: float,
+        latency_ms: int,
+        cached: bool = False,
+    ) -> None:
         """Mark job as completed with result and metrics."""
         from datetime import UTC, datetime
+
         self.status = AIJobStatus.COMPLETED
         self.result = result
         self.input_tokens = input_tokens
@@ -157,6 +175,7 @@ class AIJob(Base, TimestampMixin):
     def mark_failed(self, error: str) -> None:
         """Transition to failed state."""
         from datetime import UTC, datetime
+
         self.status = AIJobStatus.FAILED
         self.error = error
         self.completed_at = datetime.now(UTC)
@@ -164,6 +183,7 @@ class AIJob(Base, TimestampMixin):
     def mark_cancelled(self) -> None:
         """Transition to cancelled state."""
         from datetime import UTC, datetime
+
         self.status = AIJobStatus.CANCELLED
         self.cancelled_at = datetime.now(UTC)
 

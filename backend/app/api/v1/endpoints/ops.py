@@ -39,7 +39,9 @@ async def readiness(
         await db.execute(text("SELECT 1"))
         return {"status": "ready", "database": "connected"}
     except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)
+        ) from exc
 
 
 # ── Metrics ───────────────────────────────────────────────────────────────────
@@ -80,14 +82,32 @@ async def get_rate_limits(
     """Current rate limit configuration."""
     return {
         "limits": {
-            "guest": {"ai": settings.AI_RATE_LIMIT_MAX, "window_seconds": settings.AI_RATE_LIMIT_WINDOW},
-            "authenticated": {"ai": settings.AI_RATE_LIMIT_MAX * 2, "window_seconds": settings.AI_RATE_LIMIT_WINDOW},
-            "investigator": {"ai": settings.AI_RATE_LIMIT_MAX * 5, "window_seconds": settings.AI_RATE_LIMIT_WINDOW},
-            "admin": {"ai": settings.AI_RATE_LIMIT_MAX * 10, "window_seconds": settings.AI_RATE_LIMIT_WINDOW},
+            "guest": {
+                "ai": settings.AI_RATE_LIMIT_MAX,
+                "window_seconds": settings.AI_RATE_LIMIT_WINDOW,
+            },
+            "authenticated": {
+                "ai": settings.AI_RATE_LIMIT_MAX * 2,
+                "window_seconds": settings.AI_RATE_LIMIT_WINDOW,
+            },
+            "investigator": {
+                "ai": settings.AI_RATE_LIMIT_MAX * 5,
+                "window_seconds": settings.AI_RATE_LIMIT_WINDOW,
+            },
+            "admin": {
+                "ai": settings.AI_RATE_LIMIT_MAX * 10,
+                "window_seconds": settings.AI_RATE_LIMIT_WINDOW,
+            },
         },
         "auth": {
-            "login": {"max": settings.RATE_LIMIT_LOGIN_MAX, "window": settings.RATE_LIMIT_LOGIN_WINDOW},
-            "register": {"max": settings.RATE_LIMIT_REGISTER_MAX, "window": settings.RATE_LIMIT_REGISTER_WINDOW},
+            "login": {
+                "max": settings.RATE_LIMIT_LOGIN_MAX,
+                "window": settings.RATE_LIMIT_LOGIN_WINDOW,
+            },
+            "register": {
+                "max": settings.RATE_LIMIT_REGISTER_MAX,
+                "window": settings.RATE_LIMIT_REGISTER_WINDOW,
+            },
         },
     }
 
@@ -128,9 +148,13 @@ async def _check_postgres(db: AsyncSession) -> ServiceStatus:
         await db.execute(text("SELECT 1"))
         latency = (time.time() - start) * 1000
         metrics.record_db_latency(latency)
-        return ServiceStatus(name="postgresql", status="healthy", latency_ms=round(latency, 2), details=None)
+        return ServiceStatus(
+            name="postgresql", status="healthy", latency_ms=round(latency, 2), details=None
+        )
     except Exception as exc:
-        return ServiceStatus(name="postgresql", status="unhealthy", details=str(exc), latency_ms=None)
+        return ServiceStatus(
+            name="postgresql", status="unhealthy", details=str(exc), latency_ms=None
+        )
 
 
 async def _check_neo4j() -> ServiceStatus:
@@ -139,7 +163,9 @@ async def _check_neo4j() -> ServiceStatus:
         result = await check_neo4j_connection()
         latency = (time.time() - start) * 1000
         status_str = "healthy" if result else "unhealthy"
-        return ServiceStatus(name="neo4j", status=status_str, latency_ms=round(latency, 2), details=None)
+        return ServiceStatus(
+            name="neo4j", status=status_str, latency_ms=round(latency, 2), details=None
+        )
     except Exception as exc:
         return ServiceStatus(name="neo4j", status="unhealthy", latency_ms=None, details=str(exc))
 
@@ -149,6 +175,7 @@ async def _check_ai_provider() -> ServiceStatus:
     try:
         from app.ai.service import AIService
         from app.db.session import AsyncSessionLocal
+
         async with AsyncSessionLocal() as db:
             svc = AIService(db)
             result = await svc.health_check()
@@ -157,7 +184,11 @@ async def _check_ai_provider() -> ServiceStatus:
             name=f"ai_provider_{result.get('provider', 'unknown')}",
             status="healthy" if result.get("provider_healthy") else "degraded",
             latency_ms=round(latency, 2),
-            details=f"model={result.get('model', '?')}" if result.get("provider_healthy") else "AI provider unavailable",
+            details=f"model={result.get('model', '?')}"
+            if result.get("provider_healthy")
+            else "AI provider unavailable",
         )
     except Exception as exc:
-        return ServiceStatus(name="ai_provider", status="unhealthy", latency_ms=None, details=str(exc)[:200])
+        return ServiceStatus(
+            name="ai_provider", status="unhealthy", latency_ms=None, details=str(exc)[:200]
+        )

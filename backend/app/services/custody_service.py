@@ -20,11 +20,16 @@ class CustodyService:
         self.db = db
         self.repo = BaseRepository(db, ChainOfCustodyEvent)
 
-    async def record(self, evidence_id: uuid.UUID, user_id: uuid.UUID,
-                     action: str, notes: str | None = None,
-                     ip_address: str | None = None,
-                     request_id: str | None = None,
-                     details: str | None = None) -> ChainOfCustodyEvent:
+    async def record(
+        self,
+        evidence_id: uuid.UUID,
+        user_id: uuid.UUID,
+        action: str,
+        notes: str | None = None,
+        ip_address: str | None = None,
+        request_id: str | None = None,
+        details: str | None = None,
+    ) -> ChainOfCustodyEvent:
         """Record an immutable custody event."""
         event = ChainOfCustodyEvent(
             evidence_id=evidence_id,
@@ -41,7 +46,9 @@ class CustodyService:
         return event
 
     async def list_for_evidence(self, evidence_id: uuid.UUID) -> list[ChainOfCustodyEvent]:
-        return await self.repo.find_many(evidence_id=evidence_id, order_by="timestamp", descending=True)
+        return await self.repo.find_many(
+            evidence_id=evidence_id, order_by="timestamp", descending=True
+        )
 
     async def count_for_evidence(self, evidence_id: uuid.UUID) -> int:
         return await self.repo.count(evidence_id=evidence_id)

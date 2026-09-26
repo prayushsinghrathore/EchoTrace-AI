@@ -24,7 +24,10 @@ class ChainOfCustodyEvent(Base, TimestampMixin):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     evidence_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("evidence.id", ondelete="CASCADE"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey("evidence.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
@@ -32,7 +35,11 @@ class ChainOfCustodyEvent(Base, TimestampMixin):
     timestamp: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False, index=True
     )
-    action: Mapped[str] = mapped_column(String(50), nullable=False, comment="upload|download|view|verify|update|version_upload|delete|restore|export")
+    action: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        comment="upload|download|view|verify|update|version_upload|delete|restore|export",
+    )
     ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
     request_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -102,9 +102,13 @@ class GeminiProvider(BaseProvider):
             response.raise_for_status()
             data = response.json()
         except httpx.TimeoutException:
-            raise TimeoutError(f"Gemini request timed out after {settings.AI_TIMEOUT_SECONDS}s") from None
+            raise TimeoutError(
+                f"Gemini request timed out after {settings.AI_TIMEOUT_SECONDS}s"
+            ) from None
         except httpx.HTTPStatusError as exc:
-            logger.error("Gemini API error", status=exc.response.status_code, body=exc.response.text)
+            logger.error(
+                "Gemini API error", status=exc.response.status_code, body=exc.response.text
+            )
             raise RuntimeError(f"Gemini API error: {exc.response.status_code}") from exc
 
         elapsed = int((time.time() - start) * 1000)
@@ -165,7 +169,9 @@ class GeminiProvider(BaseProvider):
             "clearly and concisely. Return a JSON object with 'summary' (string) "
             "and 'key_points' (array of strings)."
         )
-        result, meta = await self._call(system_prompt, evidence_text, SummaryResult, max_tokens=max_length)
+        result, meta = await self._call(
+            system_prompt, evidence_text, SummaryResult, max_tokens=max_length
+        )
         return result
 
     async def extract_entities(
@@ -224,7 +230,9 @@ class GeminiProvider(BaseProvider):
             "'executive_summary', 'evidence_summary', 'timeline', 'entities', "
             "'relationships', 'findings', and 'recommendations' fields."
         )
-        result, meta = await self._call(system_prompt, investigation_context, ReportResult, max_tokens=8192)
+        result, meta = await self._call(
+            system_prompt, investigation_context, ReportResult, max_tokens=8192
+        )
         return result
 
     async def health_check(self) -> bool:

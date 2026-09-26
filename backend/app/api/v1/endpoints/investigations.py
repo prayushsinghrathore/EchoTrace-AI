@@ -32,6 +32,7 @@ router = APIRouter(tags=["investigations"])
 
 # ── Investigations ─────────────────────────────────────────────────────────
 
+
 @router.post("", response_model=InvestigationResponse, status_code=status.HTTP_201_CREATED)
 async def create_investigation(
     body: InvestigationCreate,
@@ -39,7 +40,9 @@ async def create_investigation(
     user: User = Depends(get_current_user),
 ):
     svc = InvestigationService(db)
-    return await svc.create(workspace_id=body.workspace_id, user_id=user.id, **body.model_dump(exclude={"workspace_id"}))
+    return await svc.create(
+        workspace_id=body.workspace_id, user_id=user.id, **body.model_dump(exclude={"workspace_id"})
+    )
 
 
 @router.get("/workspace/{workspace_id}", response_model=list)
@@ -64,8 +67,14 @@ async def search_investigations(
     user: User = Depends(get_current_user),
 ):
     svc = InvestigationService(db)
-    params = {"query": q, "workspace_id": workspace_id, "status": status, "priority": priority,
-              "skip": skip, "limit": limit}
+    params = {
+        "query": q,
+        "workspace_id": workspace_id,
+        "status": status,
+        "priority": priority,
+        "skip": skip,
+        "limit": limit,
+    }
     items, total = await svc.search(params, user.id)
     return {"items": items, "total": total, "skip": skip, "limit": limit}
 
@@ -113,7 +122,10 @@ async def delete_investigation(
 
 # ── Entities ───────────────────────────────────────────────────────────────
 
-@router.post("/{inv_id}/entities", response_model=EntityResponse, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/{inv_id}/entities", response_model=EntityResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_entity(
     inv_id: uuid.UUID,
     body: EntityCreate,
@@ -157,7 +169,12 @@ async def delete_entity(
 
 # ── Relationships ──────────────────────────────────────────────────────────
 
-@router.post("/{inv_id}/relationships", response_model=RelationshipResponse, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/{inv_id}/relationships",
+    response_model=RelationshipResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_relationship(
     inv_id: uuid.UUID,
     body: RelationshipCreate,
@@ -189,7 +206,9 @@ async def update_relationship(
     return await svc.update_relationship(rel_id, user.id, **body.model_dump(exclude_none=True))
 
 
-@router.delete("/relationships/{rel_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+@router.delete(
+    "/relationships/{rel_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None
+)
 async def delete_relationship(
     rel_id: uuid.UUID,
     db: AsyncSession = Depends(get_db_session),
@@ -201,7 +220,10 @@ async def delete_relationship(
 
 # ── Timeline ───────────────────────────────────────────────────────────────
 
-@router.post("/{inv_id}/timeline", response_model=TimelineEventResponse, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/{inv_id}/timeline", response_model=TimelineEventResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_timeline_event(
     inv_id: uuid.UUID,
     body: TimelineEventCreate,
@@ -224,7 +246,8 @@ async def list_timeline_events(
 ):
     svc = InvestigationService(db)
     return await svc.list_timeline_events(
-        inv_id, user.id,
+        inv_id,
+        user.id,
         date_from=date_from,
         date_to=date_to,
         entity_id=entity_id,
@@ -254,6 +277,7 @@ async def delete_timeline_event(
 
 
 # ── Graph ──────────────────────────────────────────────────────────────────
+
 
 @router.get("/{inv_id}/graph", response_model=dict)
 async def get_graph(

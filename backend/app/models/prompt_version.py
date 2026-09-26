@@ -31,25 +31,35 @@ class PromptVersion(Base, TimestampMixin):
     )
 
     name: Mapped[str] = mapped_column(
-        String(100), nullable=False, index=True,
+        String(100),
+        nullable=False,
+        index=True,
         comment="Prompt name (summarize, entities, relationships, timeline, report)",
     )
 
     version: Mapped[str] = mapped_column(
-        String(20), nullable=False, default="1.0.0",
+        String(20),
+        nullable=False,
+        default="1.0.0",
         comment="Semantic version of the prompt",
     )
 
     content: Mapped[str] = mapped_column(
-        Text, nullable=False, comment="Full prompt template content",
+        Text,
+        nullable=False,
+        comment="Full prompt template content",
     )
 
     description: Mapped[str | None] = mapped_column(
-        String(500), nullable=True, comment="Human-readable description of this prompt",
+        String(500),
+        nullable=True,
+        comment="Human-readable description of this prompt",
     )
 
     is_active: Mapped[bool] = mapped_column(
-        Boolean, default=True, nullable=False,
+        Boolean,
+        default=True,
+        nullable=False,
         comment="Whether this version is currently active",
     )
 

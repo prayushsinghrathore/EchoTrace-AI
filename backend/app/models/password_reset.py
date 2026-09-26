@@ -28,9 +28,7 @@ class PasswordResetToken(Base, TimestampMixin):
 
     __tablename__ = "password_reset_tokens"
 
-    __table_args__ = (
-        {"comment": "Password reset request audit records"},
-    )
+    __table_args__ = ({"comment": "Password reset request audit records"},)
 
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -82,17 +80,16 @@ class PasswordResetToken(Base, TimestampMixin):
     def is_expired(self) -> bool:
         """Check if the reset window has passed."""
         import datetime as dt_module
+
         return dt_module.datetime.now(dt_module.UTC) > self.expires_at
 
     def mark_used(self, ip_address: str | None) -> None:
         """Mark this token as used after a successful reset."""
         import datetime as dt_module
+
         self.is_used = True
         self.used_at = dt_module.datetime.now(dt_module.UTC)
         self.used_by_ip = ip_address
 
     def __repr__(self) -> str:
-        return (
-            f"<PasswordResetToken id={self.id} user_id={self.user_id} "
-            f"used={self.is_used}>"
-        )
+        return f"<PasswordResetToken id={self.id} user_id={self.user_id} " f"used={self.is_used}>"

@@ -82,7 +82,9 @@ class GraphSyncService:
         from app.models.investigation import Investigation
 
         async with AsyncSessionLocal() as db:
-            result = await db.execute(select(Investigation).where(Investigation.id == investigation_id))
+            result = await db.execute(
+                select(Investigation).where(Investigation.id == investigation_id)
+            )
             inv = result.scalar_one_or_none()
             if not inv:
                 return
@@ -97,7 +99,9 @@ class GraphSyncService:
                     "ws_id": str(inv.workspace_id),
                     "title": inv.title,
                     "status": inv.status.value if hasattr(inv.status, "value") else inv.status,
-                    "priority": inv.priority.value if hasattr(inv.priority, "value") else inv.priority,
+                    "priority": inv.priority.value
+                    if hasattr(inv.priority, "value")
+                    else inv.priority,
                 },
             )
 
@@ -156,7 +160,9 @@ class GraphSyncService:
                     "inv_id": str(investigation_id),
                     "src": str(r.source_entity_id),
                     "tgt": str(r.target_entity_id),
-                    "rtype": r.relationship_type.value if hasattr(r.relationship_type, "value") else r.relationship_type,
+                    "rtype": r.relationship_type.value
+                    if hasattr(r.relationship_type, "value")
+                    else r.relationship_type,
                     "confidence": r.confidence or 0.5,
                 }
                 for r in rels

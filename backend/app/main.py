@@ -62,12 +62,14 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Dispose database connections
     from app.db.session import _sync_engine_instance, async_engine
+
     await async_engine.dispose()
     if _sync_engine_instance is not None:
         _sync_engine_instance.dispose()
 
     await close_cache()
     from app.ai.cache import ai_cache
+
     await ai_cache.close()
     shutdown_opentelemetry()
 
@@ -90,7 +92,9 @@ def create_application() -> FastAPI:
         description="Production-grade traceability and knowledge graph platform",
         docs_url=f"{settings.API_V1_PREFIX}/docs" if not settings.is_production else None,
         redoc_url=f"{settings.API_V1_PREFIX}/redoc" if not settings.is_production else None,
-        openapi_url=f"{settings.API_V1_PREFIX}/openapi.json" if not settings.is_production else None,
+        openapi_url=f"{settings.API_V1_PREFIX}/openapi.json"
+        if not settings.is_production
+        else None,
         lifespan=lifespan,
     )
 

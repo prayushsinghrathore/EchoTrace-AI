@@ -39,6 +39,7 @@ class ExportService:
         user_id: uuid.UUID,
     ) -> ExportJob:
         from app.models.export_job import ExportEntityType, ExportFormat
+
         try:
             etype = ExportEntityType(entity_type)
             eformat = ExportFormat(fmt)
@@ -74,7 +75,9 @@ class ExportService:
         job.status = ExportJobStatus.RUNNING
         await self.db.flush()
 
-        entity_type = job.entity_type.value if hasattr(job.entity_type, "value") else job.entity_type
+        entity_type = (
+            job.entity_type.value if hasattr(job.entity_type, "value") else job.entity_type
+        )
         fmt = job.format.value if hasattr(job.format, "value") else job.format
 
         output: str | bytes = ""
@@ -129,7 +132,9 @@ class ExportService:
     async def get_job(self, job_id: uuid.UUID, user_id: uuid.UUID) -> ExportJob:
         job = await self.repo.get(job_id)
         if not job:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Export job not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Export job not found"
+            )
         await self._check_workspace_access(job.workspace_id, user_id)
         return job
 
@@ -143,18 +148,27 @@ class ExportService:
 
     async def download_with_token(self, token: str) -> tuple[bytes, str, str]:
         from datetime import UTC
+
         job = await self.repo.find_one(download_token=token)
         if not job:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid download token")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Invalid download token"
+            )
         if job.status != ExportJobStatus.COMPLETED:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Export not yet completed")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Export not yet completed"
+            )
         if job.expires_at and datetime.now(UTC) > job.expires_at:
-            raise HTTPException(status_code=status.HTTP_410_GONE, detail="Download link has expired")
+            raise HTTPException(
+                status_code=status.HTTP_410_GONE, detail="Download link has expired"
+            )
         if not job.file_path:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No file available")
         data = await create_storage_provider().retrieve(job.file_path)
         if data is None:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Export file not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Export file not found"
+            )
         extension = job.format.value if hasattr(job.format, "value") else "json"
         mime = "application/octet-stream"
         if extension == "json":
@@ -169,4 +183,6 @@ class ExportService:
         member_repo = BaseRepository(self.db, WorkspaceMember)
         member = await member_repo.find_one(workspace_id=workspace_id, user_id=user_id)
         if not member:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this workspace")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this workspace"
+            )

@@ -40,10 +40,19 @@ class Notification(Base, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     workspace_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=True, index=True
+        UUID(as_uuid=True),
+        ForeignKey("workspaces.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
     )
     notification_type: Mapped[NotificationType] = mapped_column(
-        Enum(NotificationType, name="notification_type", values_callable=lambda x: [e.value for e in x]), nullable=False, index=True
+        Enum(
+            NotificationType,
+            name="notification_type",
+            values_callable=lambda x: [e.value for e in x],
+        ),
+        nullable=False,
+        index=True,
     )
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     body: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -53,13 +62,20 @@ class Notification(Base, TimestampMixin):
     actor_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
-    reference_id: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="UUID of the related entity")
-    reference_type: Mapped[str | None] = mapped_column(String(50), nullable=True, comment="Entity type (investigation, evidence, etc.)")
+    reference_id: Mapped[str | None] = mapped_column(
+        String(255), nullable=True, comment="UUID of the related entity"
+    )
+    reference_type: Mapped[str | None] = mapped_column(
+        String(50), nullable=True, comment="Entity type (investigation, evidence, etc.)"
+    )
 
     def mark_read(self) -> None:
         from datetime import UTC
+
         self.is_read = True
         self.read_at = datetime.now(UTC)
 
     def __repr__(self) -> str:
-        return f"<Notification id={self.id} type={self.notification_type.value} read={self.is_read}>"
+        return (
+            f"<Notification id={self.id} type={self.notification_type.value} read={self.is_read}>"
+        )

@@ -62,7 +62,10 @@ def upgrade() -> None:
         sa.Column(
             "role",
             sa.Enum(
-                "admin", "user", "viewer", "auditor",
+                "admin",
+                "user",
+                "viewer",
+                "auditor",
                 name="user_role",
                 create_constraint=True,
             ),
@@ -74,7 +77,10 @@ def upgrade() -> None:
         sa.Column(
             "status",
             sa.Enum(
-                "active", "inactive", "suspended", "pending_verification",
+                "active",
+                "inactive",
+                "suspended",
+                "pending_verification",
                 name="user_status",
                 create_constraint=True,
             ),

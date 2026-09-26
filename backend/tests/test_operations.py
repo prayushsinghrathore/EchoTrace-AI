@@ -13,17 +13,30 @@ from app.models.audit_log import AuditAction
 
 async def _setup_env(client: AsyncClient) -> tuple[str, str]:
     """Create org, workspace. Returns (token, ws_id)."""
-    await client.post("/api/v1/auth/register", json={
-        "email": "ops@test.com", "password": "SecureP@ss1", "display_name": "Ops Test",
-    })
-    login = await client.post("/api/v1/auth/login", json={"email": "ops@test.com", "password": "SecureP@ss1"})
+    await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "ops@test.com",
+            "password": "SecureP@ss1",
+            "display_name": "Ops Test",
+        },
+    )
+    login = await client.post(
+        "/api/v1/auth/login", json={"email": "ops@test.com", "password": "SecureP@ss1"}
+    )
     token = login.json()["access_token"]
 
-    org = await client.post("/api/v1/organizations", json={"name": "Ops Org", "slug": "ops-org"},
-                             headers={"Authorization": f"Bearer {token}"})
+    org = await client.post(
+        "/api/v1/organizations",
+        json={"name": "Ops Org", "slug": "ops-org"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
     org_id = org.json()["id"]
-    ws = await client.post("/api/v1/workspaces", json={"organization_id": org_id, "name": "Ops WS", "slug": "ops-ws"},
-                            headers={"Authorization": f"Bearer {token}"})
+    ws = await client.post(
+        "/api/v1/workspaces",
+        json={"organization_id": org_id, "name": "Ops WS", "slug": "ops-ws"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
     ws_id = ws.json()["id"]
     return token, ws_id
 
@@ -169,8 +182,14 @@ class TestSecurityHeaders:
         resp = await client.get("/")
         headers = resp.headers
         # Check security headers from our middleware
-        for h in ["x-content-type-options", "x-frame-options", "x-xss-protection",
-                   "strict-transport-security", "referrer-policy", "x-request-id"]:
+        for h in [
+            "x-content-type-options",
+            "x-frame-options",
+            "x-xss-protection",
+            "strict-transport-security",
+            "referrer-policy",
+            "x-request-id",
+        ]:
             assert h in headers, f"Missing security header: {h}"
         assert headers["x-content-type-options"] == "nosniff"
         assert headers["x-frame-options"] == "DENY"
@@ -206,6 +225,7 @@ class TestConfig:
 
     def test_rate_limit_config(self) -> None:
         from app.core.config import settings as s
+
         assert s.RATE_LIMIT_LOGIN_MAX >= 1
         assert s.RATE_LIMIT_ENABLED is not None
         assert s.AI_RATE_LIMIT_MAX >= 1

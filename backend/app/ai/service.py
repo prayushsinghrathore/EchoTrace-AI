@@ -199,10 +199,9 @@ class AIService:
 
         # Verify workspace membership via the evidence's workspace
         from app.models.workspace_member import WorkspaceMember
+
         member_repo = BaseRepository(self.db, WorkspaceMember)
-        member = await member_repo.find_one(
-            workspace_id=evidence.workspace_id, user_id=user_id
-        )
+        member = await member_repo.find_one(workspace_id=evidence.workspace_id, user_id=user_id)
         if not member:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this workspace"
@@ -250,6 +249,7 @@ class AIService:
 
         # Load entities
         from app.models.entity import Entity
+
         entity_repo = BaseRepository(self.db, Entity)
         entities = await entity_repo.find_many(investigation_id=investigation_id)
         if entities:
@@ -262,18 +262,24 @@ class AIService:
 
         # Load relationships
         from app.models.relationship import Relationship
+
         rel_repo = BaseRepository(self.db, Relationship)
         rels = await rel_repo.find_many(investigation_id=investigation_id)
         if rels:
             parts.append("\n## Relationships")
             for r in rels:
-                rtype = r.relationship_type.value if hasattr(r.relationship_type, "value") else r.relationship_type
+                rtype = (
+                    r.relationship_type.value
+                    if hasattr(r.relationship_type, "value")
+                    else r.relationship_type
+                )
                 parts.append(f"- {r.source_entity_id} --[{rtype}]--> {r.target_entity_id}")
                 if r.notes:
                     parts.append(f"  - {r.notes}")
 
         # Load timeline events
         from app.models.timeline_event import TimelineEvent
+
         timeline_repo = BaseRepository(self.db, TimelineEvent)
         events = await timeline_repo.find_many(
             investigation_id=investigation_id, order_by="event_timestamp"
@@ -288,11 +294,10 @@ class AIService:
 
     # ── Workspace / Investigation Access Helpers ──────────────────────────────
 
-    async def _check_workspace_access(
-        self, workspace_id: uuid.UUID, user_id: uuid.UUID
-    ) -> None:
+    async def _check_workspace_access(self, workspace_id: uuid.UUID, user_id: uuid.UUID) -> None:
         """Verify the user is a member of the workspace."""
         from app.models.workspace_member import WorkspaceMember
+
         member_repo = BaseRepository(self.db, WorkspaceMember)
         member = await member_repo.find_one(workspace_id=workspace_id, user_id=user_id)
         if not member:
@@ -301,9 +306,7 @@ class AIService:
                 detail="Not a member of this workspace",
             )
 
-    async def _get_investigation_workspace(
-        self, investigation_id: uuid.UUID
-    ) -> uuid.UUID:
+    async def _get_investigation_workspace(self, investigation_id: uuid.UUID) -> uuid.UUID:
         """Get the workspace_id for an investigation."""
         inv_repo = BaseRepository(self.db, Investigation)
         investigation = await inv_repo.get(investigation_id)
@@ -328,8 +331,12 @@ class AIService:
     # ── Core AI Operations ────────────────────────────────────────────────────
 
     async def _call_with_timeout(
-        self, provider: BaseProvider, method: str, *,
-        timeout: int | None = None, **kwargs: Any,
+        self,
+        provider: BaseProvider,
+        method: str,
+        *,
+        timeout: int | None = None,
+        **kwargs: Any,
     ) -> Any:
         """Call an AI provider method with timeout and circuit breaker protection."""
         timeout_s = timeout or settings.AI_TIMEOUT_SECONDS
@@ -389,7 +396,9 @@ class AIService:
         )
 
         # Check cache
-        cached, cached_result = await ai_cache.get_async(text, prompt, provider.model, settings.AI_PROMPT_VERSION)
+        cached, cached_result = await ai_cache.get_async(
+            text, prompt, provider.model, settings.AI_PROMPT_VERSION
+        )
         if cached and cached_result is not None:
             job.mark_completed(
                 result=cached_result,
@@ -410,7 +419,11 @@ class AIService:
 
         try:
             result = await self._call_with_timeout(
-                provider, "summarize", evidence_text=text, prompt_template=prompt, max_length=max_length,
+                provider,
+                "summarize",
+                evidence_text=text,
+                prompt_template=prompt,
+                max_length=max_length,
             )
         except Exception as exc:
             job.mark_failed(str(exc))
@@ -420,7 +433,9 @@ class AIService:
 
         # Cache and persist
         result_dict = result.model_dump()
-        await ai_cache.set_async(text, prompt, provider.model, settings.AI_PROMPT_VERSION, result_dict)
+        await ai_cache.set_async(
+            text, prompt, provider.model, settings.AI_PROMPT_VERSION, result_dict
+        )
 
         input_tok = count_tokens(text, provider.model)
         output_tok = count_tokens(str(result_dict), provider.model)
@@ -472,7 +487,9 @@ class AIService:
             evidence_ids=[str(evidence_id)],
         )
 
-        cached, cached_result = await ai_cache.get_async(text, prompt, provider.model, settings.AI_PROMPT_VERSION)
+        cached, cached_result = await ai_cache.get_async(
+            text, prompt, provider.model, settings.AI_PROMPT_VERSION
+        )
         if cached and cached_result is not None:
             job.mark_completed(
                 result=cached_result,
@@ -492,7 +509,10 @@ class AIService:
 
         try:
             result = await self._call_with_timeout(
-                provider, "extract_entities", evidence_text=text, prompt_template=prompt,
+                provider,
+                "extract_entities",
+                evidence_text=text,
+                prompt_template=prompt,
             )
         except Exception as exc:
             job.mark_failed(str(exc))
@@ -501,7 +521,9 @@ class AIService:
             return AIJobResponse.model_validate(job)
 
         result_dict = result.model_dump()
-        await ai_cache.set_async(text, prompt, provider.model, settings.AI_PROMPT_VERSION, result_dict)
+        await ai_cache.set_async(
+            text, prompt, provider.model, settings.AI_PROMPT_VERSION, result_dict
+        )
 
         input_tok = count_tokens(text, provider.model)
         output_tok = count_tokens(str(result_dict), provider.model)
@@ -546,12 +568,16 @@ class AIService:
 
         # Get entities context
         from app.models.entity import Entity
+
         entity_repo = BaseRepository(self.db, Entity)
         entities = await entity_repo.find_many(investigation_id=investigation_id)
-        entities_context = "\n".join(
-            f"{e.type.value if hasattr(e.type, 'value') else e.type}: {e.label}"
-            for e in entities
-        ) or "No entities yet."
+        entities_context = (
+            "\n".join(
+                f"{e.type.value if hasattr(e.type, 'value') else e.type}: {e.label}"
+                for e in entities
+            )
+            or "No entities yet."
+        )
 
         job = await self._create_job(
             user_id=user_id,
@@ -567,7 +593,14 @@ class AIService:
             combined_text, prompt, provider.model, settings.AI_PROMPT_VERSION
         )
         if cached and cached_result is not None:
-            job.mark_completed(result=cached_result, input_tokens=0, output_tokens=0, cost=0.0, latency_ms=0, cached=True)
+            job.mark_completed(
+                result=cached_result,
+                input_tokens=0,
+                output_tokens=0,
+                cost=0.0,
+                latency_ms=0,
+                cached=True,
+            )
             await self.db.commit()
             await self.db.refresh(job)
             if cached_result.get("relationships"):
@@ -578,8 +611,11 @@ class AIService:
 
         try:
             result = await self._call_with_timeout(
-                provider, "suggest_relationships",
-                entities_context=entities_context, evidence_text=evidence_text, prompt_template=prompt,
+                provider,
+                "suggest_relationships",
+                entities_context=entities_context,
+                evidence_text=evidence_text,
+                prompt_template=prompt,
             )
         except Exception as exc:
             job.mark_failed(str(exc))
@@ -588,13 +624,21 @@ class AIService:
             return AIJobResponse.model_validate(job)
 
         result_dict = result.model_dump()
-        await ai_cache.set_async(combined_text, prompt, provider.model, settings.AI_PROMPT_VERSION, result_dict)
+        await ai_cache.set_async(
+            combined_text, prompt, provider.model, settings.AI_PROMPT_VERSION, result_dict
+        )
 
         input_tok = count_tokens(combined_text, provider.model)
         output_tok = count_tokens(str(result_dict), provider.model)
         cost = estimate_cost(input_tok, output_tok, provider.model)
 
-        job.mark_completed(result=result_dict, input_tokens=input_tok, output_tokens=output_tok, cost=cost, latency_ms=0)
+        job.mark_completed(
+            result=result_dict,
+            input_tokens=input_tok,
+            output_tokens=output_tok,
+            cost=cost,
+            latency_ms=0,
+        )
 
         if result.relationships:
             await self._create_relationship_suggestions(
@@ -626,7 +670,9 @@ class AIService:
         else:
             # Load all evidence for the workspace
             ev_repo = BaseRepository(self.db, Evidence)
-            all_evidence = await ev_repo.find_many(workspace_id=workspace_id, is_deleted=False, limit=20)
+            all_evidence = await ev_repo.find_many(
+                workspace_id=workspace_id, is_deleted=False, limit=20
+            )
             for ev in all_evidence:
                 _, text = await self._load_evidence_text(ev.id, user_id, max_chars=3000)
                 evidence_text_parts.append(text)
@@ -640,9 +686,18 @@ class AIService:
             job_type=AIJobType.GENERATE_TIMELINE,
         )
 
-        cached, cached_result = await ai_cache.get_async(combined_text, prompt, provider.model, settings.AI_PROMPT_VERSION)
+        cached, cached_result = await ai_cache.get_async(
+            combined_text, prompt, provider.model, settings.AI_PROMPT_VERSION
+        )
         if cached and cached_result is not None:
-            job.mark_completed(result=cached_result, input_tokens=0, output_tokens=0, cost=0.0, latency_ms=0, cached=True)
+            job.mark_completed(
+                result=cached_result,
+                input_tokens=0,
+                output_tokens=0,
+                cost=0.0,
+                latency_ms=0,
+                cached=True,
+            )
             await self.db.commit()
             await self.db.refresh(job)
             if cached_result.get("events"):
@@ -653,7 +708,10 @@ class AIService:
 
         try:
             result = await self._call_with_timeout(
-                provider, "generate_timeline", evidence_text=combined_text, prompt_template=prompt,
+                provider,
+                "generate_timeline",
+                evidence_text=combined_text,
+                prompt_template=prompt,
             )
         except Exception as exc:
             job.mark_failed(str(exc))
@@ -662,13 +720,21 @@ class AIService:
             return AIJobResponse.model_validate(job)
 
         result_dict = result.model_dump()
-        await ai_cache.set_async(combined_text, prompt, provider.model, settings.AI_PROMPT_VERSION, result_dict)
+        await ai_cache.set_async(
+            combined_text, prompt, provider.model, settings.AI_PROMPT_VERSION, result_dict
+        )
 
         input_tok = count_tokens(combined_text, provider.model)
         output_tok = count_tokens(str(result_dict), provider.model)
         cost = estimate_cost(input_tok, output_tok, provider.model)
 
-        job.mark_completed(result=result_dict, input_tokens=input_tok, output_tokens=output_tok, cost=cost, latency_ms=0)
+        job.mark_completed(
+            result=result_dict,
+            input_tokens=input_tok,
+            output_tokens=output_tok,
+            cost=cost,
+            latency_ms=0,
+        )
 
         if result.events:
             await self._create_timeline_suggestions(
@@ -699,16 +765,28 @@ class AIService:
             job_type=AIJobType.GENERATE_REPORT,
         )
 
-        cached, cached_result = await ai_cache.get_async(context, prompt, provider.model, settings.AI_PROMPT_VERSION)
+        cached, cached_result = await ai_cache.get_async(
+            context, prompt, provider.model, settings.AI_PROMPT_VERSION
+        )
         if cached and cached_result is not None:
-            job.mark_completed(result=cached_result, input_tokens=0, output_tokens=0, cost=0.0, latency_ms=0, cached=True)
+            job.mark_completed(
+                result=cached_result,
+                input_tokens=0,
+                output_tokens=0,
+                cost=0.0,
+                latency_ms=0,
+                cached=True,
+            )
             await self.db.commit()
             await self.db.refresh(job)
             return AIJobResponse.model_validate(job)
 
         try:
             result = await self._call_with_timeout(
-                provider, "generate_report", investigation_context=context, prompt_template=prompt,
+                provider,
+                "generate_report",
+                investigation_context=context,
+                prompt_template=prompt,
             )
         except Exception as exc:
             job.mark_failed(str(exc))
@@ -717,13 +795,21 @@ class AIService:
             return AIJobResponse.model_validate(job)
 
         result_dict = result.model_dump()
-        await ai_cache.set_async(context, prompt, provider.model, settings.AI_PROMPT_VERSION, result_dict)
+        await ai_cache.set_async(
+            context, prompt, provider.model, settings.AI_PROMPT_VERSION, result_dict
+        )
 
         input_tok = count_tokens(context, provider.model)
         output_tok = count_tokens(str(result_dict), provider.model)
         cost = estimate_cost(input_tok, output_tok, provider.model)
 
-        job.mark_completed(result=result_dict, input_tokens=input_tok, output_tokens=output_tok, cost=cost, latency_ms=0)
+        job.mark_completed(
+            result=result_dict,
+            input_tokens=input_tok,
+            output_tokens=output_tok,
+            cost=cost,
+            latency_ms=0,
+        )
         await self.db.commit()
         await self.db.refresh(job)
         return AIJobResponse.model_validate(job)
@@ -788,8 +874,10 @@ class AIService:
         evidence, text = await self._load_evidence_text(evidence_id, user_id)
         validate_input(text, max_length=settings.AI_SUMMARIZE_MAX_CHARS)
         job = await self._create_queued_job(
-            user_id=user_id, workspace_id=evidence.workspace_id,
-            job_type=AIJobType.SUMMARIZE, evidence_ids=[str(evidence_id)],
+            user_id=user_id,
+            workspace_id=evidence.workspace_id,
+            job_type=AIJobType.SUMMARIZE,
+            evidence_ids=[str(evidence_id)],
             options={"max_length": max_length} if max_length else None,
         )
         return AIJobResponse.model_validate(job)
@@ -800,43 +888,61 @@ class AIService:
         evidence, text = await self._load_evidence_text(evidence_id, user_id)
         validate_input(text, max_length=settings.AI_SUMMARIZE_MAX_CHARS)
         if investigation_id:
-            await self._check_workspace_access(await self._get_investigation_workspace(investigation_id), user_id)
+            await self._check_workspace_access(
+                await self._get_investigation_workspace(investigation_id), user_id
+            )
         job = await self._create_queued_job(
-            user_id=user_id, workspace_id=evidence.workspace_id,
-            investigation_id=investigation_id, job_type=AIJobType.EXTRACT_ENTITIES,
+            user_id=user_id,
+            workspace_id=evidence.workspace_id,
+            investigation_id=investigation_id,
+            job_type=AIJobType.EXTRACT_ENTITIES,
             evidence_ids=[str(evidence_id)],
         )
         return AIJobResponse.model_validate(job)
 
     async def enqueue_relationships(
-        self, investigation_id: uuid.UUID, user_id: uuid.UUID, evidence_ids: list[uuid.UUID] | None = None
+        self,
+        investigation_id: uuid.UUID,
+        user_id: uuid.UUID,
+        evidence_ids: list[uuid.UUID] | None = None,
     ) -> AIJobResponse:
         workspace_id = await self._get_investigation_workspace(investigation_id)
         await self._check_workspace_access(workspace_id, user_id)
         job = await self._create_queued_job(
-            user_id=user_id, workspace_id=workspace_id, investigation_id=investigation_id,
+            user_id=user_id,
+            workspace_id=workspace_id,
+            investigation_id=investigation_id,
             job_type=AIJobType.SUGGEST_RELATIONSHIPS,
             evidence_ids=[str(item) for item in evidence_ids] if evidence_ids else None,
         )
         return AIJobResponse.model_validate(job)
 
     async def enqueue_timeline(
-        self, investigation_id: uuid.UUID, user_id: uuid.UUID, evidence_ids: list[uuid.UUID] | None = None
+        self,
+        investigation_id: uuid.UUID,
+        user_id: uuid.UUID,
+        evidence_ids: list[uuid.UUID] | None = None,
     ) -> AIJobResponse:
         workspace_id = await self._get_investigation_workspace(investigation_id)
         await self._check_workspace_access(workspace_id, user_id)
         job = await self._create_queued_job(
-            user_id=user_id, workspace_id=workspace_id, investigation_id=investigation_id,
+            user_id=user_id,
+            workspace_id=workspace_id,
+            investigation_id=investigation_id,
             job_type=AIJobType.GENERATE_TIMELINE,
             evidence_ids=[str(item) for item in evidence_ids] if evidence_ids else None,
         )
         return AIJobResponse.model_validate(job)
 
-    async def enqueue_report(self, investigation_id: uuid.UUID, user_id: uuid.UUID) -> AIJobResponse:
+    async def enqueue_report(
+        self, investigation_id: uuid.UUID, user_id: uuid.UUID
+    ) -> AIJobResponse:
         workspace_id = await self._get_investigation_workspace(investigation_id)
         await self._check_workspace_access(workspace_id, user_id)
         job = await self._create_queued_job(
-            user_id=user_id, workspace_id=workspace_id, investigation_id=investigation_id,
+            user_id=user_id,
+            workspace_id=workspace_id,
+            investigation_id=investigation_id,
             job_type=AIJobType.GENERATE_REPORT,
         )
         return AIJobResponse.model_validate(job)
@@ -863,13 +969,20 @@ class AIService:
         else:
             # Get all workspaces the user belongs to
             from app.models.workspace_member import WorkspaceMember
+
             ws_repo = BaseRepository(self.db, WorkspaceMember)
             memberships = await ws_repo.find_many(user_id=user_id)
             ws_ids = [m.workspace_id for m in memberships]
             if not ws_ids:
                 return []
             from sqlalchemy import select as sa_select
-            stmt = sa_select(AIJob).where(AIJob.workspace_id.in_(ws_ids)).order_by(AIJob.created_at.desc()).limit(limit)
+
+            stmt = (
+                sa_select(AIJob)
+                .where(AIJob.workspace_id.in_(ws_ids))
+                .order_by(AIJob.created_at.desc())
+                .limit(limit)
+            )
             result = await self.db.execute(stmt)
             jobs = list(result.scalars().all())
         return [AIJobResponse.model_validate(j) for j in jobs]
@@ -885,6 +998,7 @@ class AIService:
             query = query.where(AIJob.workspace_id == workspace_id)
         else:
             from app.models.workspace_member import WorkspaceMember
+
             subq = select(WorkspaceMember.workspace_id).where(WorkspaceMember.user_id == user_id)
             query = query.where(AIJob.workspace_id.in_(subq))
 
@@ -1025,9 +1139,7 @@ class AIService:
         if status:
             filters["status"] = status
 
-        suggestions = await repo.find_many(
-            **filters, order_by="created_at", descending=True
-        )
+        suggestions = await repo.find_many(**filters, order_by="created_at", descending=True)
         return [AISuggestionResponse.model_validate(s) for s in suggestions]
 
     async def approve_suggestion(
@@ -1040,7 +1152,9 @@ class AIService:
         repo = BaseRepository(self.db, AISuggestion)
         suggestion = await repo.get(suggestion_id)
         if not suggestion:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Suggestion not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Suggestion not found"
+            )
 
         await self._check_workspace_access(suggestion.workspace_id, user_id)
 
@@ -1127,9 +1241,7 @@ class AIService:
 
         return {"approved": approved_count, "rejected": rejected_count, "errors": errors}
 
-    async def _persist_suggestion(
-        self, suggestion: AISuggestion, user_id: uuid.UUID
-    ) -> None:
+    async def _persist_suggestion(self, suggestion: AISuggestion, user_id: uuid.UUID) -> None:
         """Persist an approved suggestion to the investigation database."""
         from app.models.entity import Entity
         from app.models.relationship import Relationship

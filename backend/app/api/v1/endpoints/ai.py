@@ -96,7 +96,9 @@ async def summarize_evidence(
     """
     svc = AIService(db)
     return await svc.enqueue_summarize(
-        evidence_id=body.evidence_id, user_id=user.id, max_length=body.max_length,
+        evidence_id=body.evidence_id,
+        user_id=user.id,
+        max_length=body.max_length,
     )
 
 
@@ -115,7 +117,9 @@ async def extract_entities(
     """
     svc = AIService(db)
     return await svc.enqueue_entities(
-        evidence_id=body.evidence_id, user_id=user.id, investigation_id=body.investigation_id,
+        evidence_id=body.evidence_id,
+        user_id=user.id,
+        investigation_id=body.investigation_id,
     )
 
 
@@ -133,7 +137,9 @@ async def suggest_relationships(
     """
     svc = AIService(db)
     return await svc.enqueue_relationships(
-        investigation_id=body.investigation_id, user_id=user.id, evidence_ids=body.evidence_ids,
+        investigation_id=body.investigation_id,
+        user_id=user.id,
+        evidence_ids=body.evidence_ids,
     )
 
 
@@ -151,7 +157,9 @@ async def generate_timeline(
     """
     svc = AIService(db)
     return await svc.enqueue_timeline(
-        investigation_id=body.investigation_id, user_id=user.id, evidence_ids=body.evidence_ids,
+        investigation_id=body.investigation_id,
+        user_id=user.id,
+        evidence_ids=body.evidence_ids,
     )
 
 
@@ -206,8 +214,16 @@ async def run_ai_pipeline(
     return {
         "pipeline": "started",
         "jobs": [
-            {"job_type": "summarize", "job_id": str(summarize_job.id), "status": summarize_job.status},
-            {"job_type": "extract_entities", "job_id": str(entities_job.id), "status": entities_job.status},
+            {
+                "job_type": "summarize",
+                "job_id": str(summarize_job.id),
+                "status": summarize_job.status,
+            },
+            {
+                "job_type": "extract_entities",
+                "job_id": str(entities_job.id),
+                "status": entities_job.status,
+            },
         ],
         "evidence_id": str(evidence_id),
         "investigation_id": str(investigation_id) if investigation_id else None,

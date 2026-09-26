@@ -85,4 +85,6 @@ class WorkspaceMember(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<WorkspaceMember user={self.user_id} ws={self.workspace_id} role={self.role.value}>"
+        return (
+            f"<WorkspaceMember user={self.user_id} ws={self.workspace_id} role={self.role.value}>"
+        )

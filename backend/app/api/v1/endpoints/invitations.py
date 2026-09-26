@@ -25,7 +25,9 @@ ws_router = APIRouter(tags=["invitations"])
 router = APIRouter(tags=["invitations"])
 
 
-@ws_router.post("/{ws_id}/invite", response_model=InvitationResponse, status_code=status.HTTP_201_CREATED)
+@ws_router.post(
+    "/{ws_id}/invite", response_model=InvitationResponse, status_code=status.HTTP_201_CREATED
+)
 async def invite_user(
     ws_id: uuid.UUID,
     body: InvitationCreate,

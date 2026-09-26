@@ -46,9 +46,7 @@ class User(Base, TimestampMixin):
 
     __tablename__ = "users"
 
-    __table_args__ = (
-        {"comment": "Application users with role-based access control"},
-    )
+    __table_args__ = ({"comment": "Application users with role-based access control"},)
 
     # ── Primary Key ─────────────────────────────────────────────────────
     id: Mapped[uuid.UUID] = mapped_column(

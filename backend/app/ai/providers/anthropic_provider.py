@@ -97,9 +97,13 @@ class AnthropicProvider(BaseProvider):
             response.raise_for_status()
             data = response.json()
         except httpx.TimeoutException:
-            raise TimeoutError(f"Anthropic request timed out after {settings.AI_TIMEOUT_SECONDS}s") from None
+            raise TimeoutError(
+                f"Anthropic request timed out after {settings.AI_TIMEOUT_SECONDS}s"
+            ) from None
         except httpx.HTTPStatusError as exc:
-            logger.error("Anthropic API error", status=exc.response.status_code, body=exc.response.text)
+            logger.error(
+                "Anthropic API error", status=exc.response.status_code, body=exc.response.text
+            )
             raise RuntimeError(f"Anthropic API error: {exc.response.status_code}") from exc
 
         elapsed = int((time.time() - start) * 1000)
@@ -124,6 +128,7 @@ class AnthropicProvider(BaseProvider):
             result = response_schema.model_validate(parsed)
         except json.JSONDecodeError:
             import re
+
             json_match = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", content, re.DOTALL)
             if json_match:
                 try:
@@ -168,7 +173,9 @@ class AnthropicProvider(BaseProvider):
             "clearly and concisely. Return a JSON object with 'summary' (string) "
             "and 'key_points' (array of strings)."
         )
-        result, meta = await self._call(system_prompt, evidence_text, SummaryResult, max_tokens=max_length)
+        result, meta = await self._call(
+            system_prompt, evidence_text, SummaryResult, max_tokens=max_length
+        )
         return result
 
     async def extract_entities(
@@ -231,7 +238,9 @@ class AnthropicProvider(BaseProvider):
             "'executive_summary', 'evidence_summary', 'timeline', 'entities', "
             "'relationships', 'findings', and 'recommendations' fields."
         )
-        result, meta = await self._call(system_prompt, investigation_context, ReportResult, max_tokens=8192)
+        result, meta = await self._call(
+            system_prompt, investigation_context, ReportResult, max_tokens=8192
+        )
         return result
 
     async def health_check(self) -> bool:

@@ -35,6 +35,7 @@ class TestTokenBucket:
 
     def test_cleanup_removes_stale_entries(self) -> None:
         import time
+
         bucket = TokenBucket(max_requests=100, window_seconds=0.01)
         bucket.is_allowed("stale-key")
         assert "stale-key" in bucket._buckets

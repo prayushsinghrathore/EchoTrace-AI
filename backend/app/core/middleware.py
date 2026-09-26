@@ -99,7 +99,9 @@ def add_security_headers_middleware(app: FastAPI) -> None:
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains; preload"
+        )
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = (
             "camera=(), display-capture=(), document-domain=(), "
@@ -175,8 +177,11 @@ def add_cors_middleware(app: FastAPI, origins: list[str]) -> None:
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=[
-            "Authorization", "Content-Type", "X-Request-ID",
-            "X-Real-IP", "X-Forwarded-For",
+            "Authorization",
+            "Content-Type",
+            "X-Request-ID",
+            "X-Real-IP",
+            "X-Forwarded-For",
         ],
         expose_headers=["X-Request-ID", "X-Process-Time"],
         max_age=600,

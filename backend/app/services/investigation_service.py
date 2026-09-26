@@ -41,13 +41,17 @@ class InvestigationService:
         member_repo = BaseRepository(self.db, WorkspaceMember)
         member = await member_repo.find_one(workspace_id=workspace_id, user_id=user_id)
         if not member:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this workspace")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this workspace"
+            )
         return member.role
 
     async def _check_investigator(self, workspace_id: uuid.UUID, user_id: uuid.UUID) -> None:
         role = await self._check_member(workspace_id, user_id)
         if role not in (WorkspaceRole.OWNER, WorkspaceRole.ADMIN, WorkspaceRole.INVESTIGATOR):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions"
+            )
 
     # ── Investigations ──────────────────────────────────────────────────
 
@@ -80,7 +84,9 @@ class InvestigationService:
     async def get(self, inv_id: uuid.UUID, user_id: uuid.UUID) -> Investigation:
         inv = await self.inv_repo.get(inv_id)
         if not inv:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Investigation not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Investigation not found"
+            )
         await self._check_member(inv.workspace_id, user_id)
         return inv
 
@@ -144,12 +150,16 @@ class InvestigationService:
         await self.db.execute(sa_delete(Investigation).where(Investigation.id == inv_id))
         await self.db.commit()
 
-    async def list_for_workspace(self, workspace_id: uuid.UUID, user_id: uuid.UUID,
-                                   skip: int = 0, limit: int = 100) -> list[dict]:
+    async def list_for_workspace(
+        self, workspace_id: uuid.UUID, user_id: uuid.UUID, skip: int = 0, limit: int = 100
+    ) -> list[dict]:
         await self._check_member(workspace_id, user_id)
         invs = await self.inv_repo.find_many(
-            workspace_id=workspace_id, order_by="created_at", descending=True,
-            skip=skip, limit=limit,
+            workspace_id=workspace_id,
+            order_by="created_at",
+            descending=True,
+            skip=skip,
+            limit=limit,
         )
         return await self._enrich_list(invs)
 
@@ -189,27 +199,33 @@ class InvestigationService:
         """Return {investigation_id: count} for all given investigation IDs."""
         if not inv_ids:
             return {}
-        stmt = select(Entity.investigation_id, sa_func.count(Entity.id)).where(
-            Entity.investigation_id.in_(inv_ids)
-        ).group_by(Entity.investigation_id)
+        stmt = (
+            select(Entity.investigation_id, sa_func.count(Entity.id))
+            .where(Entity.investigation_id.in_(inv_ids))
+            .group_by(Entity.investigation_id)
+        )
         result = await self.db.execute(stmt)
         return {row[0]: row[1] for row in result}
 
     async def _batch_count_relationships(self, inv_ids: list[uuid.UUID]) -> dict[uuid.UUID, int]:
         if not inv_ids:
             return {}
-        stmt = select(Relationship.investigation_id, sa_func.count(Relationship.id)).where(
-            Relationship.investigation_id.in_(inv_ids)
-        ).group_by(Relationship.investigation_id)
+        stmt = (
+            select(Relationship.investigation_id, sa_func.count(Relationship.id))
+            .where(Relationship.investigation_id.in_(inv_ids))
+            .group_by(Relationship.investigation_id)
+        )
         result = await self.db.execute(stmt)
         return {row[0]: row[1] for row in result}
 
     async def _batch_count_timeline_events(self, inv_ids: list[uuid.UUID]) -> dict[uuid.UUID, int]:
         if not inv_ids:
             return {}
-        stmt = select(TimelineEvent.investigation_id, sa_func.count(TimelineEvent.id)).where(
-            TimelineEvent.investigation_id.in_(inv_ids)
-        ).group_by(TimelineEvent.investigation_id)
+        stmt = (
+            select(TimelineEvent.investigation_id, sa_func.count(TimelineEvent.id))
+            .where(TimelineEvent.investigation_id.in_(inv_ids))
+            .group_by(TimelineEvent.investigation_id)
+        )
         result = await self.db.execute(stmt)
         return {row[0]: row[1] for row in result}
 
@@ -224,23 +240,29 @@ class InvestigationService:
             ec = ec_map.get(inv.id, 0)
             rc = rc_map.get(inv.id, 0)
             tc = tc_map.get(inv.id, 0)
-            result.append({
-                "id": inv.id,
-                "workspace_id": inv.workspace_id,
-                "title": inv.title,
-                "description": inv.description,
-                "status": inv.status.value if hasattr(inv.status, "value") else inv.status,
-                "priority": inv.priority.value if hasattr(inv.priority, "value") else inv.priority,
-                "created_by": str(inv.created_by),
-                "lead_investigator": str(inv.lead_investigator) if inv.lead_investigator else None,
-                "opened_at": inv.opened_at.isoformat() if inv.opened_at else None,
-                "closed_at": inv.closed_at.isoformat() if inv.closed_at else None,
-                "entity_count": ec,
-                "relationship_count": rc,
-                "timeline_count": tc,
-                "created_at": inv.created_at.isoformat() if inv.created_at else None,
-                "updated_at": inv.updated_at.isoformat() if inv.updated_at else None,
-            })
+            result.append(
+                {
+                    "id": inv.id,
+                    "workspace_id": inv.workspace_id,
+                    "title": inv.title,
+                    "description": inv.description,
+                    "status": inv.status.value if hasattr(inv.status, "value") else inv.status,
+                    "priority": inv.priority.value
+                    if hasattr(inv.priority, "value")
+                    else inv.priority,
+                    "created_by": str(inv.created_by),
+                    "lead_investigator": str(inv.lead_investigator)
+                    if inv.lead_investigator
+                    else None,
+                    "opened_at": inv.opened_at.isoformat() if inv.opened_at else None,
+                    "closed_at": inv.closed_at.isoformat() if inv.closed_at else None,
+                    "entity_count": ec,
+                    "relationship_count": rc,
+                    "timeline_count": tc,
+                    "created_at": inv.created_at.isoformat() if inv.created_at else None,
+                    "updated_at": inv.updated_at.isoformat() if inv.updated_at else None,
+                }
+            )
         return result
 
     async def get_dashboard(self, workspace_id: uuid.UUID, user_id: uuid.UUID) -> dict:
@@ -320,7 +342,9 @@ class InvestigationService:
 
     # ── Relationships ───────────────────────────────────────────────────
 
-    async def create_relationship(self, inv_id: uuid.UUID, user_id: uuid.UUID, **kwargs) -> Relationship:
+    async def create_relationship(
+        self, inv_id: uuid.UUID, user_id: uuid.UUID, **kwargs
+    ) -> Relationship:
         inv = await self.get(inv_id, user_id)
         await self._check_investigator(inv.workspace_id, user_id)
 
@@ -334,11 +358,15 @@ class InvestigationService:
         await self.graph_sync.sync_investigation(inv_id)
         return rel
 
-    async def update_relationship(self, rel_id: uuid.UUID, user_id: uuid.UUID, **kwargs) -> Relationship:
+    async def update_relationship(
+        self, rel_id: uuid.UUID, user_id: uuid.UUID, **kwargs
+    ) -> Relationship:
         rel_repo = BaseRepository(self.db, Relationship)
         rel = await rel_repo.get(rel_id)
         if not rel:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Relationship not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Relationship not found"
+            )
         inv = await self.get(rel.investigation_id, user_id)
         await self._check_investigator(inv.workspace_id, user_id)
 
@@ -354,7 +382,9 @@ class InvestigationService:
         rel_repo = BaseRepository(self.db, Relationship)
         rel = await rel_repo.get(rel_id)
         if not rel:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Relationship not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Relationship not found"
+            )
         inv = await self.get(rel.investigation_id, user_id)
         await self._check_investigator(inv.workspace_id, user_id)
         await rel_repo.delete(rel_id, hard=True)
@@ -366,22 +396,28 @@ class InvestigationService:
         rels = await self.rel_repo.find_many(investigation_id=inv_id, order_by="created_at")
         result = []
         for rel in rels:
-            result.append({
-                "id": rel.id,
-                "investigation_id": rel.investigation_id,
-                "source_entity_id": rel.source_entity_id,
-                "target_entity_id": rel.target_entity_id,
-                "relationship_type": rel.relationship_type.value if hasattr(rel.relationship_type, "value") else rel.relationship_type,
-                "confidence": rel.confidence,
-                "notes": rel.notes,
-                "created_at": rel.created_at,
-                "updated_at": rel.updated_at,
-            })
+            result.append(
+                {
+                    "id": rel.id,
+                    "investigation_id": rel.investigation_id,
+                    "source_entity_id": rel.source_entity_id,
+                    "target_entity_id": rel.target_entity_id,
+                    "relationship_type": rel.relationship_type.value
+                    if hasattr(rel.relationship_type, "value")
+                    else rel.relationship_type,
+                    "confidence": rel.confidence,
+                    "notes": rel.notes,
+                    "created_at": rel.created_at,
+                    "updated_at": rel.updated_at,
+                }
+            )
         return result
 
     # ── Timeline ────────────────────────────────────────────────────────
 
-    async def create_timeline_event(self, inv_id: uuid.UUID, user_id: uuid.UUID, **kwargs) -> TimelineEvent:
+    async def create_timeline_event(
+        self, inv_id: uuid.UUID, user_id: uuid.UUID, **kwargs
+    ) -> TimelineEvent:
         inv = await self.get(inv_id, user_id)
         await self._check_investigator(inv.workspace_id, user_id)
         event = TimelineEvent(investigation_id=inv_id, created_by=user_id, **kwargs)
@@ -390,10 +426,14 @@ class InvestigationService:
         await self.db.refresh(event)
         return event
 
-    async def update_timeline_event(self, event_id: uuid.UUID, user_id: uuid.UUID, **kwargs) -> TimelineEvent:
+    async def update_timeline_event(
+        self, event_id: uuid.UUID, user_id: uuid.UUID, **kwargs
+    ) -> TimelineEvent:
         event = await self.timeline_repo.get(event_id)
         if not event:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Timeline event not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Timeline event not found"
+            )
         inv = await self.get(event.investigation_id, user_id)
         await self._check_investigator(inv.workspace_id, user_id)
         for key, val in kwargs.items():
@@ -406,14 +446,18 @@ class InvestigationService:
     async def delete_timeline_event(self, event_id: uuid.UUID, user_id: uuid.UUID) -> None:
         event = await self.timeline_repo.get(event_id)
         if not event:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Timeline event not found")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Timeline event not found"
+            )
         inv = await self.get(event.investigation_id, user_id)
         await self._check_investigator(inv.workspace_id, user_id)
         await self.timeline_repo.delete(event_id, hard=True)
         await self.db.commit()
 
     async def list_timeline_events(
-        self, inv_id: uuid.UUID, user_id: uuid.UUID,
+        self,
+        inv_id: uuid.UUID,
+        user_id: uuid.UUID,
         date_from: datetime | None = None,
         date_to: datetime | None = None,
         entity_id: uuid.UUID | None = None,
@@ -446,7 +490,9 @@ class InvestigationService:
                 if healthy:
                     return await self._get_graph_from_neo4j(inv_id)
             except Exception as exc:
-                logger.warning("Neo4j graph read failed, falling back to PostgreSQL", error=str(exc))
+                logger.warning(
+                    "Neo4j graph read failed, falling back to PostgreSQL", error=str(exc)
+                )
 
         return await self._get_graph_from_pg(inv_id)
 
@@ -462,24 +508,32 @@ class InvestigationService:
             if eid not in seen:
                 seen.add(eid)
                 etype = e.type.value if hasattr(e.type, "value") else e.type
-                nodes.append({
-                    "id": eid,
-                    "label": e.label,
-                    "type": etype,
-                    "color": ENTITY_COLORS.get(etype, "#6b7280"),
-                    "icon": ENTITY_ICONS.get(etype, "📌"),
-                })
+                nodes.append(
+                    {
+                        "id": eid,
+                        "label": e.label,
+                        "type": etype,
+                        "color": ENTITY_COLORS.get(etype, "#6b7280"),
+                        "icon": ENTITY_ICONS.get(etype, "📌"),
+                    }
+                )
 
         edges = []
         for r in rels:
-            rtype = r.relationship_type.value if hasattr(r.relationship_type, "value") else r.relationship_type
-            edges.append({
-                "id": str(r.id),
-                "source": str(r.source_entity_id),
-                "target": str(r.target_entity_id),
-                "type": rtype,
-                "confidence": r.confidence,
-            })
+            rtype = (
+                r.relationship_type.value
+                if hasattr(r.relationship_type, "value")
+                else r.relationship_type
+            )
+            edges.append(
+                {
+                    "id": str(r.id),
+                    "source": str(r.source_entity_id),
+                    "target": str(r.target_entity_id),
+                    "type": rtype,
+                    "confidence": r.confidence,
+                }
+            )
 
         return {"nodes": nodes, "edges": edges}
 
@@ -501,13 +555,15 @@ class InvestigationService:
             nid = row.get("id", "")
             if nid not in seen:
                 seen.add(nid)
-                nodes.append({
-                    "id": nid,
-                    "label": row.get("label", "Unknown"),
-                    "type": row.get("type", "custom"),
-                    "color": row.get("color", "#6b7280"),
-                    "icon": row.get("icon", "📌"),
-                })
+                nodes.append(
+                    {
+                        "id": nid,
+                        "label": row.get("label", "Unknown"),
+                        "type": row.get("type", "custom"),
+                        "color": row.get("color", "#6b7280"),
+                        "icon": row.get("icon", "📌"),
+                    }
+                )
 
         # Fetch relationship edges via Cypher pattern matching
         edge_rows = await neo4j_manager.execute_read(
@@ -524,13 +580,15 @@ class InvestigationService:
 
         edges = []
         for row in edge_rows:
-            edges.append({
-                "id": row.get("id", ""),
-                "source": row.get("source", ""),
-                "target": row.get("target", ""),
-                "type": row.get("type", "connected_to"),
-                "confidence": row.get("confidence"),
-            })
+            edges.append(
+                {
+                    "id": row.get("id", ""),
+                    "source": row.get("source", ""),
+                    "target": row.get("target", ""),
+                    "type": row.get("type", "connected_to"),
+                    "confidence": row.get("confidence"),
+                }
+            )
 
         return {"nodes": nodes, "edges": edges}
 

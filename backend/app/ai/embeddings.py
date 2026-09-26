@@ -122,7 +122,9 @@ class PgvectorStore(VectorStore):
             await db.commit()
             return True
         except Exception as exc:
-            logger.warning("pgvector table creation failed (extension may be missing)", error=str(exc))
+            logger.warning(
+                "pgvector table creation failed (extension may be missing)", error=str(exc)
+            )
             await db.rollback()
             return False
 
@@ -150,9 +152,7 @@ class PgvectorStore(VectorStore):
                 logger.warning("pgvector upsert failed", error=str(exc))
                 await db.rollback()
 
-    async def search(
-        self, vector: list[float], top_k: int = 10
-    ) -> list[dict[str, Any]]:
+    async def search(self, vector: list[float], top_k: int = 10) -> list[dict[str, Any]]:
         async with AsyncSessionLocal() as db:
             ready = await self._ensure_table(db)
             if not ready:

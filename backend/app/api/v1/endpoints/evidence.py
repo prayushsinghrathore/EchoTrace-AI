@@ -117,10 +117,18 @@ async def search_evidence(
 ):
     svc = EvidenceService(db)
     params = {
-        "query": q, "project_id": project_id, "workspace_id": workspace_id,
-        "category": category, "status": status, "priority": priority,
-        "hash_value": hash_value, "filename": filename,
-        "skip": skip, "limit": limit, "sort_by": sort_by, "sort_desc": sort_desc,
+        "query": q,
+        "project_id": project_id,
+        "workspace_id": workspace_id,
+        "category": category,
+        "status": status,
+        "priority": priority,
+        "hash_value": hash_value,
+        "filename": filename,
+        "skip": skip,
+        "limit": limit,
+        "sort_by": sort_by,
+        "sort_desc": sort_desc,
     }
     items, total = await svc.search(params, user.id)
     return {"items": items, "total": total, "skip": skip, "limit": limit}
@@ -188,12 +196,14 @@ async def upload_file(
         try:
             parsed_inv_id = uuid.UUID(investigation_id.strip())
         except ValueError:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                                detail="Invalid investigation_id format") from None
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Invalid investigation_id format",
+            ) from None
 
-    ev = await svc.upload_file(evidence_id, file, user.id,
-                                investigation_id=parsed_inv_id,
-                                change_notes=change_notes)
+    ev = await svc.upload_file(
+        evidence_id, file, user.id, investigation_id=parsed_inv_id, change_notes=change_notes
+    )
     tags = await svc._get_tag_names(ev.id)
     enriched = _enrich_evidence(ev, tags=tags)
     return {
@@ -203,10 +213,14 @@ async def upload_file(
             "sha256_hash": ev.sha256_hash,
             "sha1_hash": ev.sha1_hash,
             "md5_hash": ev.md5_hash,
-            "verified_at": ev.verification_timestamp.isoformat() if ev.verification_timestamp else None,
+            "verified_at": ev.verification_timestamp.isoformat()
+            if ev.verification_timestamp
+            else None,
         },
         "investigation_id": str(parsed_inv_id) if parsed_inv_id else None,
-        "redirect_url": f"/investigations/{parsed_inv_id}" if parsed_inv_id else f"/evidence/{evidence_id}",
+        "redirect_url": f"/investigations/{parsed_inv_id}"
+        if parsed_inv_id
+        else f"/evidence/{evidence_id}",
     }
 
 
@@ -219,8 +233,11 @@ async def download_file(
     svc = EvidenceService(db)
     data, filename, mime = await svc.download_file(evidence_id, user.id)
     safe_name = sanitize_filename(filename)
-    return StreamingResponse(iter([data]), media_type=mime,
-                             headers={"Content-Disposition": f'attachment; filename="{safe_name}"'})
+    return StreamingResponse(
+        iter([data]),
+        media_type=mime,
+        headers={"Content-Disposition": f'attachment; filename="{safe_name}"'},
+    )
 
 
 @router.post("/{evidence_id}/verify", response_model=dict)
@@ -231,11 +248,13 @@ async def verify_evidence(
     user: User = Depends(get_current_user),
 ):
     svc = EvidenceService(db)
-    return await svc.verify_hashes(evidence_id, user.id,
-                                    sha256=body.sha256_hash, sha1=body.sha1_hash, md5=body.md5_hash)
+    return await svc.verify_hashes(
+        evidence_id, user.id, sha256=body.sha256_hash, sha1=body.sha1_hash, md5=body.md5_hash
+    )
 
 
 # ── Versions ───────────────────────────────────────────────────────────────
+
 
 @router.get("/{evidence_id}/versions", response_model=list[EvidenceVersionResponse])
 async def list_versions(
@@ -259,6 +278,7 @@ async def get_version(
 
 # ── Comments ───────────────────────────────────────────────────────────────
 
+
 @router.get("/{evidence_id}/comments", response_model=list[EvidenceCommentResponse])
 async def list_comments(
     evidence_id: uuid.UUID,
@@ -269,7 +289,11 @@ async def list_comments(
     return await svc.list_comments(evidence_id, user.id)
 
 
-@router.post("/{evidence_id}/comments", response_model=EvidenceCommentResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/{evidence_id}/comments",
+    response_model=EvidenceCommentResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def add_comment(
     evidence_id: uuid.UUID,
     body: EvidenceCommentCreate,
@@ -291,7 +315,9 @@ async def edit_comment(
     return await svc.edit_comment(comment_id, user.id, body.body)
 
 
-@router.delete("/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+@router.delete(
+    "/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None
+)
 async def delete_comment(
     comment_id: uuid.UUID,
     db: AsyncSession = Depends(get_db_session),
@@ -302,6 +328,7 @@ async def delete_comment(
 
 
 # ── Chain of Custody ───────────────────────────────────────────────────────
+
 
 @router.get("/{evidence_id}/custody", response_model=list[CustodyEventResponse])
 async def list_custody(
@@ -315,6 +342,7 @@ async def list_custody(
 
 # ── Statistics ─────────────────────────────────────────────────────────────
 
+
 @router.get("/stats/project/{project_id}", response_model=EvidenceStats)
 async def evidence_stats(
     project_id: uuid.UUID,
@@ -326,6 +354,7 @@ async def evidence_stats(
 
 
 # ── Bulk Actions ───────────────────────────────────────────────────────────
+
 
 @router.post("/bulk", response_model=dict)
 async def bulk_action(

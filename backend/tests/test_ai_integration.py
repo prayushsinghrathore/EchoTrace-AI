@@ -42,46 +42,105 @@ IP: 192.168.1.100 logged in at 14:30 UTC.
 Domain: evil-phishing.com was registered 3 days ago.
 """
 
-VALID_SUMMARY_RESPONSE = json.dumps({
-    "summary": "Phishing email from john.doe@example.com with malicious attachment.",
-    "key_points": [
-        "Email sent on 2026-07-10",
-        "Attachment named invoice_2026_07.zip",
-        "Originating IP: 192.168.1.100",
-    ],
-})
+VALID_SUMMARY_RESPONSE = json.dumps(
+    {
+        "summary": "Phishing email from john.doe@example.com with malicious attachment.",
+        "key_points": [
+            "Email sent on 2026-07-10",
+            "Attachment named invoice_2026_07.zip",
+            "Originating IP: 192.168.1.100",
+        ],
+    }
+)
 
-VALID_ENTITIES_RESPONSE = json.dumps({
-    "entities": [
-        {"type": "person", "label": "John Doe", "confidence": 0.95, "context": "Sender of the email", "evidence_ref": "Email from john.doe@example.com"},
-        {"type": "email", "label": "john.doe@example.com", "confidence": 1.0, "context": "Sender email", "evidence_ref": "From field"},
-        {"type": "ip", "label": "192.168.1.100", "confidence": 0.9, "context": "Originating IP", "evidence_ref": "IP in email headers"},
-        {"type": "domain", "label": "evil-phishing.com", "confidence": 0.85, "context": "Newly registered domain", "evidence_ref": "Domain registration data"},
-    ]
-})
+VALID_ENTITIES_RESPONSE = json.dumps(
+    {
+        "entities": [
+            {
+                "type": "person",
+                "label": "John Doe",
+                "confidence": 0.95,
+                "context": "Sender of the email",
+                "evidence_ref": "Email from john.doe@example.com",
+            },
+            {
+                "type": "email",
+                "label": "john.doe@example.com",
+                "confidence": 1.0,
+                "context": "Sender email",
+                "evidence_ref": "From field",
+            },
+            {
+                "type": "ip",
+                "label": "192.168.1.100",
+                "confidence": 0.9,
+                "context": "Originating IP",
+                "evidence_ref": "IP in email headers",
+            },
+            {
+                "type": "domain",
+                "label": "evil-phishing.com",
+                "confidence": 0.85,
+                "context": "Newly registered domain",
+                "evidence_ref": "Domain registration data",
+            },
+        ]
+    }
+)
 
-VALID_RELATIONSHIPS_RESPONSE = json.dumps({
-    "relationships": [
-        {"source_entity_label": "John Doe", "target_entity_label": "evil-phishing.com",
-         "relationship_type": "visited", "confidence": 0.7, "reasoning": "Email contains links to domain", "evidence_ref": "Email body"},
-    ]
-})
+VALID_RELATIONSHIPS_RESPONSE = json.dumps(
+    {
+        "relationships": [
+            {
+                "source_entity_label": "John Doe",
+                "target_entity_label": "evil-phishing.com",
+                "relationship_type": "visited",
+                "confidence": 0.7,
+                "reasoning": "Email contains links to domain",
+                "evidence_ref": "Email body",
+            },
+        ]
+    }
+)
 
-VALID_TIMELINE_RESPONSE = json.dumps({
-    "events": [
-        {"date": "2026-07-10T14:30:00Z", "title": "Phishing email sent", "description": "Email from john.doe@example.com", "confidence": 0.95, "evidence_ref": "Email log"},
-    ]
-})
+VALID_TIMELINE_RESPONSE = json.dumps(
+    {
+        "events": [
+            {
+                "date": "2026-07-10T14:30:00Z",
+                "title": "Phishing email sent",
+                "description": "Email from john.doe@example.com",
+                "confidence": 0.95,
+                "evidence_ref": "Email log",
+            },
+        ]
+    }
+)
 
-VALID_REPORT_RESPONSE = json.dumps({
-    "executive_summary": "Phishing campaign targeting company.com",
-    "evidence_summary": "Single email with malicious attachment",
-    "timeline": [],
-    "entities": [],
-    "relationships": [],
-    "findings": [{"title": "Phishing attempt", "description": "Email with malicious attachment", "confidence": 0.9, "evidence_refs": ["Email #1"]}],
-    "recommendations": [{"title": "Block domain", "description": "Block evil-phishing.com", "priority": "critical"}],
-})
+VALID_REPORT_RESPONSE = json.dumps(
+    {
+        "executive_summary": "Phishing campaign targeting company.com",
+        "evidence_summary": "Single email with malicious attachment",
+        "timeline": [],
+        "entities": [],
+        "relationships": [],
+        "findings": [
+            {
+                "title": "Phishing attempt",
+                "description": "Email with malicious attachment",
+                "confidence": 0.9,
+                "evidence_refs": ["Email #1"],
+            }
+        ],
+        "recommendations": [
+            {
+                "title": "Block domain",
+                "description": "Block evil-phishing.com",
+                "priority": "critical",
+            }
+        ],
+    }
+)
 
 OPENAI_BASE = "http://api.test.openai"
 ANTHROPIC_BASE = "https://api.anthropic.com/v1"
@@ -96,7 +155,13 @@ def _make_openai_chunk(content: str) -> dict:
         "object": "chat.completion",
         "created": 1700000000,
         "model": "gpt-4o",
-        "choices": [{"index": 0, "message": {"role": "assistant", "content": content}, "finish_reason": "stop"}],
+        "choices": [
+            {
+                "index": 0,
+                "message": {"role": "assistant", "content": content},
+                "finish_reason": "stop",
+            }
+        ],
         "usage": {"prompt_tokens": 50, "completion_tokens": 100, "total_tokens": 150},
     }
 
@@ -115,7 +180,9 @@ def _make_anthropic_chunk(content: str) -> dict:
 
 def _make_gemini_chunk(content: str) -> dict:
     return {
-        "candidates": [{"content": {"parts": [{"text": content}], "role": "model"}, "finishReason": "STOP"}],
+        "candidates": [
+            {"content": {"parts": [{"text": content}], "role": "model"}, "finishReason": "STOP"}
+        ],
         "usageMetadata": {"promptTokenCount": 50, "candidatesTokenCount": 100},
     }
 
@@ -143,18 +210,24 @@ def make_error_transport(status: int, body: dict | None = None) -> httpx.MockTra
 
 def make_timeout_transport() -> httpx.MockTransport:
     """Create a transport that always times out."""
+
     async def _timeout(_):
-        raise httpx.TimeoutException("Request timed out", request=httpx.Request("POST", "http://test/"))
+        raise httpx.TimeoutException(
+            "Request timed out", request=httpx.Request("POST", "http://test/")
+        )
+
     return httpx.MockTransport(_timeout)
 
 
 def make_capturing_transport(capture_list: list, response_factory=None) -> httpx.MockTransport:
     """Create a transport that captures the request and returns a response."""
+
     async def _capture(request: httpx.Request) -> httpx.Response:
         capture_list.append(request)
         if response_factory:
             return response_factory(request)
         return httpx.Response(200, json=_make_openai_chunk(VALID_SUMMARY_RESPONSE))
+
     return httpx.MockTransport(_capture)
 
 
@@ -168,7 +241,10 @@ class TestOpenAIProviderIntegration:
     async def test_summarize_executes(self) -> None:
         """OpenAI.summarize() sends correct request and parses response."""
         provider = OpenAIProvider(api_key="test-key", model="gpt-4o", base_url=OPENAI_BASE)
-        provider._client = httpx.AsyncClient(base_url=OPENAI_BASE, transport=make_transport(_make_openai_chunk(VALID_SUMMARY_RESPONSE)))
+        provider._client = httpx.AsyncClient(
+            base_url=OPENAI_BASE,
+            transport=make_transport(_make_openai_chunk(VALID_SUMMARY_RESPONSE)),
+        )
 
         result = await provider.summarize(SAMPLE_EVIDENCE_TEXT)
         assert isinstance(result, SummaryResult)
@@ -179,7 +255,10 @@ class TestOpenAIProviderIntegration:
     async def test_extract_entities_executes(self) -> None:
         """OpenAI.extract_entities() returns typed entities."""
         provider = OpenAIProvider(api_key="test-key", model="gpt-4o", base_url=OPENAI_BASE)
-        provider._client = httpx.AsyncClient(base_url=OPENAI_BASE, transport=make_transport(_make_openai_chunk(VALID_ENTITIES_RESPONSE)))
+        provider._client = httpx.AsyncClient(
+            base_url=OPENAI_BASE,
+            transport=make_transport(_make_openai_chunk(VALID_ENTITIES_RESPONSE)),
+        )
 
         result = await provider.extract_entities(SAMPLE_EVIDENCE_TEXT)
         assert isinstance(result, ExtractedEntitiesResult)
@@ -190,16 +269,24 @@ class TestOpenAIProviderIntegration:
     @pytest.mark.asyncio
     async def test_suggest_relationships_executes(self) -> None:
         provider = OpenAIProvider(api_key="test-key", model="gpt-4o", base_url=OPENAI_BASE)
-        provider._client = httpx.AsyncClient(base_url=OPENAI_BASE, transport=make_transport(_make_openai_chunk(VALID_RELATIONSHIPS_RESPONSE)))
+        provider._client = httpx.AsyncClient(
+            base_url=OPENAI_BASE,
+            transport=make_transport(_make_openai_chunk(VALID_RELATIONSHIPS_RESPONSE)),
+        )
 
-        result = await provider.suggest_relationships("Entities: John Doe, evil-phishing.com", SAMPLE_EVIDENCE_TEXT)
+        result = await provider.suggest_relationships(
+            "Entities: John Doe, evil-phishing.com", SAMPLE_EVIDENCE_TEXT
+        )
         assert isinstance(result, SuggestedRelationshipsResult)
         assert len(result.relationships) >= 1
 
     @pytest.mark.asyncio
     async def test_generate_timeline_executes(self) -> None:
         provider = OpenAIProvider(api_key="test-key", model="gpt-4o", base_url=OPENAI_BASE)
-        provider._client = httpx.AsyncClient(base_url=OPENAI_BASE, transport=make_transport(_make_openai_chunk(VALID_TIMELINE_RESPONSE)))
+        provider._client = httpx.AsyncClient(
+            base_url=OPENAI_BASE,
+            transport=make_transport(_make_openai_chunk(VALID_TIMELINE_RESPONSE)),
+        )
 
         result = await provider.generate_timeline(SAMPLE_EVIDENCE_TEXT)
         assert isinstance(result, GeneratedTimelineResult)
@@ -208,7 +295,10 @@ class TestOpenAIProviderIntegration:
     @pytest.mark.asyncio
     async def test_generate_report_executes(self) -> None:
         provider = OpenAIProvider(api_key="test-key", model="gpt-4o", base_url=OPENAI_BASE)
-        provider._client = httpx.AsyncClient(base_url=OPENAI_BASE, transport=make_transport(_make_openai_chunk(VALID_REPORT_RESPONSE)))
+        provider._client = httpx.AsyncClient(
+            base_url=OPENAI_BASE,
+            transport=make_transport(_make_openai_chunk(VALID_REPORT_RESPONSE)),
+        )
 
         result = await provider.generate_report(SAMPLE_EVIDENCE_TEXT)
         assert isinstance(result, ReportResult)
@@ -217,14 +307,18 @@ class TestOpenAIProviderIntegration:
     @pytest.mark.asyncio
     async def test_health_check_executes(self) -> None:
         provider = OpenAIProvider(api_key="test-key", model="gpt-4o", base_url=OPENAI_BASE)
-        provider._client = httpx.AsyncClient(base_url=OPENAI_BASE, transport=make_transport({"data": [{"id": "gpt-4o"}]}))
+        provider._client = httpx.AsyncClient(
+            base_url=OPENAI_BASE, transport=make_transport({"data": [{"id": "gpt-4o"}]})
+        )
 
         assert await provider.health_check() is True
 
     @pytest.mark.asyncio
     async def test_health_check_failure_graceful(self) -> None:
         provider = OpenAIProvider(api_key="test-key", model="gpt-4o", base_url=OPENAI_BASE)
-        provider._client = httpx.AsyncClient(base_url=OPENAI_BASE, transport=make_error_transport(401))
+        provider._client = httpx.AsyncClient(
+            base_url=OPENAI_BASE, transport=make_error_transport(401)
+        )
 
         assert await provider.health_check() is False
 
@@ -232,7 +326,9 @@ class TestOpenAIProviderIntegration:
     async def test_timeout_raises(self) -> None:
         """Provider raises TimeoutError on timeout, not 500."""
         provider = OpenAIProvider(api_key="test-key", model="gpt-4o", base_url=OPENAI_BASE)
-        provider._client = httpx.AsyncClient(base_url=OPENAI_BASE, transport=make_timeout_transport())
+        provider._client = httpx.AsyncClient(
+            base_url=OPENAI_BASE, transport=make_timeout_transport()
+        )
 
         with pytest.raises(TimeoutError, match="timed out"):
             await provider.summarize(SAMPLE_EVIDENCE_TEXT)
@@ -241,7 +337,9 @@ class TestOpenAIProviderIntegration:
     async def test_http_5xx_raises_runtime_error(self) -> None:
         """Provider raises RuntimeError on 5xx, not bare exception."""
         provider = OpenAIProvider(api_key="test-key", model="gpt-4o", base_url=OPENAI_BASE)
-        provider._client = httpx.AsyncClient(base_url=OPENAI_BASE, transport=make_error_transport(502))
+        provider._client = httpx.AsyncClient(
+            base_url=OPENAI_BASE, transport=make_error_transport(502)
+        )
 
         with pytest.raises(RuntimeError, match="502"):
             await provider.summarize(SAMPLE_EVIDENCE_TEXT)
@@ -250,10 +348,15 @@ class TestOpenAIProviderIntegration:
     async def test_auth_header_set_correctly(self) -> None:
         """Verify the Authorization header is set."""
         captured = []
-        provider = OpenAIProvider(api_key="sk-test-secret-key-12345", model="gpt-4o", base_url=OPENAI_BASE)
+        provider = OpenAIProvider(
+            api_key="sk-test-secret-key-12345", model="gpt-4o", base_url=OPENAI_BASE
+        )
         provider._client = httpx.AsyncClient(
             base_url=OPENAI_BASE,
-            headers={"Authorization": "Bearer sk-test-secret-key-12345", "Content-Type": "application/json"},
+            headers={
+                "Authorization": "Bearer sk-test-secret-key-12345",
+                "Content-Type": "application/json",
+            },
             transport=make_capturing_transport(captured),
         )
 
@@ -289,7 +392,10 @@ class TestAnthropicProviderIntegration:
     @pytest.mark.asyncio
     async def test_summarize_executes(self) -> None:
         provider = AnthropicProvider(api_key="test-key", model="claude-sonnet-4-20250514")
-        provider._client = httpx.AsyncClient(base_url=ANTHROPIC_BASE, transport=make_transport(_make_anthropic_chunk(VALID_SUMMARY_RESPONSE)))
+        provider._client = httpx.AsyncClient(
+            base_url=ANTHROPIC_BASE,
+            transport=make_transport(_make_anthropic_chunk(VALID_SUMMARY_RESPONSE)),
+        )
 
         result = await provider.summarize(SAMPLE_EVIDENCE_TEXT)
         assert isinstance(result, SummaryResult)
@@ -298,7 +404,10 @@ class TestAnthropicProviderIntegration:
     @pytest.mark.asyncio
     async def test_extract_entities_executes(self) -> None:
         provider = AnthropicProvider(api_key="test-key", model="claude-sonnet-4-20250514")
-        provider._client = httpx.AsyncClient(base_url=ANTHROPIC_BASE, transport=make_transport(_make_anthropic_chunk(VALID_ENTITIES_RESPONSE)))
+        provider._client = httpx.AsyncClient(
+            base_url=ANTHROPIC_BASE,
+            transport=make_transport(_make_anthropic_chunk(VALID_ENTITIES_RESPONSE)),
+        )
 
         result = await provider.extract_entities(SAMPLE_EVIDENCE_TEXT)
         assert isinstance(result, ExtractedEntitiesResult)
@@ -307,7 +416,10 @@ class TestAnthropicProviderIntegration:
     @pytest.mark.asyncio
     async def test_generate_report_executes(self) -> None:
         provider = AnthropicProvider(api_key="test-key", model="claude-sonnet-4-20250514")
-        provider._client = httpx.AsyncClient(base_url=ANTHROPIC_BASE, transport=make_transport(_make_anthropic_chunk(VALID_REPORT_RESPONSE)))
+        provider._client = httpx.AsyncClient(
+            base_url=ANTHROPIC_BASE,
+            transport=make_transport(_make_anthropic_chunk(VALID_REPORT_RESPONSE)),
+        )
 
         result = await provider.generate_report(SAMPLE_EVIDENCE_TEXT)
         assert isinstance(result, ReportResult)
@@ -315,7 +427,9 @@ class TestAnthropicProviderIntegration:
     @pytest.mark.asyncio
     async def test_health_check_executes(self) -> None:
         provider = AnthropicProvider(api_key="test-key")
-        provider._client = httpx.AsyncClient(base_url=ANTHROPIC_BASE, transport=make_transport({"data": [{"id": "claude-sonnet-4"}]}))
+        provider._client = httpx.AsyncClient(
+            base_url=ANTHROPIC_BASE, transport=make_transport({"data": [{"id": "claude-sonnet-4"}]})
+        )
 
         assert await provider.health_check() is True
 
@@ -325,8 +439,15 @@ class TestAnthropicProviderIntegration:
         provider = AnthropicProvider(api_key="sk-ant-test-key")
         provider._client = httpx.AsyncClient(
             base_url=ANTHROPIC_BASE,
-            headers={"x-api-key": "sk-ant-test-key", "anthropic-version": "2023-06-01", "Content-Type": "application/json"},
-            transport=make_capturing_transport(captured, lambda _: httpx.Response(200, json=_make_anthropic_chunk(VALID_SUMMARY_RESPONSE))),
+            headers={
+                "x-api-key": "sk-ant-test-key",
+                "anthropic-version": "2023-06-01",
+                "Content-Type": "application/json",
+            },
+            transport=make_capturing_transport(
+                captured,
+                lambda _: httpx.Response(200, json=_make_anthropic_chunk(VALID_SUMMARY_RESPONSE)),
+            ),
         )
 
         await provider.summarize(SAMPLE_EVIDENCE_TEXT)
@@ -337,7 +458,9 @@ class TestAnthropicProviderIntegration:
     @pytest.mark.asyncio
     async def test_timeout_raises(self) -> None:
         provider = AnthropicProvider(api_key="test-key")
-        provider._client = httpx.AsyncClient(base_url=ANTHROPIC_BASE, transport=make_timeout_transport())
+        provider._client = httpx.AsyncClient(
+            base_url=ANTHROPIC_BASE, transport=make_timeout_transport()
+        )
 
         with pytest.raises(TimeoutError, match="timed out"):
             await provider.summarize(SAMPLE_EVIDENCE_TEXT)
@@ -352,7 +475,10 @@ class TestGeminiProviderIntegration:
     @pytest.mark.asyncio
     async def test_summarize_executes(self) -> None:
         provider = GeminiProvider(api_key="test-key", model="gemini-2.0-flash")
-        provider._client = httpx.AsyncClient(base_url=GEMINI_BASE, transport=make_transport(_make_gemini_chunk(VALID_SUMMARY_RESPONSE)))
+        provider._client = httpx.AsyncClient(
+            base_url=GEMINI_BASE,
+            transport=make_transport(_make_gemini_chunk(VALID_SUMMARY_RESPONSE)),
+        )
 
         result = await provider.summarize(SAMPLE_EVIDENCE_TEXT)
         assert isinstance(result, SummaryResult)
@@ -360,7 +486,10 @@ class TestGeminiProviderIntegration:
     @pytest.mark.asyncio
     async def test_extract_entities_executes(self) -> None:
         provider = GeminiProvider(api_key="test-key", model="gemini-2.0-flash")
-        provider._client = httpx.AsyncClient(base_url=GEMINI_BASE, transport=make_transport(_make_gemini_chunk(VALID_ENTITIES_RESPONSE)))
+        provider._client = httpx.AsyncClient(
+            base_url=GEMINI_BASE,
+            transport=make_transport(_make_gemini_chunk(VALID_ENTITIES_RESPONSE)),
+        )
 
         result = await provider.extract_entities(SAMPLE_EVIDENCE_TEXT)
         assert isinstance(result, ExtractedEntitiesResult)
@@ -368,7 +497,10 @@ class TestGeminiProviderIntegration:
     @pytest.mark.asyncio
     async def test_generate_report_executes(self) -> None:
         provider = GeminiProvider(api_key="test-key", model="gemini-2.0-flash")
-        provider._client = httpx.AsyncClient(base_url=GEMINI_BASE, transport=make_transport(_make_gemini_chunk(VALID_REPORT_RESPONSE)))
+        provider._client = httpx.AsyncClient(
+            base_url=GEMINI_BASE,
+            transport=make_transport(_make_gemini_chunk(VALID_REPORT_RESPONSE)),
+        )
 
         result = await provider.generate_report(SAMPLE_EVIDENCE_TEXT)
         assert isinstance(result, ReportResult)
@@ -376,14 +508,19 @@ class TestGeminiProviderIntegration:
     @pytest.mark.asyncio
     async def test_health_check_executes(self) -> None:
         provider = GeminiProvider(api_key="test-key")
-        provider._client = httpx.AsyncClient(base_url=GEMINI_BASE, transport=make_transport({"models": [{"name": "gemini-2.0-flash"}]}))
+        provider._client = httpx.AsyncClient(
+            base_url=GEMINI_BASE,
+            transport=make_transport({"models": [{"name": "gemini-2.0-flash"}]}),
+        )
 
         assert await provider.health_check() is True
 
     @pytest.mark.asyncio
     async def test_timeout_raises(self) -> None:
         provider = GeminiProvider(api_key="test-key")
-        provider._client = httpx.AsyncClient(base_url=GEMINI_BASE, transport=make_timeout_transport())
+        provider._client = httpx.AsyncClient(
+            base_url=GEMINI_BASE, transport=make_timeout_transport()
+        )
 
         with pytest.raises(TimeoutError, match="timed out"):
             await provider.summarize(SAMPLE_EVIDENCE_TEXT)
@@ -394,7 +531,10 @@ class TestGeminiProviderIntegration:
         provider = GeminiProvider(api_key="test-key", model="gemini-2.0-flash")
         provider._client = httpx.AsyncClient(
             base_url=GEMINI_BASE,
-            transport=make_capturing_transport(captured, lambda _: httpx.Response(200, json=_make_gemini_chunk(VALID_SUMMARY_RESPONSE)))
+            transport=make_capturing_transport(
+                captured,
+                lambda _: httpx.Response(200, json=_make_gemini_chunk(VALID_SUMMARY_RESPONSE)),
+            ),
         )
 
         await provider.summarize(SAMPLE_EVIDENCE_TEXT)
@@ -412,7 +552,10 @@ class TestAzureProviderIntegration:
     @pytest.mark.asyncio
     async def test_summarize_executes(self) -> None:
         provider = AzureProvider(api_key="test-key", endpoint=AZURE_BASE, deployment="gpt-4o")
-        provider._client = httpx.AsyncClient(base_url=AZURE_BASE, transport=make_transport(_make_openai_chunk(VALID_SUMMARY_RESPONSE)))
+        provider._client = httpx.AsyncClient(
+            base_url=AZURE_BASE,
+            transport=make_transport(_make_openai_chunk(VALID_SUMMARY_RESPONSE)),
+        )
 
         result = await provider.summarize(SAMPLE_EVIDENCE_TEXT)
         assert isinstance(result, SummaryResult)
@@ -420,7 +563,10 @@ class TestAzureProviderIntegration:
     @pytest.mark.asyncio
     async def test_extract_entities_executes(self) -> None:
         provider = AzureProvider(api_key="test-key", endpoint=AZURE_BASE, deployment="gpt-4o")
-        provider._client = httpx.AsyncClient(base_url=AZURE_BASE, transport=make_transport(_make_openai_chunk(VALID_ENTITIES_RESPONSE)))
+        provider._client = httpx.AsyncClient(
+            base_url=AZURE_BASE,
+            transport=make_transport(_make_openai_chunk(VALID_ENTITIES_RESPONSE)),
+        )
 
         result = await provider.extract_entities(SAMPLE_EVIDENCE_TEXT)
         assert isinstance(result, ExtractedEntitiesResult)
@@ -428,7 +574,9 @@ class TestAzureProviderIntegration:
     @pytest.mark.asyncio
     async def test_health_check_graceful_failure(self) -> None:
         provider = AzureProvider(api_key="test-key", endpoint=AZURE_BASE, deployment="gpt-4o")
-        provider._client = httpx.AsyncClient(base_url=AZURE_BASE, transport=make_error_transport(401))
+        provider._client = httpx.AsyncClient(
+            base_url=AZURE_BASE, transport=make_error_transport(401)
+        )
 
         assert await provider.health_check() is False
 
@@ -439,7 +587,10 @@ class TestAzureProviderIntegration:
         provider._client = httpx.AsyncClient(
             base_url=AZURE_BASE,
             headers={"api-key": "az-key-123", "Content-Type": "application/json"},
-            transport=make_capturing_transport(captured, lambda _: httpx.Response(200, json=_make_openai_chunk(VALID_SUMMARY_RESPONSE))),
+            transport=make_capturing_transport(
+                captured,
+                lambda _: httpx.Response(200, json=_make_openai_chunk(VALID_SUMMARY_RESPONSE)),
+            ),
         )
 
         await provider.summarize(SAMPLE_EVIDENCE_TEXT)
@@ -456,7 +607,10 @@ class TestOllamaProviderIntegration:
     @pytest.mark.asyncio
     async def test_summarize_executes(self) -> None:
         provider = OllamaProvider(base_url=OLLAMA_BASE, model="llama3")
-        provider._client = httpx.AsyncClient(base_url=OLLAMA_BASE, transport=make_transport(_make_ollama_chunk(VALID_SUMMARY_RESPONSE)))
+        provider._client = httpx.AsyncClient(
+            base_url=OLLAMA_BASE,
+            transport=make_transport(_make_ollama_chunk(VALID_SUMMARY_RESPONSE)),
+        )
 
         result = await provider.summarize(SAMPLE_EVIDENCE_TEXT)
         assert isinstance(result, SummaryResult)
@@ -464,7 +618,10 @@ class TestOllamaProviderIntegration:
     @pytest.mark.asyncio
     async def test_extract_entities_executes(self) -> None:
         provider = OllamaProvider(base_url=OLLAMA_BASE, model="llama3")
-        provider._client = httpx.AsyncClient(base_url=OLLAMA_BASE, transport=make_transport(_make_ollama_chunk(VALID_ENTITIES_RESPONSE)))
+        provider._client = httpx.AsyncClient(
+            base_url=OLLAMA_BASE,
+            transport=make_transport(_make_ollama_chunk(VALID_ENTITIES_RESPONSE)),
+        )
 
         result = await provider.extract_entities(SAMPLE_EVIDENCE_TEXT)
         assert isinstance(result, ExtractedEntitiesResult)
@@ -475,7 +632,9 @@ class TestOllamaProviderIntegration:
         """Ollama may return markdown-wrapped JSON; provider must handle it."""
         wrapped = f"```json\n{VALID_SUMMARY_RESPONSE}\n```"
         provider = OllamaProvider(base_url=OLLAMA_BASE, model="llama3")
-        provider._client = httpx.AsyncClient(base_url=OLLAMA_BASE, transport=make_transport(_make_ollama_chunk(wrapped)))
+        provider._client = httpx.AsyncClient(
+            base_url=OLLAMA_BASE, transport=make_transport(_make_ollama_chunk(wrapped))
+        )
 
         result = await provider.summarize(SAMPLE_EVIDENCE_TEXT)
         assert isinstance(result, SummaryResult)
@@ -484,7 +643,9 @@ class TestOllamaProviderIntegration:
     @pytest.mark.asyncio
     async def test_health_check_executes(self) -> None:
         provider = OllamaProvider(base_url=OLLAMA_BASE)
-        provider._client = httpx.AsyncClient(base_url=OLLAMA_BASE, transport=make_transport({"models": ["llama3"]}))
+        provider._client = httpx.AsyncClient(
+            base_url=OLLAMA_BASE, transport=make_transport({"models": ["llama3"]})
+        )
 
         assert await provider.health_check() is True
 
@@ -492,7 +653,10 @@ class TestOllamaProviderIntegration:
     async def test_no_api_key_needed(self) -> None:
         """Ollama is local — no authentication required."""
         provider = OllamaProvider(base_url=OLLAMA_BASE)
-        provider._client = httpx.AsyncClient(base_url=OLLAMA_BASE, transport=make_transport(_make_ollama_chunk(VALID_SUMMARY_RESPONSE)))
+        provider._client = httpx.AsyncClient(
+            base_url=OLLAMA_BASE,
+            transport=make_transport(_make_ollama_chunk(VALID_SUMMARY_RESPONSE)),
+        )
 
         result = await provider.summarize(SAMPLE_EVIDENCE_TEXT)
         assert isinstance(result, SummaryResult)
@@ -503,7 +667,10 @@ class TestOllamaProviderIntegration:
         provider = OllamaProvider(base_url=OLLAMA_BASE, model="llama3")
         provider._client = httpx.AsyncClient(
             base_url=OLLAMA_BASE,
-            transport=make_capturing_transport(captured, lambda _: httpx.Response(200, json=_make_ollama_chunk(VALID_SUMMARY_RESPONSE)))
+            transport=make_capturing_transport(
+                captured,
+                lambda _: httpx.Response(200, json=_make_ollama_chunk(VALID_SUMMARY_RESPONSE)),
+            ),
         )
 
         await provider.summarize(SAMPLE_EVIDENCE_TEXT)
@@ -532,7 +699,9 @@ class TestRetryIntegration:
 
         transport = httpx.MockTransport(_handler)
         async with httpx.AsyncClient(transport=transport) as client:
-            response = await call_with_retry(client, "POST", "http://test/chat", json={"test": True}, max_retries=3)
+            response = await call_with_retry(
+                client, "POST", "http://test/chat", json={"test": True}, max_retries=3
+            )
             assert response.status_code == 200
             assert call_count[0] == 3
 
@@ -549,7 +718,9 @@ class TestRetryIntegration:
 
         transport = httpx.MockTransport(_handler_timeout)
         async with httpx.AsyncClient(transport=transport) as client:
-            response = await call_with_retry(client, "POST", "http://test/chat", json={"test": True}, max_retries=3)
+            response = await call_with_retry(
+                client, "POST", "http://test/chat", json={"test": True}, max_retries=3
+            )
             assert response.status_code == 200
             assert call_count[0] == 2
 
@@ -565,7 +736,9 @@ class TestRetryIntegration:
         transport = httpx.MockTransport(_handler_400)
         async with httpx.AsyncClient(transport=transport) as client:
             with pytest.raises(httpx.HTTPStatusError):
-                await call_with_retry(client, "POST", "http://test/chat", json={"test": True}, max_retries=3)
+                await call_with_retry(
+                    client, "POST", "http://test/chat", json={"test": True}, max_retries=3
+                )
             assert call_count[0] == 1
 
     @pytest.mark.asyncio
@@ -581,7 +754,9 @@ class TestRetryIntegration:
 
         transport = httpx.MockTransport(_handler_429)
         async with httpx.AsyncClient(transport=transport) as client:
-            response = await call_with_retry(client, "POST", "http://test/chat", json={"test": True}, max_retries=3)
+            response = await call_with_retry(
+                client, "POST", "http://test/chat", json={"test": True}, max_retries=3
+            )
             assert response.status_code == 200
             assert call_count[0] == 2
 
@@ -591,7 +766,9 @@ class TestRetryIntegration:
         transport = httpx.MockTransport(lambda _: httpx.Response(503, json={"error": "down"}))
         async with httpx.AsyncClient(transport=transport) as client:
             with pytest.raises(RuntimeError, match="503"):
-                await call_with_retry(client, "POST", "http://test/chat", json={"test": True}, max_retries=2)
+                await call_with_retry(
+                    client, "POST", "http://test/chat", json={"test": True}, max_retries=2
+                )
 
 
 # ── Full AI Workflow Integration Test ──────────────────────────────────────────
@@ -606,11 +783,11 @@ class TestFullAIWorkflow:
     async def test_complete_ai_workflow(self) -> None:
         """Run the complete AI pipeline through OpenAI provider."""
         responses = [
-            _make_openai_chunk(VALID_SUMMARY_RESPONSE),     # summarize
-            _make_openai_chunk(VALID_ENTITIES_RESPONSE),     # extract_entities
-            _make_openai_chunk(VALID_RELATIONSHIPS_RESPONSE),# suggest_relationships
-            _make_openai_chunk(VALID_TIMELINE_RESPONSE),     # generate_timeline
-            _make_openai_chunk(VALID_REPORT_RESPONSE),       # generate_report
+            _make_openai_chunk(VALID_SUMMARY_RESPONSE),  # summarize
+            _make_openai_chunk(VALID_ENTITIES_RESPONSE),  # extract_entities
+            _make_openai_chunk(VALID_RELATIONSHIPS_RESPONSE),  # suggest_relationships
+            _make_openai_chunk(VALID_TIMELINE_RESPONSE),  # generate_timeline
+            _make_openai_chunk(VALID_REPORT_RESPONSE),  # generate_report
         ]
         call_count = [0]
 
@@ -620,7 +797,9 @@ class TestFullAIWorkflow:
             return httpx.Response(200, json=responses[idx % len(responses)])
 
         provider = OpenAIProvider(api_key="test-key", model="gpt-4o", base_url=OPENAI_BASE)
-        provider._client = httpx.AsyncClient(base_url=OPENAI_BASE, transport=httpx.MockTransport(multi_response))
+        provider._client = httpx.AsyncClient(
+            base_url=OPENAI_BASE, transport=httpx.MockTransport(multi_response)
+        )
 
         # 1. Summarize
         summary = await provider.summarize(self.SAMPLE_TEXT)
@@ -656,6 +835,7 @@ class TestEmbeddingProvider:
     @pytest.mark.asyncio
     async def test_provider_properties(self) -> None:
         from app.ai.embeddings import OpenAIEmbeddingProvider
+
         provider = OpenAIEmbeddingProvider(api_key="test-key")
         assert provider.dimensions == 1536
 
@@ -671,7 +851,9 @@ class TestEmbeddingProvider:
         }
         transport = httpx.MockTransport(lambda _: httpx.Response(200, json=embed_response))
         provider = OpenAIEmbeddingProvider(api_key="test-key")
-        provider._client = httpx.AsyncClient(base_url="https://api.openai.com/v1", transport=transport)
+        provider._client = httpx.AsyncClient(
+            base_url="https://api.openai.com/v1", transport=transport
+        )
 
         vec = await provider.embed_text("test text")
         assert len(vec) == 1536
@@ -692,7 +874,9 @@ class TestEmbeddingProvider:
         }
         transport = httpx.MockTransport(lambda _: httpx.Response(200, json=embed_response))
         provider = OpenAIEmbeddingProvider(api_key="test-key")
-        provider._client = httpx.AsyncClient(base_url="https://api.openai.com/v1", transport=transport)
+        provider._client = httpx.AsyncClient(
+            base_url="https://api.openai.com/v1", transport=transport
+        )
 
         vecs = await provider.embed_batch(["text one", "text two"])
         assert len(vecs) == 2
@@ -703,7 +887,9 @@ class TestEmbeddingProvider:
         from app.ai.embeddings import OpenAIEmbeddingProvider
 
         provider = OpenAIEmbeddingProvider(api_key="test-key")
-        provider._client = httpx.AsyncClient(base_url="https://api.openai.com/v1", transport=make_timeout_transport())
+        provider._client = httpx.AsyncClient(
+            base_url="https://api.openai.com/v1", transport=make_timeout_transport()
+        )
 
         with pytest.raises(TimeoutError):
             await provider.embed_text("test")
@@ -716,6 +902,7 @@ class TestPgvectorStore:
     async def test_health_check_without_pgvector(self) -> None:
         """Without pgvector extension, health_check returns False."""
         from app.ai.embeddings import PgvectorStore
+
         store = PgvectorStore()
         result = await store.health_check()
         assert isinstance(result, bool)

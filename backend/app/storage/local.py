@@ -31,7 +31,9 @@ class LocalStorageProvider(StorageProvider):
         full.parent.mkdir(parents=True, exist_ok=True)
         return full
 
-    async def store(self, data: BinaryIO | bytes, filename: str, mime_type: str, path: str | None = None) -> StoredFile:
+    async def store(
+        self, data: BinaryIO | bytes, filename: str, mime_type: str, path: str | None = None
+    ) -> StoredFile:
         # Sanitize filename — strip path separators to prevent traversal
         safe_filename = filename.replace("/", "_").replace("\\", "_")
         safe_name = f"{uuid.uuid4().hex}_{safe_filename}"

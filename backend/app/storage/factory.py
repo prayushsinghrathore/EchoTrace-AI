@@ -10,5 +10,6 @@ def create_storage_provider() -> StorageProvider:
         return LocalStorageProvider()
     if settings.STORAGE_PROVIDER == "s3":
         from app.storage.s3 import S3StorageProvider
+
         return S3StorageProvider()
     raise ValueError(f"Unsupported STORAGE_PROVIDER: {settings.STORAGE_PROVIDER}")

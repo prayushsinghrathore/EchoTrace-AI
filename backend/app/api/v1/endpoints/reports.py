@@ -48,11 +48,15 @@ logger = get_logger(__name__)
 router = APIRouter(tags=["reports"])
 
 
-async def _check_workspace_member(db: AsyncSession, workspace_id: uuid.UUID, user_id: uuid.UUID) -> None:
+async def _check_workspace_member(
+    db: AsyncSession, workspace_id: uuid.UUID, user_id: uuid.UUID
+) -> None:
     member_repo = BaseRepository(db, WorkspaceMember)
     member = await member_repo.find_one(workspace_id=workspace_id, user_id=user_id)
     if not member:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this workspace")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this workspace"
+        )
 
 
 # ── Report Generation ────────────────────────────────────────────────────────
@@ -88,7 +92,9 @@ async def generate_report(
         "title": data.metadata.title,
         "format": body.format,
         "content": content,
-        "generated_at": data.metadata.generated_at.isoformat() if data.metadata.generated_at else "",
+        "generated_at": data.metadata.generated_at.isoformat()
+        if data.metadata.generated_at
+        else "",
         "statistics": data.statistics,
     }
 
@@ -148,7 +154,8 @@ async def download_export(
     svc = ExportService(db)
     data, filename, mime = await svc.download_with_token(token)
     return StreamingResponse(
-        iter([data]), media_type=mime,
+        iter([data]),
+        media_type=mime,
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
@@ -225,10 +232,12 @@ async def list_workspace_activity(
     """List activity events for a workspace."""
     svc = ActivityService(db)
     items, total = await svc.list_for_workspace(
-        workspace_id, user.id,
+        workspace_id,
+        user.id,
         investigation_id=investigation_id,
         event_type=event_type,
-        skip=skip, limit=limit,
+        skip=skip,
+        limit=limit,
     )
     return {
         "items": [ActivityEventResponse.model_validate(e) for e in items],
@@ -248,7 +257,9 @@ async def list_investigation_activity(
 ) -> dict:
     """List activity events for a specific investigation."""
     svc = ActivityService(db)
-    items, total = await svc.list_for_investigation(investigation_id, user.id, skip=skip, limit=limit)
+    items, total = await svc.list_for_investigation(
+        investigation_id, user.id, skip=skip, limit=limit
+    )
     return {
         "items": [ActivityEventResponse.model_validate(e) for e in items],
         "total": total,
@@ -310,10 +321,14 @@ async def workspace_analytics(
         u_result = await db.execute(select(UserModel).where(UserModel.id == row.actor_id))
         u = u_result.scalar_one_or_none()
         if u:
-            top_investigators.append(MemberActivityResponse(
-                id=u.id, display_name=u.display_name, email=u.email,
-                event_count=row.cnt,
-            ))
+            top_investigators.append(
+                MemberActivityResponse(
+                    id=u.id,
+                    display_name=u.display_name,
+                    email=u.email,
+                    event_count=row.cnt,
+                )
+            )
 
     return WorkspaceDashboardResponse(
         total_investigations=total_invs,
@@ -352,8 +367,10 @@ async def evidence_analytics(
     total_storage = storage_result.scalar() or 0
     recent = await ev_repo.count(workspace_id=workspace_id, is_deleted=False)
     return EvidenceAnalyticsResponse(
-        total=total, by_status=by_status,
-        total_storage_bytes=total_storage, recent_uploads=recent,
+        total=total,
+        by_status=by_status,
+        total_storage_bytes=total_storage,
+        recent_uploads=recent,
     )
 
 
@@ -364,7 +381,9 @@ async def evidence_analytics(
 async def global_search(
     q: str = Query(..., min_length=1, max_length=200),
     _workspace_id: uuid.UUID | None = Query(None),
-    entity_type: str | None = Query(None, description="Comma-separated: investigation,evidence,entity"),
+    entity_type: str | None = Query(
+        None, description="Comma-separated: investigation,evidence,entity"
+    ),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db_session),
@@ -383,40 +402,73 @@ async def global_search(
     types_list = entity_type.split(",") if entity_type else ["investigation", "evidence", "entity"]
 
     if "investigation" in types_list:
-        inv_stmt = select(Investigation).where(
-            Investigation.workspace_id.in_(ws_ids),
-            or_(Investigation.title.ilike(query_filter), Investigation.description.ilike(query_filter)),
-        ).limit(limit)
+        inv_stmt = (
+            select(Investigation)
+            .where(
+                Investigation.workspace_id.in_(ws_ids),
+                or_(
+                    Investigation.title.ilike(query_filter),
+                    Investigation.description.ilike(query_filter),
+                ),
+            )
+            .limit(limit)
+        )
         for inv in (await db.execute(inv_stmt)).scalars().all():
-            results.append(GlobalSearchResult(
-                id=str(inv.id), type="investigation",
-                title=inv.title, description=inv.description,
-                link=f"/investigations/{inv.id}", workspace_id=str(inv.workspace_id), score=1.0,
-            ))
+            results.append(
+                GlobalSearchResult(
+                    id=str(inv.id),
+                    type="investigation",
+                    title=inv.title,
+                    description=inv.description,
+                    link=f"/investigations/{inv.id}",
+                    workspace_id=str(inv.workspace_id),
+                    score=1.0,
+                )
+            )
 
     if "evidence" in types_list:
-        ev_stmt = select(Evidence).where(
-            Evidence.workspace_id.in_(ws_ids), Evidence.is_deleted == False,
-            or_(Evidence.title.ilike(query_filter), Evidence.description.ilike(query_filter),
-                Evidence.evidence_number.ilike(query_filter), Evidence.original_filename.ilike(query_filter)),
-        ).limit(limit)
+        ev_stmt = (
+            select(Evidence)
+            .where(
+                Evidence.workspace_id.in_(ws_ids),
+                Evidence.is_deleted == False,
+                or_(
+                    Evidence.title.ilike(query_filter),
+                    Evidence.description.ilike(query_filter),
+                    Evidence.evidence_number.ilike(query_filter),
+                    Evidence.original_filename.ilike(query_filter),
+                ),
+            )
+            .limit(limit)
+        )
         for ev in (await db.execute(ev_stmt)).scalars().all():
-            results.append(GlobalSearchResult(
-                id=str(ev.id), type="evidence",
-                title=ev.title, description=ev.description,
-                match_field=ev.evidence_number, link=f"/evidence/{ev.id}",
-                workspace_id=str(ev.workspace_id), score=1.0,
-            ))
+            results.append(
+                GlobalSearchResult(
+                    id=str(ev.id),
+                    type="evidence",
+                    title=ev.title,
+                    description=ev.description,
+                    match_field=ev.evidence_number,
+                    link=f"/evidence/{ev.id}",
+                    workspace_id=str(ev.workspace_id),
+                    score=1.0,
+                )
+            )
 
     if "entity" in types_list:
         ent_stmt = select(Entity).where(Entity.label.ilike(query_filter)).limit(limit)
         for ent in (await db.execute(ent_stmt)).scalars().all():
             etype = ent.type.value if hasattr(ent.type, "value") else ent.type
-            results.append(GlobalSearchResult(
-                id=str(ent.id), type=f"entity_{etype}",
-                title=ent.label, description=ent.description,
-                link=f"/investigations/{ent.investigation_id}", score=1.0,
-            ))
+            results.append(
+                GlobalSearchResult(
+                    id=str(ent.id),
+                    type=f"entity_{etype}",
+                    title=ent.label,
+                    description=ent.description,
+                    link=f"/investigations/{ent.investigation_id}",
+                    score=1.0,
+                )
+            )
 
     return GlobalSearchResponse(
         results=results[:limit], total=len(results), query=q, skip=skip, limit=limit

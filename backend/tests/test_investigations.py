@@ -14,21 +14,37 @@ from httpx import AsyncClient
 
 async def _setup(client: AsyncClient) -> tuple[str, str, str]:
     """Create org, workspace, project, investigation. Returns (token, ws_id, inv_id)."""
-    await client.post("/api/v1/auth/register", json={
-        "email": "invt@test.com", "password": "SecureP@ss1", "display_name": "Inv Test",
-    })
-    login = await client.post("/api/v1/auth/login", json={"email": "invt@test.com", "password": "SecureP@ss1"})
+    await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "invt@test.com",
+            "password": "SecureP@ss1",
+            "display_name": "Inv Test",
+        },
+    )
+    login = await client.post(
+        "/api/v1/auth/login", json={"email": "invt@test.com", "password": "SecureP@ss1"}
+    )
     token = login.json()["access_token"]
 
-    org = await client.post("/api/v1/organizations", json={"name": "Inv Org", "slug": "inv-org"},
-                             headers={"Authorization": f"Bearer {token}"})
+    org = await client.post(
+        "/api/v1/organizations",
+        json={"name": "Inv Org", "slug": "inv-org"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
     org_id = org.json()["id"]
-    ws = await client.post("/api/v1/workspaces", json={"organization_id": org_id, "name": "Inv WS", "slug": "inv-ws"},
-                            headers={"Authorization": f"Bearer {token}"})
+    ws = await client.post(
+        "/api/v1/workspaces",
+        json={"organization_id": org_id, "name": "Inv WS", "slug": "inv-ws"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
     ws_id = ws.json()["id"]
 
-    inv = await client.post("/api/v1/investigations", json={"workspace_id": ws_id, "title": "Test Investigation"},
-                             headers={"Authorization": f"Bearer {token}"})
+    inv = await client.post(
+        "/api/v1/investigations",
+        json={"workspace_id": ws_id, "title": "Test Investigation"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
     inv_id = inv.json()["id"]
     return token, ws_id, inv_id
 
@@ -41,33 +57,46 @@ class TestInvestigations:
         token, ws_id, inv_id = await _setup(client)
         assert inv_id is not None
         # Verify via get
-        resp = await client.get(f"/api/v1/investigations/{inv_id}", headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(
+            f"/api/v1/investigations/{inv_id}", headers={"Authorization": f"Bearer {token}"}
+        )
         assert resp.status_code == 200
         assert resp.json()["title"] == "Test Investigation"
         assert resp.json()["status"] == "open"
 
     async def test_list(self, client: AsyncClient) -> None:
         token, ws_id, inv_id = await _setup(client)
-        resp = await client.get(f"/api/v1/investigations/workspace/{ws_id}", headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(
+            f"/api/v1/investigations/workspace/{ws_id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert resp.status_code == 200
         assert len(resp.json()) >= 1
 
     async def test_update(self, client: AsyncClient) -> None:
         token, ws_id, inv_id = await _setup(client)
-        resp = await client.patch(f"/api/v1/investigations/{inv_id}", json={"title": "Updated Inv", "priority": "high"},
-                                   headers={"Authorization": f"Bearer {token}"})
+        resp = await client.patch(
+            f"/api/v1/investigations/{inv_id}",
+            json={"title": "Updated Inv", "priority": "high"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert resp.status_code == 200
         assert resp.json()["title"] == "Updated Inv"
         assert resp.json()["priority"] == "high"
 
     async def test_delete(self, client: AsyncClient) -> None:
         token, ws_id, inv_id = await _setup(client)
-        resp = await client.delete(f"/api/v1/investigations/{inv_id}", headers={"Authorization": f"Bearer {token}"})
+        resp = await client.delete(
+            f"/api/v1/investigations/{inv_id}", headers={"Authorization": f"Bearer {token}"}
+        )
         assert resp.status_code == 204
 
     async def test_dashboard(self, client: AsyncClient) -> None:
         token, ws_id, inv_id = await _setup(client)
-        resp = await client.get(f"/api/v1/investigations/dashboard/{ws_id}", headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(
+            f"/api/v1/investigations/dashboard/{ws_id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["total"] >= 1
@@ -75,13 +104,17 @@ class TestInvestigations:
 
     async def test_search(self, client: AsyncClient) -> None:
         token, ws_id, inv_id = await _setup(client)
-        resp = await client.get(f"/api/v1/investigations/search?q=Test&workspace_id={ws_id}",
-                                 headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(
+            f"/api/v1/investigations/search?q=Test&workspace_id={ws_id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert resp.status_code == 200
         assert resp.json()["total"] >= 1
 
     async def test_unauthenticated_blocked(self, client: AsyncClient) -> None:
-        resp = await client.get("/api/v1/investigations/workspace/00000000-0000-0000-0000-000000000000")
+        resp = await client.get(
+            "/api/v1/investigations/workspace/00000000-0000-0000-0000-000000000000"
+        )
         assert resp.status_code == 401
 
 
@@ -91,37 +124,60 @@ class TestEntities:
 
     async def test_create_entity(self, client: AsyncClient) -> None:
         token, ws_id, inv_id = await _setup(client)
-        resp = await client.post(f"/api/v1/investigations/{inv_id}/entities", json={
-            "type": "person", "label": "John Doe", "description": "A person of interest",
-        }, headers={"Authorization": f"Bearer {token}"})
+        resp = await client.post(
+            f"/api/v1/investigations/{inv_id}/entities",
+            json={
+                "type": "person",
+                "label": "John Doe",
+                "description": "A person of interest",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert resp.status_code == 201
         assert resp.json()["label"] == "John Doe"
         assert resp.json()["type"] == "person"
 
     async def test_list_entities(self, client: AsyncClient) -> None:
         token, ws_id, inv_id = await _setup(client)
-        await client.post(f"/api/v1/investigations/{inv_id}/entities", json={"type": "email", "label": "test@example.com"},
-                           headers={"Authorization": f"Bearer {token}"})
-        resp = await client.get(f"/api/v1/investigations/{inv_id}/entities", headers={"Authorization": f"Bearer {token}"})
+        await client.post(
+            f"/api/v1/investigations/{inv_id}/entities",
+            json={"type": "email", "label": "test@example.com"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        resp = await client.get(
+            f"/api/v1/investigations/{inv_id}/entities",
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert resp.status_code == 200
         assert len(resp.json()) >= 1
 
     async def test_update_entity(self, client: AsyncClient) -> None:
         token, ws_id, inv_id = await _setup(client)
-        create = await client.post(f"/api/v1/investigations/{inv_id}/entities", json={"type": "ip", "label": "192.168.1.1"},
-                                     headers={"Authorization": f"Bearer {token}"})
+        create = await client.post(
+            f"/api/v1/investigations/{inv_id}/entities",
+            json={"type": "ip", "label": "192.168.1.1"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
         eid = create.json()["id"]
-        resp = await client.patch(f"/api/v1/investigations/entities/{eid}", json={"label": "10.0.0.1"},
-                                   headers={"Authorization": f"Bearer {token}"})
+        resp = await client.patch(
+            f"/api/v1/investigations/entities/{eid}",
+            json={"label": "10.0.0.1"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert resp.status_code == 200
         assert resp.json()["label"] == "10.0.0.1"
 
     async def test_delete_entity(self, client: AsyncClient) -> None:
         token, ws_id, inv_id = await _setup(client)
-        create = await client.post(f"/api/v1/investigations/{inv_id}/entities", json={"type": "device", "label": "Laptop-01"},
-                                     headers={"Authorization": f"Bearer {token}"})
+        create = await client.post(
+            f"/api/v1/investigations/{inv_id}/entities",
+            json={"type": "device", "label": "Laptop-01"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
         eid = create.json()["id"]
-        resp = await client.delete(f"/api/v1/investigations/entities/{eid}", headers={"Authorization": f"Bearer {token}"})
+        resp = await client.delete(
+            f"/api/v1/investigations/entities/{eid}", headers={"Authorization": f"Bearer {token}"}
+        )
         assert resp.status_code == 204
 
 
@@ -131,37 +187,68 @@ class TestRelationships:
 
     async def _setup_entities(self, client: AsyncClient) -> tuple[str, str, str, str]:
         token, ws_id, inv_id = await _setup(client)
-        e1 = await client.post(f"/api/v1/investigations/{inv_id}/entities", json={"type": "person", "label": "Alice"},
-                                headers={"Authorization": f"Bearer {token}"})
-        e2 = await client.post(f"/api/v1/investigations/{inv_id}/entities", json={"type": "email", "label": "alice@test.com"},
-                                headers={"Authorization": f"Bearer {token}"})
+        e1 = await client.post(
+            f"/api/v1/investigations/{inv_id}/entities",
+            json={"type": "person", "label": "Alice"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        e2 = await client.post(
+            f"/api/v1/investigations/{inv_id}/entities",
+            json={"type": "email", "label": "alice@test.com"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
         return token, inv_id, e1.json()["id"], e2.json()["id"]
 
     async def test_create_relationship(self, client: AsyncClient) -> None:
         token, inv_id, e1, e2 = await self._setup_entities(client)
-        resp = await client.post(f"/api/v1/investigations/{inv_id}/relationships", json={
-            "source_entity_id": e1, "target_entity_id": e2, "relationship_type": "uses", "confidence": 0.9,
-        }, headers={"Authorization": f"Bearer {token}"})
+        resp = await client.post(
+            f"/api/v1/investigations/{inv_id}/relationships",
+            json={
+                "source_entity_id": e1,
+                "target_entity_id": e2,
+                "relationship_type": "uses",
+                "confidence": 0.9,
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert resp.status_code == 201
         assert resp.json()["relationship_type"] == "uses"
         assert resp.json()["confidence"] == 0.9
 
     async def test_list_relationships(self, client: AsyncClient) -> None:
         token, inv_id, e1, e2 = await self._setup_entities(client)
-        await client.post(f"/api/v1/investigations/{inv_id}/relationships", json={
-            "source_entity_id": e1, "target_entity_id": e2, "relationship_type": "uses",
-        }, headers={"Authorization": f"Bearer {token}"})
-        resp = await client.get(f"/api/v1/investigations/{inv_id}/relationships", headers={"Authorization": f"Bearer {token}"})
+        await client.post(
+            f"/api/v1/investigations/{inv_id}/relationships",
+            json={
+                "source_entity_id": e1,
+                "target_entity_id": e2,
+                "relationship_type": "uses",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        resp = await client.get(
+            f"/api/v1/investigations/{inv_id}/relationships",
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert resp.status_code == 200
         assert len(resp.json()) >= 1
 
     async def test_delete_relationship(self, client: AsyncClient) -> None:
         token, inv_id, e1, e2 = await self._setup_entities(client)
-        create = await client.post(f"/api/v1/investigations/{inv_id}/relationships", json={
-            "source_entity_id": e1, "target_entity_id": e2, "relationship_type": "connected_to",
-        }, headers={"Authorization": f"Bearer {token}"})
+        create = await client.post(
+            f"/api/v1/investigations/{inv_id}/relationships",
+            json={
+                "source_entity_id": e1,
+                "target_entity_id": e2,
+                "relationship_type": "connected_to",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
         rid = create.json()["id"]
-        resp = await client.delete(f"/api/v1/investigations/relationships/{rid}", headers={"Authorization": f"Bearer {token}"})
+        resp = await client.delete(
+            f"/api/v1/investigations/relationships/{rid}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert resp.status_code == 204
 
 
@@ -171,28 +258,48 @@ class TestTimeline:
 
     async def test_create_timeline_event(self, client: AsyncClient) -> None:
         token, ws_id, inv_id = await _setup(client)
-        resp = await client.post(f"/api/v1/investigations/{inv_id}/timeline", json={
-            "event_timestamp": "2026-07-10T12:00:00Z", "title": "Initial finding",
-        }, headers={"Authorization": f"Bearer {token}"})
+        resp = await client.post(
+            f"/api/v1/investigations/{inv_id}/timeline",
+            json={
+                "event_timestamp": "2026-07-10T12:00:00Z",
+                "title": "Initial finding",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert resp.status_code == 201
         assert resp.json()["title"] == "Initial finding"
 
     async def test_list_timeline(self, client: AsyncClient) -> None:
         token, ws_id, inv_id = await _setup(client)
-        await client.post(f"/api/v1/investigations/{inv_id}/timeline", json={
-            "event_timestamp": "2026-07-10T12:00:00Z", "title": "Event 1",
-        }, headers={"Authorization": f"Bearer {token}"})
-        resp = await client.get(f"/api/v1/investigations/{inv_id}/timeline", headers={"Authorization": f"Bearer {token}"})
+        await client.post(
+            f"/api/v1/investigations/{inv_id}/timeline",
+            json={
+                "event_timestamp": "2026-07-10T12:00:00Z",
+                "title": "Event 1",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        resp = await client.get(
+            f"/api/v1/investigations/{inv_id}/timeline",
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert resp.status_code == 200
         assert len(resp.json()) >= 1
 
     async def test_delete_timeline_event(self, client: AsyncClient) -> None:
         token, ws_id, inv_id = await _setup(client)
-        create = await client.post(f"/api/v1/investigations/{inv_id}/timeline", json={
-            "event_timestamp": "2026-07-10T12:00:00Z", "title": "Delete me",
-        }, headers={"Authorization": f"Bearer {token}"})
+        create = await client.post(
+            f"/api/v1/investigations/{inv_id}/timeline",
+            json={
+                "event_timestamp": "2026-07-10T12:00:00Z",
+                "title": "Delete me",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
         eid = create.json()["id"]
-        resp = await client.delete(f"/api/v1/investigations/timeline/{eid}", headers={"Authorization": f"Bearer {token}"})
+        resp = await client.delete(
+            f"/api/v1/investigations/timeline/{eid}", headers={"Authorization": f"Bearer {token}"}
+        )
         assert resp.status_code == 204
 
 
@@ -202,13 +309,22 @@ class TestPermissions:
 
     async def test_non_member_cannot_access(self, client: AsyncClient) -> None:
         token, ws_id, inv_id = await _setup(client)
-        await client.post("/api/v1/auth/register", json={
-            "email": "other_inv@test.com", "password": "SecureP@ss1", "display_name": "Other",
-        })
-        other_login = await client.post("/api/v1/auth/login", json={"email": "other_inv@test.com", "password": "SecureP@ss1"})
+        await client.post(
+            "/api/v1/auth/register",
+            json={
+                "email": "other_inv@test.com",
+                "password": "SecureP@ss1",
+                "display_name": "Other",
+            },
+        )
+        other_login = await client.post(
+            "/api/v1/auth/login", json={"email": "other_inv@test.com", "password": "SecureP@ss1"}
+        )
         other_token = other_login.json()["access_token"]
 
-        resp = await client.get(f"/api/v1/investigations/{inv_id}", headers={"Authorization": f"Bearer {other_token}"})
+        resp = await client.get(
+            f"/api/v1/investigations/{inv_id}", headers={"Authorization": f"Bearer {other_token}"}
+        )
         assert resp.status_code == 403
 
 
@@ -218,15 +334,29 @@ class TestGraph:
 
     async def test_graph_returns_nodes_edges(self, client: AsyncClient) -> None:
         token, ws_id, inv_id = await _setup(client)
-        e1 = await client.post(f"/api/v1/investigations/{inv_id}/entities", json={"type": "person", "label": "Alice"},
-                                headers={"Authorization": f"Bearer {token}"})
-        e2 = await client.post(f"/api/v1/investigations/{inv_id}/entities", json={"type": "device", "label": "Phone"},
-                                headers={"Authorization": f"Bearer {token}"})
-        await client.post(f"/api/v1/investigations/{inv_id}/relationships", json={
-            "source_entity_id": e1.json()["id"], "target_entity_id": e2.json()["id"], "relationship_type": "owns",
-        }, headers={"Authorization": f"Bearer {token}"})
+        e1 = await client.post(
+            f"/api/v1/investigations/{inv_id}/entities",
+            json={"type": "person", "label": "Alice"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        e2 = await client.post(
+            f"/api/v1/investigations/{inv_id}/entities",
+            json={"type": "device", "label": "Phone"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        await client.post(
+            f"/api/v1/investigations/{inv_id}/relationships",
+            json={
+                "source_entity_id": e1.json()["id"],
+                "target_entity_id": e2.json()["id"],
+                "relationship_type": "owns",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
 
-        resp = await client.get(f"/api/v1/investigations/{inv_id}/graph", headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(
+            f"/api/v1/investigations/{inv_id}/graph", headers={"Authorization": f"Bearer {token}"}
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert len(data["nodes"]) >= 2
@@ -234,7 +364,9 @@ class TestGraph:
 
     async def test_graph_empty_no_entities(self, client: AsyncClient) -> None:
         token, ws_id, inv_id = await _setup(client)
-        resp = await client.get(f"/api/v1/investigations/{inv_id}/graph", headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(
+            f"/api/v1/investigations/{inv_id}/graph", headers={"Authorization": f"Bearer {token}"}
+        )
         assert resp.status_code == 200
         assert resp.json()["nodes"] == []
 
@@ -246,8 +378,10 @@ class TestInvestigationActivityEvents:
     async def test_create_records_activity(self, client: AsyncClient) -> None:
         """Create investigation -> ActivityEvent INVESTIGATION_CREATED recorded."""
         token, ws_id, inv_id = await _setup(client)
-        resp = await client.get(f"/api/v1/reports/activity?workspace_id={ws_id}",
-                                 headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(
+            f"/api/v1/reports/activity?workspace_id={ws_id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert resp.status_code == 200
         data = resp.json()
         items = data["items"]
@@ -258,10 +392,15 @@ class TestInvestigationActivityEvents:
     async def test_update_records_activity(self, client: AsyncClient) -> None:
         """Update investigation -> ActivityEvent INVESTIGATION_UPDATED recorded."""
         token, ws_id, inv_id = await _setup(client)
-        await client.patch(f"/api/v1/investigations/{inv_id}", json={"title": "Updated Title"},
-                            headers={"Authorization": f"Bearer {token}"})
-        resp = await client.get(f"/api/v1/reports/activity/investigation/{inv_id}",
-                                 headers={"Authorization": f"Bearer {token}"})
+        await client.patch(
+            f"/api/v1/investigations/{inv_id}",
+            json={"title": "Updated Title"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        resp = await client.get(
+            f"/api/v1/reports/activity/investigation/{inv_id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
         data = resp.json()
         items = data["items"]
         updated = [e for e in items if e["event_type"] == "investigation_updated"]
@@ -270,10 +409,15 @@ class TestInvestigationActivityEvents:
     async def test_close_records_closed_activity(self, client: AsyncClient) -> None:
         """Close investigation -> ActivityEvent INVESTIGATION_CLOSED recorded."""
         token, ws_id, inv_id = await _setup(client)
-        await client.patch(f"/api/v1/investigations/{inv_id}", json={"status": "closed"},
-                            headers={"Authorization": f"Bearer {token}"})
-        resp = await client.get(f"/api/v1/reports/activity/investigation/{inv_id}",
-                                 headers={"Authorization": f"Bearer {token}"})
+        await client.patch(
+            f"/api/v1/investigations/{inv_id}",
+            json={"status": "closed"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        resp = await client.get(
+            f"/api/v1/reports/activity/investigation/{inv_id}",
+            headers={"Authorization": f"Bearer {token}"},
+        )
         data = resp.json()
         items = data["items"]
         closed = [e for e in items if e["event_type"] == "investigation_closed"]
@@ -287,12 +431,22 @@ class TestTimelineFiltering:
     async def test_timeline_date_filter(self, client: AsyncClient) -> None:
         """Filter timeline events by date range."""
         token, ws_id, inv_id = await _setup(client)
-        await client.post(f"/api/v1/investigations/{inv_id}/timeline", json={
-            "event_timestamp": "2026-01-01T00:00:00Z", "title": "Old event",
-        }, headers={"Authorization": f"Bearer {token}"})
-        await client.post(f"/api/v1/investigations/{inv_id}/timeline", json={
-            "event_timestamp": "2026-07-14T00:00:00Z", "title": "Recent event",
-        }, headers={"Authorization": f"Bearer {token}"})
+        await client.post(
+            f"/api/v1/investigations/{inv_id}/timeline",
+            json={
+                "event_timestamp": "2026-01-01T00:00:00Z",
+                "title": "Old event",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        await client.post(
+            f"/api/v1/investigations/{inv_id}/timeline",
+            json={
+                "event_timestamp": "2026-07-14T00:00:00Z",
+                "title": "Recent event",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
         resp = await client.get(
             f"/api/v1/investigations/{inv_id}/timeline?date_from=2026-06-01T00:00:00Z",
             headers={"Authorization": f"Bearer {token}"},
@@ -307,14 +461,26 @@ class TestTimelineFiltering:
     async def test_timeline_no_filter_returns_all(self, client: AsyncClient) -> None:
         """Without filters, all timeline events are returned."""
         token, ws_id, inv_id = await _setup(client)
-        await client.post(f"/api/v1/investigations/{inv_id}/timeline", json={
-            "event_timestamp": "2026-01-01T00:00:00Z", "title": "Event A",
-        }, headers={"Authorization": f"Bearer {token}"})
-        await client.post(f"/api/v1/investigations/{inv_id}/timeline", json={
-            "event_timestamp": "2026-07-14T00:00:00Z", "title": "Event B",
-        }, headers={"Authorization": f"Bearer {token}"})
-        resp = await client.get(f"/api/v1/investigations/{inv_id}/timeline",
-                                 headers={"Authorization": f"Bearer {token}"})
+        await client.post(
+            f"/api/v1/investigations/{inv_id}/timeline",
+            json={
+                "event_timestamp": "2026-01-01T00:00:00Z",
+                "title": "Event A",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        await client.post(
+            f"/api/v1/investigations/{inv_id}/timeline",
+            json={
+                "event_timestamp": "2026-07-14T00:00:00Z",
+                "title": "Event B",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        resp = await client.get(
+            f"/api/v1/investigations/{inv_id}/timeline",
+            headers={"Authorization": f"Bearer {token}"},
+        )
         assert resp.status_code == 200
         assert len(resp.json()) >= 2
 
@@ -326,15 +492,28 @@ class TestNeo4jGraphRead:
     async def test_graph_via_postgresql_fallback(self, client: AsyncClient) -> None:
         """With NEO4J_ENABLED=False, graph data comes from PostgreSQL."""
         token, ws_id, inv_id = await _setup(client)
-        e1 = await client.post(f"/api/v1/investigations/{inv_id}/entities", json={"type": "person", "label": "Alice"},
-                                headers={"Authorization": f"Bearer {token}"})
-        e2 = await client.post(f"/api/v1/investigations/{inv_id}/entities", json={"type": "device", "label": "Phone"},
-                                headers={"Authorization": f"Bearer {token}"})
-        await client.post(f"/api/v1/investigations/{inv_id}/relationships", json={
-            "source_entity_id": e1.json()["id"], "target_entity_id": e2.json()["id"], "relationship_type": "owns",
-        }, headers={"Authorization": f"Bearer {token}"})
-        resp = await client.get(f"/api/v1/investigations/{inv_id}/graph",
-                                 headers={"Authorization": f"Bearer {token}"})
+        e1 = await client.post(
+            f"/api/v1/investigations/{inv_id}/entities",
+            json={"type": "person", "label": "Alice"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        e2 = await client.post(
+            f"/api/v1/investigations/{inv_id}/entities",
+            json={"type": "device", "label": "Phone"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        await client.post(
+            f"/api/v1/investigations/{inv_id}/relationships",
+            json={
+                "source_entity_id": e1.json()["id"],
+                "target_entity_id": e2.json()["id"],
+                "relationship_type": "owns",
+            },
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        resp = await client.get(
+            f"/api/v1/investigations/{inv_id}/graph", headers={"Authorization": f"Bearer {token}"}
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert len(data["nodes"]) >= 2
@@ -343,10 +522,14 @@ class TestNeo4jGraphRead:
     async def test_graph_node_format(self, client: AsyncClient) -> None:
         """Every node has id, label, type, color, icon."""
         token, ws_id, inv_id = await _setup(client)
-        await client.post(f"/api/v1/investigations/{inv_id}/entities", json={"type": "ip", "label": "10.0.0.1"},
-                           headers={"Authorization": f"Bearer {token}"})
-        resp = await client.get(f"/api/v1/investigations/{inv_id}/graph",
-                                 headers={"Authorization": f"Bearer {token}"})
+        await client.post(
+            f"/api/v1/investigations/{inv_id}/entities",
+            json={"type": "ip", "label": "10.0.0.1"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        resp = await client.get(
+            f"/api/v1/investigations/{inv_id}/graph", headers={"Authorization": f"Bearer {token}"}
+        )
         assert resp.status_code == 200
         for node in resp.json()["nodes"]:
             assert "id" in node
@@ -358,18 +541,23 @@ class TestNeo4jGraphRead:
     async def test_graph_no_duplicate_nodes(self, client: AsyncClient) -> None:
         """Graph should not contain duplicate node IDs."""
         token, ws_id, inv_id = await _setup(client)
-        await client.post(f"/api/v1/investigations/{inv_id}/entities", json={"type": "person", "label": "Bob"},
-                           headers={"Authorization": f"Bearer {token}"})
-        resp = await client.get(f"/api/v1/investigations/{inv_id}/graph",
-                                 headers={"Authorization": f"Bearer {token}"})
+        await client.post(
+            f"/api/v1/investigations/{inv_id}/entities",
+            json={"type": "person", "label": "Bob"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        resp = await client.get(
+            f"/api/v1/investigations/{inv_id}/graph", headers={"Authorization": f"Bearer {token}"}
+        )
         node_ids = [n["id"] for n in resp.json()["nodes"]]
         assert len(node_ids) == len(set(node_ids)), "Duplicate nodes found"
 
     async def test_graph_empty_returns_empty_lists(self, client: AsyncClient) -> None:
         """Investigation with no entities returns empty nodes/edges."""
         token, ws_id, inv_id = await _setup(client)
-        resp = await client.get(f"/api/v1/investigations/{inv_id}/graph",
-                                 headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(
+            f"/api/v1/investigations/{inv_id}/graph", headers={"Authorization": f"Bearer {token}"}
+        )
         assert resp.status_code == 200
         assert resp.json()["nodes"] == []
         assert resp.json()["edges"] == []
@@ -383,31 +571,47 @@ class TestNeo4jGraphRead:
         """Graph endpoint for non-existent investigation returns 404."""
         token, ws_id, inv_id = await _setup(client)
         fake_id = uuid.uuid4()
-        resp = await client.get(f"/api/v1/investigations/{fake_id}/graph",
-                                 headers={"Authorization": f"Bearer {token}"})
+        resp = await client.get(
+            f"/api/v1/investigations/{fake_id}/graph", headers={"Authorization": f"Bearer {token}"}
+        )
         assert resp.status_code == 404
 
     async def test_graph_workspace_isolation(self, client: AsyncClient) -> None:
         """User from another workspace cannot view this investigation's graph."""
         token, ws_id, inv_id = await _setup(client)
-        await client.post("/api/v1/auth/register", json={
-            "email": "other_graph@test.com", "password": "SecureP@ss1", "display_name": "Other",
-        })
-        other_login = await client.post("/api/v1/auth/login", json={
-            "email": "other_graph@test.com", "password": "SecureP@ss1",
-        })
+        await client.post(
+            "/api/v1/auth/register",
+            json={
+                "email": "other_graph@test.com",
+                "password": "SecureP@ss1",
+                "display_name": "Other",
+            },
+        )
+        other_login = await client.post(
+            "/api/v1/auth/login",
+            json={
+                "email": "other_graph@test.com",
+                "password": "SecureP@ss1",
+            },
+        )
         other_token = other_login.json()["access_token"]
-        resp = await client.get(f"/api/v1/investigations/{inv_id}/graph",
-                                 headers={"Authorization": f"Bearer {other_token}"})
+        resp = await client.get(
+            f"/api/v1/investigations/{inv_id}/graph",
+            headers={"Authorization": f"Bearer {other_token}"},
+        )
         assert resp.status_code == 403
 
     async def test_graph_after_sync_persists(self, client: AsyncClient) -> None:
         """Graph data persists correctly through entity creation."""
         token, ws_id, inv_id = await _setup(client)
-        await client.post(f"/api/v1/investigations/{inv_id}/entities", json={"type": "person", "label": "Charlie"},
-                           headers={"Authorization": f"Bearer {token}"})
-        resp = await client.get(f"/api/v1/investigations/{inv_id}/graph",
-                                 headers={"Authorization": f"Bearer {token}"})
+        await client.post(
+            f"/api/v1/investigations/{inv_id}/entities",
+            json={"type": "person", "label": "Charlie"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        resp = await client.get(
+            f"/api/v1/investigations/{inv_id}/graph", headers={"Authorization": f"Bearer {token}"}
+        )
         assert resp.status_code == 200
         labels = [n["label"] for n in resp.json()["nodes"]]
         assert "Charlie" in labels

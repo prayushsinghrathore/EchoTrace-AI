@@ -87,9 +87,7 @@ class Neo4jConnectionManager:
     def driver(self) -> AsyncDriver:
         """Get the Neo4j driver instance."""
         if not self._driver:
-            raise RuntimeError(
-                "Neo4j driver not initialized. Call `initialize()` first."
-            )
+            raise RuntimeError("Neo4j driver not initialized. Call `initialize()` first.")
         return self._driver
 
     @asynccontextmanager

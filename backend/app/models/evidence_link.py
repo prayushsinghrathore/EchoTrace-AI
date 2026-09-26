@@ -1,4 +1,5 @@
 """EvidenceLink model — links evidence to entities within investigations."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -21,9 +22,21 @@ class EvidenceLink(Base, TimestampMixin):
     __table_args__ = ({"comment": "Links between evidence and entities"},)
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    investigation_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("investigations.id", ondelete="CASCADE"), nullable=False, index=True)
-    evidence_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("evidence.id", ondelete="CASCADE"), nullable=False, index=True)
-    entity_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("entities.id", ondelete="SET NULL"), nullable=True)
+    investigation_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("investigations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    evidence_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("evidence.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    entity_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("entities.id", ondelete="SET NULL"), nullable=True
+    )
     rel_desc: Mapped[str | None] = mapped_column(String(100), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
