@@ -1,12 +1,12 @@
 services:
   - type: web
     name: echotrace-backend
-    env: docker
+    runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     branch: main
-    healthCheckPath: /api/v1/live
-    envVars:
+    healthCheckPath: /api/v1/ready
+    envVars: &backend_env
       - key: PORT
         value: 8000
       - key: ENVIRONMENT
@@ -37,6 +37,27 @@ services:
         sync: false
       - key: NEO4J_DATABASE
         value: neo4j
+      - key: REDIS_ENABLED
+        value: "true"
+      - key: REDIS_URL
+        fromService:
+          name: echotrace-redis
+          type: keyvalue
+          property: connectionString
+      - key: STORAGE_PROVIDER
+        value: s3
+      - key: STORAGE_S3_BUCKET
+        sync: false
+      - key: STORAGE_S3_REGION
+        sync: false
+      - key: STORAGE_S3_ACCESS_KEY
+        sync: false
+      - key: STORAGE_S3_SECRET_KEY
+        sync: false
+      - key: STORAGE_S3_ENDPOINT
+        sync: false
+      - key: STORAGE_S3_PREFIX
+        value: evidence
       - key: EMAIL_PROVIDER
         value: smtp
       - key: EMAIL_FROM
@@ -60,9 +81,18 @@ services:
       - key: PASSWORD_RESET_URL
         value: https://echo-trace-ai.vercel.app
 
+  - type: worker
+    name: echotrace-worker
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    dockerCommand: python -m app.worker
+    branch: main
+    envVars: *backend_env
+
   - type: web
     name: echotrace-frontend
-    env: docker
+    runtime: docker
     dockerfilePath: ./frontend/Dockerfile
     dockerContext: ./frontend
     branch: main
@@ -80,3 +110,7 @@ services:
         value: "1"
       - key: PORT
         value: "3000"
+
+  - type: keyvalue
+    name: echotrace-redis
+    plan: free

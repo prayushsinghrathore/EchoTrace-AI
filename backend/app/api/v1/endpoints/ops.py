@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db_session
 from app.core.auth import get_current_user
+from app.core.cache import check_connection as check_redis_connection
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.core.metrics import metrics
@@ -34,14 +35,37 @@ router = APIRouter(tags=["operations"])
 async def readiness(
     db: AsyncSession = Depends(get_db_session),
 ) -> dict:
-    """Kubernetes readiness probe — checks database connectivity."""
+    """Readiness probe for every enabled runtime dependency."""
+    services: dict[str, str] = {}
     try:
         await db.execute(text("SELECT 1"))
-        return {"status": "ready", "database": "connected"}
+        services["database"] = "connected"
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)
         ) from exc
+
+    neo4j_ready = await check_neo4j_connection()
+    services["neo4j"] = (
+        "connected"
+        if settings.NEO4J_ENABLED and neo4j_ready
+        else ("disabled" if not settings.NEO4J_ENABLED else "unavailable")
+    )
+
+    redis_ready = await check_redis_connection()
+    services["redis"] = (
+        "connected"
+        if settings.REDIS_ENABLED and redis_ready
+        else ("disabled" if not settings.REDIS_ENABLED else "unavailable")
+    )
+
+    unavailable = [name for name, value in services.items() if value == "unavailable"]
+    if unavailable:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"status": "not_ready", "services": services},
+        )
+    return {"status": "ready", "services": services}
 
 
 # ── Metrics ───────────────────────────────────────────────────────────────────

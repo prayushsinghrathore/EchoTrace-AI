@@ -203,7 +203,7 @@ jobs:
         run: |
           set -eu
           for attempt in $(seq 1 30); do
-            if curl --fail --silent http://127.0.0.1:8000/api/v1/live >/dev/null \
+            if curl --fail --silent http://127.0.0.1:8000/api/v1/ready >/dev/null \
               && docker compose exec -T neo4j cypher-shell -u neo4j -p echotrace_neo4j 'RETURN 1' >/dev/null \
               && docker compose exec -T redis redis-cli ping | grep -q PONG; then
               exit 0
@@ -221,6 +221,7 @@ jobs:
           set -eu
           curl --fail --silent --show-error http://127.0.0.1:7474/ >/dev/null
           curl --fail --silent --show-error http://127.0.0.1:8000/api/v1/live >/dev/null
+          curl --fail --silent --show-error http://127.0.0.1:8000/api/v1/ready >/dev/null
           docker compose ps --status running worker
 
           curl --fail --silent --show-error \

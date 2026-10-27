@@ -104,6 +104,19 @@ async def close() -> None:
             await _redis_client.close()
 
 
+async def check_connection() -> bool:
+    """Check Redis connectivity when Redis is enabled."""
+    if not settings.REDIS_ENABLED:
+        return True
+    client = await _get_client()
+    if client is None:
+        return False
+    try:
+        return bool(await client.ping())
+    except Exception:
+        return False
+
+
 def cache_key(prefix: str, *args: Any, **kwargs: Any) -> str:
     """
     Build a deterministic cache key from arguments.
