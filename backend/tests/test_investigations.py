@@ -54,7 +54,7 @@ class TestInvestigations:
     """Investigation CRUD tests."""
 
     async def test_create(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         assert inv_id is not None
         # Verify via get
         resp = await client.get(
@@ -65,7 +65,7 @@ class TestInvestigations:
         assert resp.json()["status"] == "open"
 
     async def test_list(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id = await _setup(client)
+        token, ws_id, _inv_id = await _setup(client)
         resp = await client.get(
             f"/api/v1/investigations/workspace/{ws_id}",
             headers={"Authorization": f"Bearer {token}"},
@@ -74,7 +74,7 @@ class TestInvestigations:
         assert len(resp.json()) >= 1
 
     async def test_update(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         resp = await client.patch(
             f"/api/v1/investigations/{inv_id}",
             json={"title": "Updated Inv", "priority": "high"},
@@ -85,14 +85,14 @@ class TestInvestigations:
         assert resp.json()["priority"] == "high"
 
     async def test_delete(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         resp = await client.delete(
             f"/api/v1/investigations/{inv_id}", headers={"Authorization": f"Bearer {token}"}
         )
         assert resp.status_code == 204
 
     async def test_dashboard(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id = await _setup(client)
+        token, ws_id, _inv_id = await _setup(client)
         resp = await client.get(
             f"/api/v1/investigations/dashboard/{ws_id}",
             headers={"Authorization": f"Bearer {token}"},
@@ -103,7 +103,7 @@ class TestInvestigations:
         assert "open" in data
 
     async def test_search(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id = await _setup(client)
+        token, ws_id, _inv_id = await _setup(client)
         resp = await client.get(
             f"/api/v1/investigations/search?q=Test&workspace_id={ws_id}",
             headers={"Authorization": f"Bearer {token}"},
@@ -123,7 +123,7 @@ class TestEntities:
     """Entity CRUD tests."""
 
     async def test_create_entity(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         resp = await client.post(
             f"/api/v1/investigations/{inv_id}/entities",
             json={
@@ -138,7 +138,7 @@ class TestEntities:
         assert resp.json()["type"] == "person"
 
     async def test_list_entities(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         await client.post(
             f"/api/v1/investigations/{inv_id}/entities",
             json={"type": "email", "label": "test@example.com"},
@@ -152,7 +152,7 @@ class TestEntities:
         assert len(resp.json()) >= 1
 
     async def test_update_entity(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         create = await client.post(
             f"/api/v1/investigations/{inv_id}/entities",
             json={"type": "ip", "label": "192.168.1.1"},
@@ -168,7 +168,7 @@ class TestEntities:
         assert resp.json()["label"] == "10.0.0.1"
 
     async def test_delete_entity(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         create = await client.post(
             f"/api/v1/investigations/{inv_id}/entities",
             json={"type": "device", "label": "Laptop-01"},
@@ -186,7 +186,7 @@ class TestRelationships:
     """Relationship CRUD tests."""
 
     async def _setup_entities(self, client: AsyncClient) -> tuple[str, str, str, str]:
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         e1 = await client.post(
             f"/api/v1/investigations/{inv_id}/entities",
             json={"type": "person", "label": "Alice"},
@@ -257,7 +257,7 @@ class TestTimeline:
     """Timeline event tests."""
 
     async def test_create_timeline_event(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         resp = await client.post(
             f"/api/v1/investigations/{inv_id}/timeline",
             json={
@@ -270,7 +270,7 @@ class TestTimeline:
         assert resp.json()["title"] == "Initial finding"
 
     async def test_list_timeline(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         await client.post(
             f"/api/v1/investigations/{inv_id}/timeline",
             json={
@@ -287,7 +287,7 @@ class TestTimeline:
         assert len(resp.json()) >= 1
 
     async def test_delete_timeline_event(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         create = await client.post(
             f"/api/v1/investigations/{inv_id}/timeline",
             json={
@@ -308,7 +308,7 @@ class TestPermissions:
     """Permission enforcement tests."""
 
     async def test_non_member_cannot_access(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id = await _setup(client)
+        _token, _ws_id, inv_id = await _setup(client)
         await client.post(
             "/api/v1/auth/register",
             json={
@@ -333,7 +333,7 @@ class TestGraph:
     """Graph endpoint tests."""
 
     async def test_graph_returns_nodes_edges(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         e1 = await client.post(
             f"/api/v1/investigations/{inv_id}/entities",
             json={"type": "person", "label": "Alice"},
@@ -363,7 +363,7 @@ class TestGraph:
         assert len(data["edges"]) >= 1
 
     async def test_graph_empty_no_entities(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         resp = await client.get(
             f"/api/v1/investigations/{inv_id}/graph", headers={"Authorization": f"Bearer {token}"}
         )
@@ -377,7 +377,7 @@ class TestInvestigationActivityEvents:
 
     async def test_create_records_activity(self, client: AsyncClient) -> None:
         """Create investigation -> ActivityEvent INVESTIGATION_CREATED recorded."""
-        token, ws_id, inv_id = await _setup(client)
+        token, ws_id, _inv_id = await _setup(client)
         resp = await client.get(
             f"/api/v1/reports/activity?workspace_id={ws_id}",
             headers={"Authorization": f"Bearer {token}"},
@@ -391,7 +391,7 @@ class TestInvestigationActivityEvents:
 
     async def test_update_records_activity(self, client: AsyncClient) -> None:
         """Update investigation -> ActivityEvent INVESTIGATION_UPDATED recorded."""
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         await client.patch(
             f"/api/v1/investigations/{inv_id}",
             json={"title": "Updated Title"},
@@ -408,7 +408,7 @@ class TestInvestigationActivityEvents:
 
     async def test_close_records_closed_activity(self, client: AsyncClient) -> None:
         """Close investigation -> ActivityEvent INVESTIGATION_CLOSED recorded."""
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         await client.patch(
             f"/api/v1/investigations/{inv_id}",
             json={"status": "closed"},
@@ -430,7 +430,7 @@ class TestTimelineFiltering:
 
     async def test_timeline_date_filter(self, client: AsyncClient) -> None:
         """Filter timeline events by date range."""
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         await client.post(
             f"/api/v1/investigations/{inv_id}/timeline",
             json={
@@ -460,7 +460,7 @@ class TestTimelineFiltering:
 
     async def test_timeline_no_filter_returns_all(self, client: AsyncClient) -> None:
         """Without filters, all timeline events are returned."""
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         await client.post(
             f"/api/v1/investigations/{inv_id}/timeline",
             json={
@@ -491,7 +491,7 @@ class TestNeo4jGraphRead:
 
     async def test_graph_via_postgresql_fallback(self, client: AsyncClient) -> None:
         """With NEO4J_ENABLED=False, graph data comes from PostgreSQL."""
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         e1 = await client.post(
             f"/api/v1/investigations/{inv_id}/entities",
             json={"type": "person", "label": "Alice"},
@@ -521,7 +521,7 @@ class TestNeo4jGraphRead:
 
     async def test_graph_node_format(self, client: AsyncClient) -> None:
         """Every node has id, label, type, color, icon."""
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         await client.post(
             f"/api/v1/investigations/{inv_id}/entities",
             json={"type": "ip", "label": "10.0.0.1"},
@@ -540,7 +540,7 @@ class TestNeo4jGraphRead:
 
     async def test_graph_no_duplicate_nodes(self, client: AsyncClient) -> None:
         """Graph should not contain duplicate node IDs."""
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         await client.post(
             f"/api/v1/investigations/{inv_id}/entities",
             json={"type": "person", "label": "Bob"},
@@ -554,7 +554,7 @@ class TestNeo4jGraphRead:
 
     async def test_graph_empty_returns_empty_lists(self, client: AsyncClient) -> None:
         """Investigation with no entities returns empty nodes/edges."""
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         resp = await client.get(
             f"/api/v1/investigations/{inv_id}/graph", headers={"Authorization": f"Bearer {token}"}
         )
@@ -569,7 +569,7 @@ class TestNeo4jGraphRead:
 
     async def test_graph_invalid_investigation_returns_404(self, client: AsyncClient) -> None:
         """Graph endpoint for non-existent investigation returns 404."""
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, _inv_id = await _setup(client)
         fake_id = uuid.uuid4()
         resp = await client.get(
             f"/api/v1/investigations/{fake_id}/graph", headers={"Authorization": f"Bearer {token}"}
@@ -578,7 +578,7 @@ class TestNeo4jGraphRead:
 
     async def test_graph_workspace_isolation(self, client: AsyncClient) -> None:
         """User from another workspace cannot view this investigation's graph."""
-        token, ws_id, inv_id = await _setup(client)
+        _token, _ws_id, inv_id = await _setup(client)
         await client.post(
             "/api/v1/auth/register",
             json={
@@ -603,7 +603,7 @@ class TestNeo4jGraphRead:
 
     async def test_graph_after_sync_persists(self, client: AsyncClient) -> None:
         """Graph data persists correctly through entity creation."""
-        token, ws_id, inv_id = await _setup(client)
+        token, _ws_id, inv_id = await _setup(client)
         await client.post(
             f"/api/v1/investigations/{inv_id}/entities",
             json={"type": "person", "label": "Charlie"},

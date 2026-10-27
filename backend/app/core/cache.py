@@ -92,7 +92,7 @@ async def clear_pattern(pattern: str) -> None:
     if client is None:
         return
     with suppress(Exception):
-        cursor, keys = await client.scan(cursor=0, match=pattern, count=100)
+        _cursor, keys = await client.scan(cursor=0, match=pattern, count=100)
         if keys:
             await client.delete(*keys)
 

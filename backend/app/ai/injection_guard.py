@@ -141,8 +141,7 @@ def validate_input(text: str, max_length: int | None = None) -> None:
 
     if max_length and len(text) > max_length:
         raise ValueError(
-            f"Input text exceeds maximum length of {max_length} characters "
-            f"({len(text)} provided)"
+            f"Input text exceeds maximum length of {max_length} characters ({len(text)} provided)"
         )
 
     result = scan_for_injection(text)

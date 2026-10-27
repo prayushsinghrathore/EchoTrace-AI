@@ -92,4 +92,4 @@ class PasswordResetToken(Base, TimestampMixin):
         self.used_by_ip = ip_address
 
     def __repr__(self) -> str:
-        return f"<PasswordResetToken id={self.id} user_id={self.user_id} " f"used={self.is_used}>"
+        return f"<PasswordResetToken id={self.id} user_id={self.user_id} used={self.is_used}>"

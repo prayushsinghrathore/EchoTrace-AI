@@ -138,7 +138,7 @@ class TestReportAPI:
         assert resp.status_code == 401
 
     async def test_generate_report_invalid_investigation(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id, ev_id = await _setup_env(client)
+        token, _ws_id, _inv_id, _ev_id = await _setup_env(client)
         resp = await client.post(
             "/api/v1/reports/generate",
             json={
@@ -149,7 +149,7 @@ class TestReportAPI:
         assert resp.status_code == 404
 
     async def test_generate_report_valid(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id, ev_id = await _setup_env(client)
+        token, _ws_id, inv_id, _ev_id = await _setup_env(client)
         resp = await client.post(
             "/api/v1/reports/generate",
             json={
@@ -184,7 +184,7 @@ class TestExportAPI:
         assert resp.status_code == 401
 
     async def test_create_export_valid(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id, ev_id = await _setup_env(client)
+        token, ws_id, inv_id, _ev_id = await _setup_env(client)
         resp = await client.post(
             "/api/v1/reports/export",
             json={
@@ -201,7 +201,7 @@ class TestExportAPI:
         assert data["status"] == "queued"
 
     async def test_list_exports(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id, ev_id = await _setup_env(client)
+        token, ws_id, inv_id, _ev_id = await _setup_env(client)
         await client.post(
             "/api/v1/reports/export",
             json={
@@ -236,7 +236,7 @@ class TestNotificationAPI:
         assert resp.status_code == 401
 
     async def test_list_notifications(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id, ev_id = await _setup_env(client)
+        token, _ws_id, _inv_id, _ev_id = await _setup_env(client)
         resp = await client.get(
             "/api/v1/reports/notifications", headers={"Authorization": f"Bearer {token}"}
         )
@@ -246,7 +246,7 @@ class TestNotificationAPI:
         assert "total" in data
 
     async def test_unread_count(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id, ev_id = await _setup_env(client)
+        token, _ws_id, _inv_id, _ev_id = await _setup_env(client)
         resp = await client.get(
             "/api/v1/reports/notifications/unread-count",
             headers={"Authorization": f"Bearer {token}"},
@@ -267,7 +267,7 @@ class TestActivityAPI:
         assert resp.status_code == 401
 
     async def test_list_activity(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id, ev_id = await _setup_env(client)
+        token, ws_id, _inv_id, _ev_id = await _setup_env(client)
         resp = await client.get(
             f"/api/v1/reports/activity?workspace_id={ws_id}",
             headers={"Authorization": f"Bearer {token}"},
@@ -289,7 +289,7 @@ class TestAnalyticsAPI:
         assert resp.status_code == 401
 
     async def test_workspace_analytics(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id, ev_id = await _setup_env(client)
+        token, ws_id, _inv_id, _ev_id = await _setup_env(client)
         resp = await client.get(
             f"/api/v1/reports/analytics/workspace/{ws_id}",
             headers={"Authorization": f"Bearer {token}"},
@@ -312,7 +312,7 @@ class TestSearchAPI:
         assert resp.status_code == 401
 
     async def test_search_no_results(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id, ev_id = await _setup_env(client)
+        token, _ws_id, _inv_id, _ev_id = await _setup_env(client)
         resp = await client.get(
             "/api/v1/reports/search?q=zzz_nonexistent_zzz",
             headers={"Authorization": f"Bearer {token}"},
@@ -322,7 +322,7 @@ class TestSearchAPI:
         assert len(data["results"]) == 0
 
     async def test_search_finds_investigation(self, client: AsyncClient) -> None:
-        token, ws_id, inv_id, ev_id = await _setup_env(client)
+        token, ws_id, _inv_id, _ev_id = await _setup_env(client)
         resp = await client.get(
             f"/api/v1/reports/search?q=Report&workspace_id={ws_id}",
             headers={"Authorization": f"Bearer {token}"},

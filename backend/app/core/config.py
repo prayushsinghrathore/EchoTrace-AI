@@ -95,8 +95,7 @@ class Settings(BaseSettings):
             )
         reset_url = data.get("PASSWORD_RESET_URL", "")
         if data.get("ENVIRONMENT") == "production" and (
-            not reset_url
-            or reset_url.startswith(("http://localhost", "http://127.0.0.1"))
+            not reset_url or reset_url.startswith(("http://localhost", "http://127.0.0.1"))
         ):
             data["PASSWORD_RESET_URL"] = "https://echo-trace-ai.vercel.app"
         return data

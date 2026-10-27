@@ -138,7 +138,7 @@ class TestOperationsAPI:
         assert resp.status_code == 401
 
     async def test_metrics_authenticated(self, client: AsyncClient) -> None:
-        token, ws_id = await _setup_env(client)
+        token, _ws_id = await _setup_env(client)
         resp = await client.get("/api/v1/metrics", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 200
         data = resp.json()
@@ -148,7 +148,7 @@ class TestOperationsAPI:
         assert "cache" in data
 
     async def test_rate_limits_endpoint(self, client: AsyncClient) -> None:
-        token, ws_id = await _setup_env(client)
+        token, _ws_id = await _setup_env(client)
         resp = await client.get("/api/v1/rate-limits", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 200
         data = resp.json()
@@ -165,7 +165,7 @@ class TestAudit:
 
     async def test_audit_service_creation(self, client: AsyncClient) -> None:
         """Verify audit model works via API."""
-        token, ws_id = await _setup_env(client)
+        _token, _ws_id = await _setup_env(client)
         assert AuditAction.LOGIN.value == "login"
         assert AuditAction.LOGOUT.value == "logout"
         assert AuditAction.EVIDENCE_CREATED.value == "evidence_created"

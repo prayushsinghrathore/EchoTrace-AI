@@ -122,4 +122,4 @@ class RefreshToken(Base, TimestampMixin):
         self.revoked_by_action = action
 
     def __repr__(self) -> str:
-        return f"<RefreshToken id={self.id} user_id={self.user_id} " f"revoked={self.is_revoked}>"
+        return f"<RefreshToken id={self.id} user_id={self.user_id} revoked={self.is_revoked}>"

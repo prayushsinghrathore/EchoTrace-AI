@@ -124,7 +124,7 @@ class TestAICache:
 
     def test_cache_different_key_misses(self) -> None:
         self.cache.set("text1", "prompt", "gpt-4o", "1.0.0", {"summary": "test"})
-        hit, result = self.cache.get("text2", "prompt", "gpt-4o", "1.0.0")
+        hit, _result = self.cache.get("text2", "prompt", "gpt-4o", "1.0.0")
         assert not hit
 
     def test_cache_eviction(self) -> None:
@@ -396,7 +396,7 @@ class TestAIAPI:
         assert resp.status_code == 401
 
     async def test_list_providers_authenticated(self, client: AsyncClient) -> None:
-        token, ws_id = await self._setup_env(client)
+        token, _ws_id = await self._setup_env(client)
         resp = await client.get(
             "/api/v1/ai/providers", headers={"Authorization": f"Bearer {token}"}
         )
@@ -416,19 +416,19 @@ class TestAIAPI:
         assert data["total_jobs"] >= 0
 
     async def test_usage_without_workspace(self, client: AsyncClient) -> None:
-        token, ws_id = await self._setup_env(client)
+        token, _ws_id = await self._setup_env(client)
         resp = await client.get("/api/v1/ai/usage", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 200
 
     async def test_get_job_not_found(self, client: AsyncClient) -> None:
-        token, ws_id = await self._setup_env(client)
+        token, _ws_id = await self._setup_env(client)
         resp = await client.get(
             f"/api/v1/ai/jobs/{uuid.uuid4()}", headers={"Authorization": f"Bearer {token}"}
         )
         assert resp.status_code == 404
 
     async def test_review_suggestion_not_found(self, client: AsyncClient) -> None:
-        token, ws_id = await self._setup_env(client)
+        token, _ws_id = await self._setup_env(client)
         resp = await client.post(
             f"/api/v1/ai/review/{uuid.uuid4()}/approve",
             headers={"Authorization": f"Bearer {token}"},
@@ -437,7 +437,7 @@ class TestAIAPI:
         assert resp.status_code == 404
 
     async def test_bulk_review_no_suggestions(self, client: AsyncClient) -> None:
-        token, ws_id = await self._setup_env(client)
+        token, _ws_id = await self._setup_env(client)
         sid = uuid.uuid4()
         resp = await client.post(
             "/api/v1/ai/review/bulk",

@@ -145,7 +145,7 @@ class OllamaProvider(BaseProvider):
             "You are a forensic analysis assistant. Summarize the evidence concisely. "
             "Return valid JSON with 'summary' (string) and 'key_points' (array)."
         )
-        result, meta = await self._call(
+        result, _meta = await self._call(
             system_prompt, evidence_text, SummaryResult, max_tokens=max_length
         )
         return result
@@ -159,7 +159,7 @@ class OllamaProvider(BaseProvider):
             "You are a forensic entity extractor. Identify all entities. "
             "Return valid JSON with an 'entities' array."
         )
-        result, meta = await self._call(system_prompt, evidence_text, ExtractedEntitiesResult)
+        result, _meta = await self._call(system_prompt, evidence_text, ExtractedEntitiesResult)
         return result
 
     async def suggest_relationships(
@@ -173,7 +173,7 @@ class OllamaProvider(BaseProvider):
             "You are a forensic relationship analyst. Return valid JSON with "
             "a 'relationships' array."
         )
-        result, meta = await self._call(system_prompt, user_prompt, SuggestedRelationshipsResult)
+        result, _meta = await self._call(system_prompt, user_prompt, SuggestedRelationshipsResult)
         return result
 
     async def generate_timeline(
@@ -184,7 +184,7 @@ class OllamaProvider(BaseProvider):
         system_prompt = prompt_template or (
             "You are a forensic timeline analyst. Return valid JSON with an 'events' array."
         )
-        result, meta = await self._call(system_prompt, evidence_text, GeneratedTimelineResult)
+        result, _meta = await self._call(system_prompt, evidence_text, GeneratedTimelineResult)
         return result
 
     async def generate_report(
@@ -196,7 +196,7 @@ class OllamaProvider(BaseProvider):
             "You are a forensic report writer. Return valid JSON with executive_summary, "
             "evidence_summary, timeline, entities, relationships, findings, and recommendations."
         )
-        result, meta = await self._call(
+        result, _meta = await self._call(
             system_prompt, investigation_context, ReportResult, max_tokens=8192
         )
         return result

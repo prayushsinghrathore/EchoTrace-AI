@@ -58,7 +58,7 @@ class TestEvidenceCRUD:
     """Evidence CRUD tests."""
 
     async def test_create_evidence(self, client: AsyncClient) -> None:
-        token, ws_id, proj_id = await _setup_env(client)
+        token, _ws_id, proj_id = await _setup_env(client)
         resp = await client.post(
             "/api/v1/evidence",
             json={
@@ -81,7 +81,7 @@ class TestEvidenceCRUD:
         assert set(data["tags"]) == {"important", "test"}
 
     async def test_list_evidence(self, client: AsyncClient) -> None:
-        token, ws_id, proj_id = await _setup_env(client)
+        token, _ws_id, proj_id = await _setup_env(client)
         await client.post(
             "/api/v1/evidence",
             json={
@@ -106,7 +106,7 @@ class TestEvidenceCRUD:
         assert len(resp.json()) >= 2
 
     async def test_get_evidence(self, client: AsyncClient) -> None:
-        token, ws_id, proj_id = await _setup_env(client)
+        token, _ws_id, proj_id = await _setup_env(client)
         create = await client.post(
             "/api/v1/evidence",
             json={
@@ -123,7 +123,7 @@ class TestEvidenceCRUD:
         assert resp.json()["title"] == "Get Me"
 
     async def test_update_evidence(self, client: AsyncClient) -> None:
-        token, ws_id, proj_id = await _setup_env(client)
+        token, _ws_id, proj_id = await _setup_env(client)
         create = await client.post(
             "/api/v1/evidence",
             json={
@@ -143,7 +143,7 @@ class TestEvidenceCRUD:
         assert resp.json()["priority"] == "critical"
 
     async def test_delete_and_restore(self, client: AsyncClient) -> None:
-        token, ws_id, proj_id = await _setup_env(client)
+        token, _ws_id, proj_id = await _setup_env(client)
         create = await client.post(
             "/api/v1/evidence",
             json={
@@ -171,7 +171,7 @@ class TestEvidencePermissions:
     """Permission enforcement tests."""
 
     async def test_non_member_cannot_create(self, client: AsyncClient) -> None:
-        token, ws_id, proj_id = await _setup_env(client)
+        _token, _ws_id, proj_id = await _setup_env(client)
 
         # Second user
         await client.post(
@@ -211,7 +211,7 @@ class TestEvidenceSearch:
     """Search functionality tests."""
 
     async def test_search_by_title(self, client: AsyncClient) -> None:
-        token, ws_id, proj_id = await _setup_env(client)
+        token, _ws_id, proj_id = await _setup_env(client)
         await client.post(
             "/api/v1/evidence",
             json={
@@ -229,7 +229,7 @@ class TestEvidenceSearch:
         assert data["total"] >= 1
 
     async def test_search_by_hash(self, client: AsyncClient) -> None:
-        token, ws_id, proj_id = await _setup_env(client)
+        token, _ws_id, proj_id = await _setup_env(client)
         await client.post(
             "/api/v1/evidence",
             json={
@@ -250,7 +250,7 @@ class TestEvidenceComments:
     """Comment tests."""
 
     async def test_add_and_list_comments(self, client: AsyncClient) -> None:
-        token, ws_id, proj_id = await _setup_env(client)
+        token, _ws_id, proj_id = await _setup_env(client)
         create = await client.post(
             "/api/v1/evidence",
             json={
@@ -275,7 +275,7 @@ class TestEvidenceComments:
         assert len(list_resp.json()) >= 1
 
     async def test_edit_and_delete_comment(self, client: AsyncClient) -> None:
-        token, ws_id, proj_id = await _setup_env(client)
+        token, _ws_id, proj_id = await _setup_env(client)
         create = await client.post(
             "/api/v1/evidence",
             json={
@@ -312,7 +312,7 @@ class TestEvidenceCustody:
     """Chain of custody tests."""
 
     async def test_custody_events_created(self, client: AsyncClient) -> None:
-        token, ws_id, proj_id = await _setup_env(client)
+        token, _ws_id, proj_id = await _setup_env(client)
         create = await client.post(
             "/api/v1/evidence",
             json={
@@ -336,7 +336,7 @@ class TestEvidenceCustody:
         assert len(custody.json()) >= 2  # create + update
 
     async def test_custody_has_actions(self, client: AsyncClient) -> None:
-        token, ws_id, proj_id = await _setup_env(client)
+        token, _ws_id, proj_id = await _setup_env(client)
         create = await client.post(
             "/api/v1/evidence",
             json={
@@ -359,7 +359,7 @@ class TestEvidenceStats:
     """Statistics tests."""
 
     async def test_evidence_stats(self, client: AsyncClient) -> None:
-        token, ws_id, proj_id = await _setup_env(client)
+        token, _ws_id, proj_id = await _setup_env(client)
         await client.post(
             "/api/v1/evidence",
             json={
@@ -434,7 +434,7 @@ class TestEvidenceUpload:
 
     async def test_upload_valid_file_success(self, client: AsyncClient) -> None:
         """Upload a valid text file — should return 200 with hashes and verification."""
-        token, ws_id, proj_id, ev_id = await self._create_evidence_and_token(client)
+        token, _ws_id, _proj_id, ev_id = await self._create_evidence_and_token(client)
         resp = await client.post(
             f"/api/v1/evidence/{ev_id}/upload",
             files={"file": ("test.txt", b"Hello EchoTrace AI", "text/plain")},
@@ -453,7 +453,7 @@ class TestEvidenceUpload:
 
     async def test_upload_invalid_investigation_id_returns_422(self, client: AsyncClient) -> None:
         """REGRESSION: Upload with invalid investigation_id UUID -> 422, not 500."""
-        token, ws_id, proj_id, ev_id = await self._create_evidence_and_token(client)
+        token, _ws_id, _proj_id, ev_id = await self._create_evidence_and_token(client)
         resp = await client.post(
             f"/api/v1/evidence/{ev_id}/upload",
             files={"file": ("test.txt", b"Regression test data", "text/plain")},
@@ -465,7 +465,7 @@ class TestEvidenceUpload:
 
     async def test_upload_without_investigation_id_succeeds(self, client: AsyncClient) -> None:
         """Upload without investigation_id should work normally."""
-        token, ws_id, proj_id, ev_id = await self._create_evidence_and_token(client)
+        token, _ws_id, _proj_id, ev_id = await self._create_evidence_and_token(client)
         resp = await client.post(
             f"/api/v1/evidence/{ev_id}/upload",
             files={"file": ("data.csv", b"col1,col2\n1,2\n3,4", "text/csv")},
@@ -476,7 +476,7 @@ class TestEvidenceUpload:
 
     async def test_upload_duplicate_file_returns_409(self, client: AsyncClient) -> None:
         """Upload identical content to different evidence items — second should return 409."""
-        token, ws_id, proj_id, ev_id = await self._create_evidence_and_token(client)
+        token, _ws_id, proj_id, ev_id = await self._create_evidence_and_token(client)
         content = b"Unique file content for cross-evidence dedup test"
 
         # First evidence: upload succeeds
@@ -508,7 +508,7 @@ class TestEvidenceUpload:
 
     async def test_upload_empty_file_returns_400(self, client: AsyncClient) -> None:
         """Upload an empty file — should return 400."""
-        token, ws_id, proj_id, ev_id = await self._create_evidence_and_token(client)
+        token, _ws_id, _proj_id, ev_id = await self._create_evidence_and_token(client)
         resp = await client.post(
             f"/api/v1/evidence/{ev_id}/upload",
             files={"file": ("empty.txt", b"", "text/plain")},
@@ -519,7 +519,7 @@ class TestEvidenceUpload:
 
     async def test_upload_unsupported_mime_returns_415(self, client: AsyncClient) -> None:
         """Upload with unsupported MIME type — should return 415."""
-        token, ws_id, proj_id, ev_id = await self._create_evidence_and_token(client)
+        token, _ws_id, _proj_id, ev_id = await self._create_evidence_and_token(client)
         resp = await client.post(
             f"/api/v1/evidence/{ev_id}/upload",
             files={"file": ("malware.exe", b"MZ\x90\x00", "application/x-msdownload")},
@@ -530,7 +530,7 @@ class TestEvidenceUpload:
 
     async def test_upload_without_auth_returns_401(self, client: AsyncClient) -> None:
         """Upload without authentication — should return 401."""
-        token, ws_id, proj_id, ev_id = await self._create_evidence_and_token(client)
+        _token, _ws_id, _proj_id, ev_id = await self._create_evidence_and_token(client)
         resp = await client.post(
             f"/api/v1/evidence/{ev_id}/upload",
             files={"file": ("test.txt", b"no auth", "text/plain")},
@@ -541,7 +541,7 @@ class TestEvidenceUpload:
         self, client: AsyncClient
     ) -> None:
         """Upload with a valid investigation_id should create timeline events and custody records."""
-        token, ws_id, proj_id, ev_id = await self._create_evidence_and_token(client)
+        token, ws_id, _proj_id, ev_id = await self._create_evidence_and_token(client)
         inv = await client.post(
             "/api/v1/investigations",
             json={
@@ -581,7 +581,7 @@ class TestEvidenceClassification:
 
     async def test_create_with_various_statuses(self, client: AsyncClient) -> None:
         """Create evidence with each status enum value."""
-        token, ws_id, proj_id = await _setup_env(client)
+        token, _ws_id, proj_id = await _setup_env(client)
         from app.models.evidence import EvidenceStatus
 
         # Create evidence then update through each status
@@ -613,7 +613,7 @@ class TestEvidenceClassification:
 
     async def test_create_with_various_priorities(self, client: AsyncClient) -> None:
         """Create evidence with each priority enum value."""
-        token, ws_id, proj_id = await _setup_env(client)
+        token, _ws_id, proj_id = await _setup_env(client)
         from app.models.evidence import EvidencePriority
 
         for priority in EvidencePriority:
@@ -626,16 +626,16 @@ class TestEvidenceClassification:
                 },
                 headers={"Authorization": f"Bearer {token}"},
             )
-            assert (
-                resp.status_code == 201
-            ), f"Failed to create with priority {priority.value}: {resp.text}"
+            assert resp.status_code == 201, (
+                f"Failed to create with priority {priority.value}: {resp.text}"
+            )
             assert resp.json()["priority"] == priority.value
 
     async def test_metadata_persistence(self, client: AsyncClient) -> None:
         """All metadata fields persist correctly through create → get."""
         import uuid
 
-        token, ws_id, proj_id = await _setup_env(client)
+        token, _ws_id, proj_id = await _setup_env(client)
         collector_id = uuid.uuid4()
 
         resp = await client.post(
@@ -675,7 +675,7 @@ class TestEvidenceClassification:
 
     async def test_search_by_classification(self, client: AsyncClient) -> None:
         """Search/filter evidence by status, priority, and category."""
-        token, ws_id, proj_id = await _setup_env(client)
+        token, _ws_id, proj_id = await _setup_env(client)
         # Create evidence with different classifications
         await client.post(
             "/api/v1/evidence",
@@ -722,7 +722,7 @@ class TestEvidenceClassification:
 
     async def test_stats_by_classification(self, client: AsyncClient) -> None:
         """Evidence stats contains by_status, by_category, by_priority."""
-        token, ws_id, proj_id = await _setup_env(client)
+        token, _ws_id, proj_id = await _setup_env(client)
         await client.post(
             "/api/v1/evidence",
             json={
@@ -751,7 +751,9 @@ class TestEvidenceVersions:
 
     async def test_versions_created_on_upload(self, client: AsyncClient) -> None:
         """Upload creates a version record."""
-        token, ws_id, proj_id, ev_id = await TestEvidenceUpload()._create_evidence_and_token(client)
+        token, _ws_id, _proj_id, ev_id = await TestEvidenceUpload()._create_evidence_and_token(
+            client
+        )
         await client.post(
             f"/api/v1/evidence/{ev_id}/upload",
             files={"file": ("v1.txt", b"Version 1 content", "text/plain")},
@@ -770,7 +772,9 @@ class TestEvidenceVersions:
 
     async def test_version_retrieval_by_id(self, client: AsyncClient) -> None:
         """Get a specific version by its ID."""
-        token, ws_id, proj_id, ev_id = await TestEvidenceUpload()._create_evidence_and_token(client)
+        token, _ws_id, _proj_id, ev_id = await TestEvidenceUpload()._create_evidence_and_token(
+            client
+        )
         await client.post(
             f"/api/v1/evidence/{ev_id}/upload",
             files={"file": ("get_ver.txt", b"Version for retrieval", "text/plain")},
@@ -792,7 +796,9 @@ class TestEvidenceVersions:
 
     async def test_version_number_increments(self, client: AsyncClient) -> None:
         """Each upload increments the version number."""
-        token, ws_id, proj_id, ev_id = await TestEvidenceUpload()._create_evidence_and_token(client)
+        token, _ws_id, _proj_id, ev_id = await TestEvidenceUpload()._create_evidence_and_token(
+            client
+        )
         await client.post(
             f"/api/v1/evidence/{ev_id}/upload",
             files={"file": ("v1.txt", b"First version", "text/plain")},
@@ -817,7 +823,7 @@ class TestEvidenceLifecycle:
 
     async def test_complete_lifecycle(self, client: AsyncClient) -> None:
         """Full evidence lifecycle end-to-end."""
-        token, ws_id, proj_id = await _setup_env(client)
+        token, _ws_id, proj_id = await _setup_env(client)
 
         # 1. Create (DRAFT)
         create = await client.post(
