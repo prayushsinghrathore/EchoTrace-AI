@@ -108,8 +108,6 @@ def shutdown_opentelemetry() -> None:
     """Shut down the OpenTelemetry provider gracefully."""
     if not _OTEL_AVAILABLE or not settings.OTEL_ENABLED:
         return
-    from opentelemetry import trace
-
     if _tracer_provider is not None:
-        trace.get_tracer_provider().shutdown()
+        _tracer_provider.shutdown()
         logger.debug("OpenTelemetry shut down")
